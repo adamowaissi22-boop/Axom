@@ -13,6 +13,8 @@ local TweenService = game:GetService("TweenService")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local TeleportService = game:GetService("TeleportService")
 local VirtualUser = game:GetService("VirtualUser")
+local Stats = game:GetService("Stats")
+local MarketplaceService = game:GetService("MarketplaceService")
 
 local savedCFrame = nil
 local amountToBring = 1
@@ -301,6 +303,148 @@ local fpsBoostData = {
     particles = {},
     postFx = {},
 }
+local touchEnabled = UserInputService.TouchEnabled
+local bodyGyro = nil
+local bodyVelocity = nil
+local flyConnection = nil
+local humanoid = nil
+
+local function getHumanoid()
+    if player.Character then
+        return player.Character:FindFirstChildOfClass("Humanoid")
+    end
+    return nil
+end
+
+local function getHumanoidRootPart()
+    if player.Character then
+        return player.Character:FindFirstChild("HumanoidRootPart")
+    end
+    return nil
+end
+
+local function cleanFlyParts()
+    local hrp = getHumanoidRootPart()
+    if hrp then
+        for _, child in pairs(hrp:GetChildren()) do
+            if child:IsA("BodyGyro") or child:IsA("BodyVelocity") then
+                child:Destroy()
+            end
+        end
+    end
+    local hum = getHumanoid()
+    if hum then
+        hum.PlatformStand = false
+        hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+    end
+end
+
+local function startTouchFly()
+    cleanFlyParts()
+    flyEnabled = true
+    
+    local hrp = getHumanoidRootPart()
+    local hum = getHumanoid()
+    if not hrp or not hum then return end
+    
+    local controlModule = require(player.PlayerScripts:WaitForChild("PlayerModule"):WaitForChild("ControlModule"))
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(9000000000, 9000000000, 9000000000)
+    bodyVelocity.Velocity = Vector3.zero
+    bodyVelocity.Parent = hrp
+    
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = Vector3.new(9000000000, 9000000000, 9000000000)
+    bodyGyro.D = 50
+    bodyGyro.P = 1000
+    bodyGyro.Parent = hrp
+    hum.PlatformStand = true
+    
+    flyConnection = RunService.RenderStepped:Connect(function()
+        if flyEnabled and hrp and hum and bodyVelocity and bodyGyro then
+            local moveVector = controlModule:GetMoveVector()
+            bodyGyro.CFrame = Workspace.CurrentCamera.CFrame
+            
+            if moveVector.Magnitude <= 0 then
+                bodyVelocity.Velocity = Vector3.zero
+            else
+                bodyVelocity.Velocity = (Workspace.CurrentCamera.CFrame.RightVector * moveVector.X - Workspace.CurrentCamera.CFrame.LookVector * moveVector.Z) * (flySpeed * 50)
+            end
+        end
+    end)
+end
+
+local function startDesktopFly()
+    cleanFlyParts()
+    flyEnabled = true
+    
+    local hrp = getHumanoidRootPart()
+    local hum = getHumanoid()
+    if not hrp or not hum then return end
+    
+    bodyGyro = Instance.new("BodyGyro")
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyGyro.P = 90000
+    bodyGyro.MaxTorque = Vector3.new(9000000000, 9000000000, 9000000000)
+    bodyGyro.CFrame = hrp.CFrame
+    bodyGyro.Parent = hrp
+    
+    bodyVelocity.MaxForce = Vector3.new(9000000000, 9000000000, 9000000000)
+    bodyVelocity.Velocity = Vector3.zero
+    bodyVelocity.Parent = hrp
+    hum.PlatformStand = true
+    
+    local inputBeganConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed then
+            if input.KeyCode == Enum.KeyCode.W then flyKeys.W = flySpeed
+            elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = -flySpeed
+            elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = -flySpeed
+            elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = flySpeed
+            elseif input.KeyCode == Enum.KeyCode.E then flyKeys.E = flySpeed * 2
+            elseif input.KeyCode == Enum.KeyCode.Q then flyKeys.Q = -flySpeed * 2 end
+        end
+    end)
+    
+    local inputEndedConnection = UserInputService.InputEnded:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.W then flyKeys.W = 0
+        elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = 0
+        elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = 0
+        elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = 0
+        elseif input.KeyCode == Enum.KeyCode.E then flyKeys.E = 0
+        elseif input.KeyCode == Enum.KeyCode.Q then flyKeys.Q = 0 end
+    end)
+    
+    flyConnection = RunService.RenderStepped:Connect(function()
+        if flyEnabled and hrp and hum and bodyVelocity and bodyGyro then
+            local camera = Workspace.CurrentCamera
+            bodyGyro.CFrame = camera.CFrame
+            
+            if Vector3.new(flyKeys.A + flyKeys.D, flyKeys.Q + flyKeys.E, flyKeys.W + flyKeys.S).Magnitude <= 0 then
+                bodyVelocity.Velocity = Vector3.zero
+            else
+                bodyVelocity.Velocity = (camera.CFrame.LookVector * (flyKeys.W + flyKeys.S) + 
+                                       camera.CFrame.RightVector * (flyKeys.A + flyKeys.D) + 
+                                       camera.CFrame.UpVector * (flyKeys.Q + flyKeys.E)) * (flySpeed * 50)
+            end
+        else
+            if flyConnection then flyConnection:Disconnect() flyConnection = nil end
+            if inputBeganConnection then inputBeganConnection:Disconnect() end
+            if inputEndedConnection then inputEndedConnection:Disconnect() end
+        end
+    end)
+end
+
+local function stopFly()
+    flyEnabled = false
+    flyKeys = {W = 0, A = 0, S = 0, D = 0, E = 0, Q = 0}
+    
+    if flyConnection then
+        flyConnection:Disconnect()
+        flyConnection = nil
+    end
+    
+    cleanFlyParts()
+end
 
 PlayerEnhancements:MakeSlider("Walk Speed", 16, 300, 16, function(value)
     walkSpeed = value
@@ -325,18 +469,44 @@ PlayerEnhancements:MakeSlider("Jump Power", 50, 350, 50, function(value)
 end)
 
 PlayerEnhancements:MakeToggle("Fly", false, function(enabled)
-    flyEnabled = enabled
     if enabled then
-        Window:MakeNotification("Fly", "Press E to ascend, Q to descend, WASD to move", 5)
+        if touchEnabled then
+            startTouchFly()
+        else
+            startDesktopFly()
+        end
+        Window:MakeNotification("Fly Enabled", "Press E to ascend, Q to descend, WASD to move", 5)
+    else
+        stopFly()
+        Window:MakeNotification("Fly Disabled", "Flight mode deactivated", 3)
     end
 end)
 
 PlayerEnhancements:MakeSlider("Fly Speed", 1, 5, 1, function(value)
     flySpeed = value
+    if flyEnabled then
+        if touchEnabled then
+            stopFly()
+            startTouchFly()
+        else
+            flyKeys.W = flyKeys.W > 0 and flySpeed or 0
+            flyKeys.S = flyKeys.S < 0 and -flySpeed or 0
+            flyKeys.A = flyKeys.A < 0 and -flySpeed or 0
+            flyKeys.D = flyKeys.D > 0 and flySpeed or 0
+            flyKeys.E = flyKeys.E > 0 and flySpeed * 2 or 0
+            flyKeys.Q = flyKeys.Q < 0 and -flySpeed * 2 or 0
+        end
+    end
 end)
 
 PlayerEnhancements:MakeToggle("Infinite Jump", false, function(enabled)
     infiniteJump = enabled
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if infiniteJump and getHumanoid() then
+        getHumanoid():ChangeState("Jumping")
+    end
 end)
 
 PlayerEnhancements:MakeToggle("NoClip", false, function(enabled)
@@ -596,8 +766,35 @@ local killAuraEnabled = false
 local killAuraRadius = 75
 local killAuraCooldown = 0.5
 local killAuraThread = nil
+local lastAttackTimes = {}
 local autoStunEnabled = false
 local autoStunThread = nil
+
+local function getBestWeapon()
+    local inventory = player:FindFirstChild("Inventory")
+    if not inventory then return nil end
+    
+    local bestWeapon = nil
+    local highestDamage = 0
+    
+    for _, item in pairs(inventory:GetChildren()) do
+        local damage = item:GetAttribute("WeaponDamage")
+        if typeof(damage) == "number" and damage > highestDamage then
+            highestDamage = damage
+            bestWeapon = item
+        end
+    end
+    
+    return bestWeapon
+end
+
+local function equipWeapon(weapon)
+    if weapon then
+        pcall(function()
+            ReplicatedStorage.RemoteEvents.EquipItemHandle:FireServer("FireAllClients", weapon)
+        end)
+    end
+end
 
 CombatFeatures:MakeToggle("Kill Aura", false, function(enabled)
     killAuraEnabled = enabled
@@ -609,6 +806,12 @@ CombatFeatures:MakeToggle("Kill Aura", false, function(enabled)
                 if char then
                     local hrp = char:FindFirstChild("HumanoidRootPart")
                     if hrp then
+                        local bestWeapon = getBestWeapon()
+                        if bestWeapon then
+                            equipWeapon(bestWeapon)
+                        end
+                        
+                        local currentTime = tick()
                         local nearbyParts = Workspace:GetPartBoundsInRadius(hrp.Position, killAuraRadius)
                         for _, part in pairs(nearbyParts) do
                             local model = part:FindFirstAncestorOfClass("Model")
@@ -616,11 +819,15 @@ CombatFeatures:MakeToggle("Kill Aura", false, function(enabled)
                                 local humanoid = model:FindFirstChildOfClass("Humanoid")
                                 local targetHRP = model:FindFirstChild("HumanoidRootPart")
                                 if humanoid and targetHRP and humanoid.Health > 0 then
-                                    task.spawn(function()
-                                        pcall(function()
-                                            ReplicatedStorage.RemoteEvents.ToolDamageObject:InvokeServer(model, nil, "1_" .. player.UserId, targetHRP.CFrame)
+                                    local lastAttackTime = lastAttackTimes[model] or 0
+                                    if currentTime - lastAttackTime >= killAuraCooldown then
+                                        lastAttackTimes[model] = currentTime
+                                        task.spawn(function()
+                                            pcall(function()
+                                                ReplicatedStorage.RemoteEvents.ToolDamageObject:InvokeServer(model, bestWeapon, "1_" .. player.UserId, targetHRP.CFrame)
+                                            end)
                                         end)
-                                    end)
+                                    end
                                 end
                             end
                         end
@@ -634,6 +841,7 @@ CombatFeatures:MakeToggle("Kill Aura", false, function(enabled)
             task.cancel(killAuraThread)
             killAuraThread = nil
         end
+        lastAttackTimes = {}
         Window:MakeNotification("Kill Aura", "Disabled", 3)
     end
 end)
@@ -677,6 +885,8 @@ local AutoFeatures = Window:MakeSection("Auto Features")
 local autoChopEnabled = false
 local autoChopRadius = 75
 local autoChopThread = nil
+local autoChopTreeType = "All Trees"
+local treeHealthBars = {}
 local autoReviveEnabled = false
 local autoReviveItem = "Both"
 local autoReviveThread = nil
@@ -691,6 +901,114 @@ local autoScrapItems = {}
 local autoScrapperThread = nil
 local autoSacrificeEnabled = false
 local autoSacrificeThread = nil
+local autoStrongholdEnabled = false
+local autoStrongholdThread = nil
+local strongholdAuraEnabled = false
+local candyCount = 0
+local diamondCount = 0
+
+local function isTree(model)
+    local name = model.Name:lower()
+    if autoChopTreeType == "All Trees" then
+        return name:find("tree")
+    elseif autoChopTreeType == "Small Trees" then
+        return name:find("small tree") or name:find("small webbed tree")
+    elseif autoChopTreeType == "Big Trees" then
+        return name:find("treebig") or name:find("webbedtreebig")
+    end
+    return false
+end
+
+local function createTreeHealthBar(tree)
+    if treeHealthBars[tree] then return end
+    
+    local trunk = tree:FindFirstChild("Trunk") or tree.PrimaryPart
+    if not trunk then return end
+    
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "TreeHealthBar"
+    billboard.Adornee = trunk
+    billboard.Size = UDim2.new(4, 0, 0.4, 0)
+    billboard.StudsOffset = Vector3.new(0, 0.5, 0)
+    billboard.AlwaysOnTop = true
+    billboard.MaxDistance = 200
+    billboard.Parent = trunk
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0.3, 0)
+    frame.Position = UDim2.new(0, 0, 0.35, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.BorderSizePixel = 0
+    frame.Parent = billboard
+    
+    local fill = Instance.new("Frame")
+    fill.Name = "Fill"
+    fill.Size = UDim2.new(1, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
+    fill.BorderSizePixel = 0
+    fill.Parent = frame
+    
+    local corner1 = Instance.new("UICorner")
+    corner1.CornerRadius = UDim.new(0, 6)
+    corner1.Parent = frame
+    
+    local corner2 = Instance.new("UICorner")
+    corner2.CornerRadius = UDim.new(0, 6)
+    corner2.Parent = fill
+    
+    treeHealthBars[tree] = {
+        gui = billboard,
+        bar = fill
+    }
+end
+
+local function updateTreeHealthBar(tree)
+    local data = treeHealthBars[tree]
+    if not data then return end
+    
+    local bar = data.bar
+    if bar and bar.Parent then
+        local health = tree:GetAttribute("Health") or 0
+        local name = tree.Name:lower()
+        local maxHealth = name:find("big") and 1750 or (name:find("small") and 50 or (name:find("tree") and 500 or 100))
+        local healthRatio = math.clamp(health / maxHealth, 0, 1)
+        
+        bar.Size = UDim2.new(healthRatio, 0, 1, 0)
+        
+        if healthRatio > 0.6 then
+            bar.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
+        elseif healthRatio > 0.3 then
+            bar.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+        else
+            bar.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        end
+        
+        if healthRatio <= 0 or health <= 0 then
+            if data.gui and data.gui.Parent then
+                data.gui:Destroy()
+            end
+            treeHealthBars[tree] = nil
+        end
+    end
+end
+
+local function removeTreeHealthBar(tree)
+    local data = treeHealthBars[tree]
+    if data and data.gui and data.gui.Parent then
+        data.gui:Destroy()
+    end
+    treeHealthBars[tree] = nil
+end
+
+AutoFeatures:MakeDropdown("Tree Type", {"All Trees", "Small Trees", "Big Trees"}, "All Trees", function(value)
+    autoChopTreeType = value
+    Window:MakeNotification("Auto Chop", "Tree type set to " .. value, 3)
+end)
+
+AutoFeatures:MakeSlider("Auto Chop Range", 10, 100, 75, function(value)
+    autoChopRadius = value
+    Window:MakeNotification("Auto Chop", "Range set to " .. autoChopRadius, 3)
+end)
 
 AutoFeatures:MakeToggle("Auto Chop Trees", false, function(enabled)
     autoChopEnabled = enabled
@@ -701,14 +1019,46 @@ AutoFeatures:MakeToggle("Auto Chop Trees", false, function(enabled)
                 local char = player.Character
                 local hrp = char and char:FindFirstChild("HumanoidRootPart")
                 if hrp then
+                    local bestAxe = getBestWeapon()
+                    if bestAxe then
+                        equipWeapon(bestAxe)
+                    end
+                    
                     local nearbyParts = Workspace:GetPartBoundsInRadius(hrp.Position, autoChopRadius)
+                    local trees = {}
+                    
                     for _, part in pairs(nearbyParts) do
                         local tree = part:FindFirstAncestorOfClass("Model")
-                        if tree and tree:FindFirstChild("Trunk") then
-                            if tree.Name:lower():find("tree") then
+                        if tree and tree:FindFirstChild("Trunk") and isTree(tree) then
+                            trees[tree] = true
+                        end
+                    end
+                    
+                    for tree, _ in pairs(trees) do
+                        createTreeHealthBar(tree)
+                        updateTreeHealthBar(tree)
+                    end
+                    
+                    for tree, data in pairs(treeHealthBars) do
+                        if tree.Parent then
+                            updateTreeHealthBar(tree)
+                        else
+                            removeTreeHealthBar(tree)
+                        end
+                    end
+                    
+                    for tree, _ in pairs(trees) do
+                        if tree.Parent then
+                            local targetCFrame
+                            local trunk = tree:FindFirstChild("Trunk") or tree.PrimaryPart
+                            if trunk then
+                                targetCFrame = CFrame.new(trunk.Position + Vector3.new(math.random(-3, 3), math.random(2, 4), math.random(-3, 3)))
+                            end
+                            
+                            if targetCFrame then
                                 for i = 1, 3 do
                                     pcall(function()
-                                        ReplicatedStorage.RemoteEvents.ToolDamageObject:InvokeServer(tree, nil, "6", tree:GetPivot())
+                                        ReplicatedStorage.RemoteEvents.ToolDamageObject:InvokeServer(tree, bestAxe, "6", targetCFrame)
                                     end)
                                     task.wait(0.05)
                                 end
@@ -718,19 +1068,24 @@ AutoFeatures:MakeToggle("Auto Chop Trees", false, function(enabled)
                 end
                 task.wait(0.25)
             end
+            
+            for tree, _ in pairs(treeHealthBars) do
+                removeTreeHealthBar(tree)
+            end
+            treeHealthBars = {}
+            Window:MakeNotification("Auto Chop", "Stopped.", 3)
         end)
     else
         if autoChopThread then
             task.cancel(autoChopThread)
             autoChopThread = nil
         end
-        Window:MakeNotification("Auto Chop", "Disabled", 3)
+        for tree, _ in pairs(treeHealthBars) do
+            removeTreeHealthBar(tree)
+        end
+        treeHealthBars = {}
+        Window:MakeNotification("Auto Chop", "Disabled.", 3)
     end
-end)
-
-AutoFeatures:MakeSlider("Auto Chop Range", 10, 100, 75, function(value)
-    autoChopRadius = value
-    Window:MakeNotification("Auto Chop", "Range set to " .. autoChopRadius, 3)
 end)
 
 AutoFeatures:MakeToggle("Auto Revive Teammates", false, function(enabled)
@@ -786,21 +1141,54 @@ AutoFeatures:MakeToggle("Auto Potions", false, function(enabled)
         Window:MakeNotification("Auto Potions", "Enabled", 3)
         autoPotionsThread = task.spawn(function()
             while autoPotionsEnabled do
-                local cauldron = Workspace.Map.Campground.Cauldron
+                local cauldron = Workspace.Map and Workspace.Map.Campground and Workspace.Map.Campground.Cauldron
                 if cauldron and cauldron.Functional and cauldron.Functional.Recipe then
                     for _, recipePart in pairs(cauldron.Functional.Recipe:GetChildren()) do
                         local required = recipePart:GetAttribute("Required")
                         if required and not recipePart:GetAttribute("AlreadyDone") then
+                            if autoBuySeedsEnabled then
+                                local name = recipePart.Name:lower()
+                                local plantMap = {
+                                    dripleaf = "Dripleaf Plant",
+                                    mandrake = "Mandrake Plant",
+                                    moonflower = "Moonflower Plant",
+                                    stareweed = "Stareweed Plant",
+                                    ["cave vine"] = "Cave Vine Plant"
+                                }
+                                
+                                for key, plantName in pairs(plantMap) do
+                                    if name:find(key) then
+                                        local shops = ReplicatedStorage:FindFirstChild("Shops")
+                                        if shops then
+                                            local fairyShop = shops:FindFirstChild("Fairy")
+                                            if fairyShop then
+                                                local plantItem = fairyShop:FindFirstChild(plantName)
+                                                if plantItem then
+                                                    pcall(function()
+                                                        ReplicatedStorage.RemoteEvents.BuyBox:InvokeServer(plantItem)
+                                                        Window:MakeNotification("Auto Buy Seeds", "Purchased " .. plantName .. " for recipe.", 3)
+                                                    end)
+                                                end
+                                            end
+                                        end
+                                        break
+                                    end
+                                end
+                            end
+                            
                             local items = Workspace:FindFirstChild("Items")
                             if items then
+                                local cauldronPos = cauldron:GetPivot() + Vector3.new(0, 3, 0)
                                 local count = 0
                                 for _, item in pairs(items:GetChildren()) do
                                     if item.Name:lower():find(recipePart.Name:lower()) then
-                                        ReplicatedStorage.RemoteEvents.RequestStartDraggingItem:FireServer(item)
-                                        task.wait(0.1)
-                                        item:SetPrimaryPartCFrame(cauldron:GetPivot() + Vector3.new(0, 3, 0))
-                                        count = count + 1
-                                        if count >= required then break end
+                                        pcall(function()
+                                            ReplicatedStorage.RemoteEvents.RequestStartDraggingItem:FireServer(item)
+                                            task.wait(0.1)
+                                            item:SetPrimaryPartCFrame(cauldronPos)
+                                            count = count + 1
+                                            if count >= required then break end
+                                        end)
                                     end
                                 end
                             end
@@ -841,13 +1229,21 @@ AutoFeatures:MakeToggle("Auto Fuel Fire", false, function(enabled)
             while autoFuelFireEnabled do
                 local items = Workspace:FindFirstChild("Items")
                 if items then
+                    local firePos = CFrame.new(0, 20, 0)
+                    local validItems = {
+                        Log = true,
+                        ["Fuel Canister"] = true,
+                        ["Oil Barrel"] = true,
+                        Coal = true
+                    }
+                    
                     for _, item in pairs(items:GetChildren()) do
-                        if item:IsA("Model") and item.PrimaryPart and (table.find(autoFuelTypes, "All") or table.find(autoFuelTypes, item.Name)) then
-                            if item.Name == "Log" or item.Name == "Fuel Canister" or item.Name == "Oil Barrel" or item.Name == "Coal" then
+                        if item:IsA("Model") and item.PrimaryPart then
+                            if validItems[item.Name] and (table.find(autoFuelTypes, "All") or table.find(autoFuelTypes, item.Name)) then
                                 pcall(function()
                                     ReplicatedStorage.RemoteEvents.RequestStartDraggingItem:FireServer(item)
                                     task.wait(0.05)
-                                    item:SetPrimaryPartCFrame(CFrame.new(0, 20, 0))
+                                    item:SetPrimaryPartCFrame(firePos)
                                 end)
                             end
                         end
@@ -871,16 +1267,18 @@ AutoFeatures:MakeToggle("Auto Sacrifice Cultists", false, function(enabled)
         Window:MakeNotification("Auto Sacrifice", "Enabled", 3)
         autoSacrificeThread = task.spawn(function()
             while autoSacrificeEnabled do
-                local volcano = Workspace.Map.Landmarks and Workspace.Map.Landmarks:FindFirstChild("Volcano")
-                if volcano and volcano.Functional and volcano.Functional:FindFirstChild("Lava") then
-                    local lava = volcano.Functional.Lava
-                    local items = Workspace:FindFirstChild("Items")
-                    if items then
-                        for _, item in pairs(items:GetChildren()) do
-                            if item:IsA("Model") and (item.Name == "Cultist" or item.Name == "Crossbow Cultist") then
-                                pcall(function()
-                                    ReplicatedStorage.RemoteEvents.RequestLavaBurnItem:InvokeServer(item, lava)
-                                end)
+                local volcano = Workspace.Map and Workspace.Map.Landmarks and Workspace.Map.Landmarks:FindFirstChild("Volcano")
+                if volcano and volcano.Functional then
+                    local lava = volcano.Functional:FindFirstChild("Lava")
+                    if lava and lava:IsA("BasePart") then
+                        local items = Workspace:FindFirstChild("Items")
+                        if items then
+                            for _, item in pairs(items:GetChildren()) do
+                                if item:IsA("Model") and (item.Name == "Cultist" or item.Name == "Crossbow Cultist") then
+                                    pcall(function()
+                                        ReplicatedStorage.RemoteEvents.RequestLavaBurnItem:InvokeServer(item, lava)
+                                    end)
+                                end
                             end
                         end
                     end
@@ -897,114 +1295,982 @@ AutoFeatures:MakeToggle("Auto Sacrifice Cultists", false, function(enabled)
     end
 end)
 
-local TeleportSection = Window:MakeSection("Teleport Locations")
-local teleportLocations = {
-    "Campground",
-    "Stronghold",
-    "Fairy House",
-    "Ice Temple",
-    "Volcano",
-    "Carnival",
-    "Furniture Trader",
-    "Anvil",
-    "Upgrade Station"
+local scrapItemList = {
+    "Bolt", "Broken Fan", "Broken Microwave", "Broken Radio", "Metal Chair", 
+    "Old Car Engine", "Sheet Metal", "Tyre", "Washing Machine", "Log", 
+    "Chair", "Cultist Gem", "Forest Gem Fragment", "Forest Gem", "UFO Scrap", 
+    "Cultist Prototype", "Cultist Experiment", "UFO Component", "UFO Junk"
 }
-local selectedTeleport = "Campground"
+table.sort(scrapItemList, function(a, b) return a:lower() < b:lower() end)
+table.insert(scrapItemList, 1, "Deselect All")
+table.insert(scrapItemList, 1, "All")
 
-TeleportSection:MakeDropdown("Select Location", teleportLocations, function(location)
-    selectedTeleport = location
+AutoFeatures:MakeDropdown("Scrap Items", scrapItemList, {}, function(values)
+    if table.find(values, "All") then
+        local allItems = {}
+        for _, item in ipairs(scrapItemList) do
+            if item ~= "All" and item ~= "Deselect All" then
+                table.insert(allItems, item)
+            end
+        end
+        autoScrapItems = allItems
+        Window:MakeNotification("Scrap Items", "All items selected", 3)
+    elseif table.find(values, "Deselect All") then
+        autoScrapItems = {}
+        Window:MakeNotification("Scrap Items", "All items deselected", 3)
+    else
+        autoScrapItems = values
+    end
 end)
 
-TeleportSection:MakeButton("Teleport", function()
-    local hrp = getHRP()
-    if not hrp then return end
+AutoFeatures:MakeToggle("Auto Scrapper", false, function(enabled)
+    autoScrapperEnabled = enabled
+    if enabled then
+        Window:MakeNotification("Auto Scrapper", "Enabled", 3)
+        autoScrapperThread = task.spawn(function()
+            while autoScrapperEnabled do
+                local items = Workspace:FindFirstChild("Items")
+                if items then
+                    local scrapperPos = CFrame.new(21, 17, -5)
+                    for _, item in pairs(items:GetChildren()) do
+                        if item:IsA("Model") and item.PrimaryPart and table.find(autoScrapItems, item.Name) then
+                            pcall(function()
+                                ReplicatedStorage.RemoteEvents.RequestStartDraggingItem:FireServer(item)
+                                task.wait(0.05)
+                                item:SetPrimaryPartCFrame(scrapperPos)
+                            end)
+                        end
+                    end
+                end
+                task.wait(2)
+            end
+        end)
+    else
+        if autoScrapperThread then
+            task.cancel(autoScrapperThread)
+            autoScrapperThread = nil
+        end
+        Window:MakeNotification("Auto Scrapper", "Disabled", 3)
+    end
+end)
+
+local function updateStatsDisplay()
+    candyCount = player:GetAttribute("Candy") or 0
+    diamondCount = player:GetAttribute("Diamonds") or 0
+end
+
+player:GetAttributeChangedSignal("Candy"):Connect(updateStatsDisplay)
+player:GetAttributeChangedSignal("Diamonds"):Connect(updateStatsDisplay)
+updateStatsDisplay()
+
+AutoFeatures:MakeToggle("Auto Stronghold", false, function(enabled)
+    autoStrongholdEnabled = enabled
+    if enabled then
+        Window:MakeNotification("Auto Stronghold", "Starting...", 3)
+        pcall(function()
+            ReplicatedStorage.RemoteEvents.RequestOpenItemChest:Wait()
+        end)
+        
+        autoStrongholdThread = task.spawn(function()
+            while autoStrongholdEnabled do
+                local stronghold = Workspace.Map and Workspace.Map.Landmarks and Workspace.Map.Landmarks:FindFirstChild("Stronghold")
+                if stronghold and stronghold.Functional then
+                    local sign = stronghold.Functional:FindFirstChild("Sign")
+                    if sign and sign:FindFirstChild("SurfaceGui") then
+                        Window:MakeNotification("Auto Stronghold", "Waiting for Stronghold ready...", 3)
+                        
+                        local triggerZone = stronghold.Functional.EnemyWaves12 and stronghold.Functional.EnemyWaves12.Wave1 and stronghold.Functional.EnemyWaves12.Wave1.TriggerZone
+                        if triggerZone then
+                            local hrp = getHRP()
+                            if hrp then
+                                hrp.CFrame = triggerZone.CFrame + Vector3.new(0, 4, 0)
+                            end
+                        end
+                        
+                        strongholdAuraEnabled = true
+                        task.spawn(function()
+                            while strongholdAuraEnabled and autoStrongholdEnabled do
+                                local char = player.Character
+                                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                                local bestWeapon = getBestWeapon()
+                                
+                                if hrp and bestWeapon then
+                                    local characters = Workspace:FindFirstChild("Characters")
+                                    if characters then
+                                        for _, enemy in pairs(characters:GetChildren()) do
+                                            if enemy ~= char then
+                                                local enemyHumanoid = enemy:FindFirstChildOfClass("Humanoid")
+                                                local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
+                                                if enemyHumanoid and enemyHRP and enemyHumanoid.Health > 0 then
+                                                    local distance = (enemyHRP.Position - hrp.Position).Magnitude
+                                                    if distance <= 200 then
+                                                        pcall(function()
+                                                            ReplicatedStorage.RemoteEvents.ToolDamageObject:InvokeServer(enemy, bestWeapon, "Coin_Stack", enemyHRP.CFrame)
+                                                        end)
+                                                    end
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                                RunService.Heartbeat:Wait()
+                            end
+                        end)
+                        
+                        repeat
+                            task.wait(1)
+                            local items = Workspace:FindFirstChild("Items")
+                            local chest = items and items:FindFirstChild("Stronghold Diamond Chest")
+                        until (chest and not chest:GetAttribute("Locked")) or not autoStrongholdEnabled
+                        
+                        strongholdAuraEnabled = false
+                        
+                        if autoStrongholdEnabled then
+                            local items = Workspace:FindFirstChild("Items")
+                            local chest = items and items:FindFirstChild("Stronghold Diamond Chest")
+                            if chest then
+                                pcall(function()
+                                    ReplicatedStorage.RemoteEvents.RequestOpenItemChest:FireServer(chest)
+                                end)
+                            end
+                            
+                            Window:MakeNotification("Auto Stronghold", "Cycle complete - waiting for next respawn.", 3)
+                            task.wait(5)
+                        end
+                    end
+                end
+                task.wait(5)
+            end
+        end)
+    else
+        autoStrongholdEnabled = false
+        strongholdAuraEnabled = false
+        if autoStrongholdThread then
+            task.cancel(autoStrongholdThread)
+            autoStrongholdThread = nil
+        end
+        Window:MakeNotification("Auto Stronghold", "Disabled", 3)
+    end
+end)
+
+local BringAllSection = Window:MakeSection("Bring All Features")
+
+BringAllSection:MakeButton("Bring All Kids", function()
+    Window:MakeNotification("Starting Kid Collection", "Searching for Lost Children...", 3)
+    task.spawn(function()
+        local requestBagStoreItem = ReplicatedStorage.RemoteEvents:FindFirstChild("RequestBagStoreItem")
+        if requestBagStoreItem then
+            local inventory = player:FindFirstChild("Inventory")
+            local characters = Workspace:FindFirstChild("Characters")
+            local sack = inventory and (inventory:FindFirstChild("Old Sack") or inventory:FindFirstChild("Good Sack") or 
+                     inventory:FindFirstChild("Infernal Sack") or inventory:FindFirstChild("Giant Sack"))
+            
+            if sack then
+                local hrp = getHRP()
+                if hrp then
+                    for _, childName in ipairs({"Lost Child", "Lost Child2", "Lost Child3", "Lost Child4"}) do
+                        local child = characters and characters:FindFirstChild(childName)
+                        if child and child:FindFirstChild("HumanoidRootPart") then
+                            hrp.CFrame = child.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0)
+                            task.wait(0.3)
+                            pcall(function()
+                                requestBagStoreItem:InvokeServer(sack, child)
+                            end)
+                            task.wait(0.3)
+                        end
+                    end
+                    
+                    hrp.CFrame = CFrame.new(0, 20, 0)
+                    Window:MakeNotification("Kid Collection Complete", "Returned to Fire.", 3)
+                end
+            else
+                Window:MakeNotification("No Sack Found", "Need any Sack to collect kids.", 3)
+            end
+        else
+            Window:MakeNotification("Error", "Remote missing.", 3)
+        end
+    end)
+end)
+
+local CraftingSection = Window:MakeSection("Crafting")
+
+local function craftItem(itemName)
+    pcall(function()
+        ReplicatedStorage.RemoteEvents.CraftItem:InvokeServer(itemName)
+        Window:MakeNotification("Crafting", itemName .. " crafted successfully!", 3)
+    end)
+end
+
+CraftingSection:MakeButton("Map", function() craftItem("Map") end)
+CraftingSection:MakeButton("Old Bed", function() craftItem("Old Bed") end)
+CraftingSection:MakeButton("Crafting Bench 2", function() craftItem("Crafting Bench 2") end)
+CraftingSection:MakeButton("Regular Bed", function() craftItem("Regular Bed") end)
+CraftingSection:MakeButton("Crafting Bench 3", function() craftItem("Crafting Bench 3") end)
+CraftingSection:MakeButton("Good Bed", function() craftItem("Good Bed") end)
+CraftingSection:MakeButton("Crafting Bench 4", function() craftItem("Crafting Bench 4") end)
+CraftingSection:MakeButton("Giant Bed", function() craftItem("Giant Bed") end)
+CraftingSection:MakeButton("Bear Trap", function() craftItem("Bear trap") end)
+
+local SaplingPlanterSection = Window:MakeSection("Sapling Planter")
+local saplingShape = "Circle"
+local saplingSpacing = 3
+local saplingRadius = 50
+local saplingCenter = "Fire"
+local previewParts = {}
+local previewActive = false
+local previewConnection = nil
+
+local function getCenterPosition()
+    if saplingCenter == "Player" then
+        local hrp = getHRP()
+        return hrp and hrp.Position
+    else
+        local map = Workspace:FindFirstChild("Map")
+        local campground = map and map:FindFirstChild("Campground")
+        local mainFire = campground and campground:FindFirstChild("MainFire")
+        return mainFire and mainFire.PrimaryPart and mainFire.PrimaryPart.Position
+    end
+end
+
+local function getGroundPosition(position)
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {Workspace:FindFirstChild("Map") and Workspace.Map:FindFirstChild("Ground")}
+    raycastParams.FilterType = Enum.RaycastFilterType.Include
+    raycastParams.IgnoreWater = true
     
-    if selectedTeleport == "Campground" then
+    local raycastResult = Workspace:Raycast(position + Vector3.new(0, 50, 0), Vector3.new(0, -200, 0), raycastParams)
+    return raycastResult and raycastResult.Position or position
+end
+
+local function findSapling()
+    local items = Workspace:FindFirstChild("Items")
+    if items then
+        for _, item in pairs(items:GetChildren()) do
+            if item:IsA("Model") and item.Name:lower():find("sapling") then
+                return item
+            end
+        end
+    end
+    return nil
+end
+
+local function plantSapling(position)
+    local groundPos = getGroundPosition(position)
+    local sapling = findSapling()
+    if sapling then
+        pcall(function()
+            ReplicatedStorage.RemoteEvents.RequestPlantItem:InvokeServer(sapling, groundPos)
+        end)
+    end
+end
+
+local function calculateCirclePoints(center, radius, spacing)
+    local circumference = 2 * math.pi * radius
+    local pointCount = math.max(3, math.floor(circumference / spacing))
+    local points = {}
+    
+    for i = 1, pointCount do
+        local angle = i / pointCount * 2 * math.pi
+        local x = center.X + math.cos(angle) * radius
+        local z = center.Z + math.sin(angle) * radius
+        table.insert(points, Vector3.new(x, center.Y, z))
+    end
+    
+    return points
+end
+
+local function calculateSquarePoints(center, radius, spacing)
+    local halfSize = radius / 2
+    local points = {}
+    
+    for x = -halfSize, halfSize, spacing do
+        for z = -halfSize, halfSize, spacing do
+            if math.abs(x) == halfSize or math.abs(z) == halfSize then
+                table.insert(points, Vector3.new(center.X + x, center.Y, center.Z + z))
+            end
+        end
+    end
+    
+    return points
+end
+
+local function calculateTrianglePoints(center, radius, spacing)
+    local halfSize = radius / 2
+    local sqrt3 = math.sqrt(3)
+    local height = sqrt3 * halfSize
+    
+    local point1 = Vector3.new(center.X, center.Y, center.Z - height / 2)
+    local point2 = Vector3.new(center.X - halfSize, center.Y, center.Z + height / 2)
+    local point3 = Vector3.new(center.X + halfSize, center.Y, center.Z + height / 2)
+    
+    local points = {}
+    
+    local function interpolatePoints(p1, p2)
+        local dir = p2 - p1
+        local length = dir.Magnitude
+        local unit = dir.Unit
+        
+        for dist = 0, length, spacing do
+            table.insert(points, p1 + unit * dist)
+        end
+    end
+    
+    interpolatePoints(point1, point2)
+    interpolatePoints(point2, point3)
+    interpolatePoints(point3, point1)
+    
+    return points
+end
+
+local function getSaplingPoints()
+    local center = getCenterPosition()
+    if not center then return {} end
+    
+    if saplingShape == "Circle" then
+        return calculateCirclePoints(center, saplingRadius, saplingSpacing)
+    elseif saplingShape == "Square" then
+        return calculateSquarePoints(center, saplingRadius, saplingSpacing)
+    elseif saplingShape == "Triangle" then
+        return calculateTrianglePoints(center, saplingRadius, saplingSpacing)
+    end
+    
+    return {}
+end
+
+local function clearPreview()
+    for _, part in pairs(previewParts) do
+        if part and part.Parent then
+            part:Destroy()
+        end
+    end
+    previewParts = {}
+    
+    if previewConnection then
+        previewConnection:Disconnect()
+        previewConnection = nil
+    end
+    
+    previewActive = false
+end
+
+local function createPreview()
+    clearPreview()
+    
+    local center = getCenterPosition()
+    if not center then return end
+    
+    local points = getSaplingPoints()
+    if #points == 0 then return end
+    
+    previewActive = true
+    
+    for _, point in ipairs(points) do
+        local part = Instance.new("Part")
+        part.Anchored = true
+        part.CanCollide = false
+        part.CanTouch = false
+        part.Material = Enum.Material.Neon
+        part.Color = Color3.fromRGB(0, 255, 0)
+        part.Size = Vector3.new(1, 0.2, 1)
+        part.CFrame = CFrame.new(point + Vector3.new(0, 2, 0))
+        part.Transparency = 0.25
+        part.Name = "AxomPreview"
+        part.Parent = Workspace
+        
+        table.insert(previewParts, part)
+    end
+    
+    if saplingCenter == "Player" then
+        previewConnection = RunService.RenderStepped:Connect(function()
+            if previewActive then
+                local hrp = getHRP()
+                if hrp then
+                    local newPoints = getSaplingPoints()
+                    for i, point in ipairs(newPoints) do
+                        if previewParts[i] then
+                            previewParts[i].CFrame = CFrame.new(point + Vector3.new(0, 2, 0))
+                        end
+                    end
+                end
+            else
+                if previewConnection then
+                    previewConnection:Disconnect()
+                    previewConnection = nil
+                end
+            end
+        end)
+    end
+end
+
+SaplingPlanterSection:MakeDropdown("Center Position", {"Fire", "Player"}, "Fire", function(value)
+    saplingCenter = value
+    if previewActive then
+        createPreview()
+    end
+end)
+
+SaplingPlanterSection:MakeDropdown("Shape", {"Circle", "Square", "Triangle"}, "Circle", function(value)
+    saplingShape = value
+    if previewActive then
+        createPreview()
+    end
+end)
+
+SaplingPlanterSection:MakeSlider("Spacing (studs)", 1, 5, 3, 0.5, function(value)
+    saplingSpacing = value
+    if previewActive then
+        createPreview()
+    end
+end)
+
+SaplingPlanterSection:MakeSlider("Size / Radius (studs)", 35, 185, 50, 5, function(value)
+    saplingRadius = value
+    if previewActive then
+        createPreview()
+    end
+end)
+
+SaplingPlanterSection:MakeButton("Plant Saplings", function()
+    if previewActive and #previewParts > 0 then
+        local center = getCenterPosition()
+        if center then
+            local points = getSaplingPoints()
+            for _, point in ipairs(points) do
+                task.spawn(function()
+                    plantSapling(point)
+                    RunService.Heartbeat:Wait()
+                end)
+            end
+            clearPreview()
+            Window:MakeNotification("Planting", string.format("Planted %s | Radius: %d | Spacing: %.1f | Center: %s", saplingShape, saplingRadius, saplingSpacing, saplingCenter), 3)
+        end
+    else
+        createPreview()
+        Window:MakeNotification("Preview Active", "Visualizer created. Adjust sliders or click again to confirm/cancel.", 3)
+    end
+end)
+
+local TeleportSection = Window:MakeSection("Teleport Locations")
+
+local teleportFunctions = {
+    Fire = function()
+        return CFrame.new(0, 15, 0)
+    end,
+    Stronghold = function()
+        local stronghold = Workspace.Map and Workspace.Map.Landmarks and Workspace.Map.Landmarks:FindFirstChild("Stronghold")
+        if stronghold and stronghold.Functional then
+            local sign = stronghold.Functional:FindFirstChild("Sign")
+            if sign then
+                return sign.CFrame * CFrame.new(0, 0, 5)
+            end
+        end
+    end,
+    Anvil = function()
+        local toolWorkshop = Workspace.Map and Workspace.Map.Landmarks and Workspace.Map.Landmarks:FindFirstChild("ToolWorkshop")
+        if toolWorkshop and toolWorkshop.Functional then
+            local anvilHologram = toolWorkshop.Functional:FindFirstChild("AnvilHologram")
+            if anvilHologram and anvilHologram:FindFirstChild("HumanoidRootPart") then
+                return anvilHologram.HumanoidRootPart.CFrame
+            end
+        end
+    end,
+    Upgrade = function()
+        local skillsBuilding = Workspace.Map and Workspace.Map.Landmarks and Workspace.Map.Landmarks:FindFirstChild("SkillsBuilding")
+        if skillsBuilding and skillsBuilding.Functional then
+            local rodBench = skillsBuilding.Functional:FindFirstChild("RodBench")
+            if rodBench and rodBench:FindFirstChild("PromptPart") then
+                return rodBench.PromptPart.CFrame * CFrame.new(-10, 0, 0)
+            end
+        end
+    end,
+    ["Fairy House"] = function()
+        local fairyHouse = Workspace.Map and Workspace.Map.Landmarks and Workspace.Map.Landmarks:FindFirstChild("Fairy House")
+        if fairyHouse and fairyHouse.Functional then
+            local playerPart = fairyHouse.Functional:FindFirstChild("PlayerPart")
+            if playerPart then
+                return playerPart.CFrame + Vector3.new(0, 3, 0)
+            end
+        end
+    end,
+    ["Ice Temple"] = function()
+        local iceTemple = Workspace.Map and Workspace.Map.Landmarks and Workspace.Map.Landmarks:FindFirstChild("Ice Temple")
+        if iceTemple then
+            local main = iceTemple:FindFirstChild("Main")
+            if main then
+                return main.CFrame + Vector3.new(0, 3, 0)
+            end
+        end
+    end,
+    Volcano = function()
+        local volcano = Workspace.Map and Workspace.Map.Landmarks and Workspace.Map.Landmarks:FindFirstChild("Volcano")
+        if volcano and volcano.Functional and volcano.Functional:FindFirstChild("Sacrifice") then
+            local altar = volcano.Functional.Sacrifice:FindFirstChild("Altar")
+            if altar and altar:FindFirstChild("Platform") then
+                local platform = altar.Platform
+                if platform:IsA("BasePart") then
+                    return platform.CFrame + Vector3.new(0, 5, 0)
+                end
+            end
+        end
+    end,
+    Carnival = function()
         local map = Workspace:FindFirstChild("Map")
         if map then
-            local campground = map:FindFirstChild("Campground")
-            if campground then
-                local mainFire = campground:FindFirstChild("MainFire")
-                if mainFire then
-                    hrp.CFrame = mainFire:GetPivot() + Vector3.new(0, 5, 0)
-                    Window:MakeNotification("Teleported", "Teleported to Campground", 3)
-                end
-            end
-        end
-    elseif selectedTeleport == "Stronghold" then
-        local landmarks = Workspace.Map and Workspace.Map:FindFirstChild("Landmarks")
-        if landmarks then
-            local stronghold = landmarks:FindFirstChild("Stronghold")
-            if stronghold and stronghold:FindFirstChild("Functional") then
-                local sign = stronghold.Functional:FindFirstChild("Sign")
-                if sign then
-                    hrp.CFrame = sign.CFrame * CFrame.new(0, 0, 5)
-                    Window:MakeNotification("Teleported", "Teleported to Stronghold", 3)
-                end
-            end
-        end
-    elseif selectedTeleport == "Fairy House" then
-        local landmarks = Workspace.Map and Workspace.Map:FindFirstChild("Landmarks")
-        if landmarks then
-            local fairyHouse = landmarks:FindFirstChild("Fairy House")
-            if fairyHouse and fairyHouse:FindFirstChild("Functional") then
-                local playerPart = fairyHouse.Functional:FindFirstChild("PlayerPart")
-                if playerPart then
-                    hrp.CFrame = playerPart.CFrame + Vector3.new(0, 3, 0)
-                    Window:MakeNotification("Teleported", "Teleported to Fairy House", 3)
-                end
-            end
-        end
-    elseif selectedTeleport == "Ice Temple" then
-        local landmarks = Workspace.Map and Workspace.Map:FindFirstChild("Landmarks")
-        if landmarks then
-            local iceTemple = landmarks:FindFirstChild("Ice Temple")
-            if iceTemple then
-                local main = iceTemple:FindFirstChild("Main")
-                if main then
-                    hrp.CFrame = main.CFrame + Vector3.new(0, 3, 0)
-                    Window:MakeNotification("Teleported", "Teleported to Ice Temple", 3)
-                end
-            end
-        end
-    elseif selectedTeleport == "Volcano" then
-        local landmarks = Workspace.Map and Workspace.Map:FindFirstChild("Landmarks")
-        if landmarks then
-            local volcano = landmarks:FindFirstChild("Volcano")
-            if volcano and volcano:FindFirstChild("Functional") and volcano.Functional:FindFirstChild("Sacrifice") then
-                local altar = volcano.Functional.Sacrifice:FindFirstChild("Altar")
-                if altar then
-                    local platform = altar:FindFirstChild("Platform")
-                    if platform and platform:IsA("BasePart") then
-                        hrp.CFrame = platform.CFrame + Vector3.new(0, 5, 0)
-                        Window:MakeNotification("Teleported", "Teleported to Volcano", 3)
+            local landmarks = map:FindFirstChild("Landmarks")
+            if landmarks then
+                local halloweenCarnival = landmarks:FindFirstChild("Halloween Carnival")
+                if halloweenCarnival and halloweenCarnival:FindFirstChild("Main") then
+                    local main = halloweenCarnival.Main
+                    if main:IsA("BasePart") then
+                        return main.CFrame + Vector3.new(0, 5, 0)
                     end
                 end
             end
         end
-    elseif selectedTeleport == "Anvil" then
-        local landmarks = Workspace.Map and Workspace.Map:FindFirstChild("Landmarks")
-        if landmarks then
-            local toolWorkshop = landmarks:FindFirstChild("ToolWorkshop")
-            if toolWorkshop and toolWorkshop:FindFirstChild("Functional") then
-                local anvilHologram = toolWorkshop.Functional:FindFirstChild("AnvilHologram")
-                if anvilHologram and anvilHologram:FindFirstChild("HumanoidRootPart") then
-                    hrp.CFrame = anvilHologram.HumanoidRootPart.CFrame
-                    Window:MakeNotification("Teleported", "Teleported to Anvil", 3)
-                end
+    end,
+    ["Furniture Trader"] = function()
+        local characters = Workspace:FindFirstChild("Characters")
+        if characters then
+            local furnitureTrader = characters:FindFirstChild("Furniture Trader")
+            if furnitureTrader and furnitureTrader:FindFirstChild("HumanoidRootPart") then
+                return furnitureTrader.HumanoidRootPart.CFrame
             end
         end
     end
+}
+
+local teleportLocations = {}
+for locationName, _ in pairs(teleportFunctions) do
+    table.insert(teleportLocations, locationName)
+end
+table.sort(teleportLocations)
+
+local selectedTeleport = "Fire"
+
+TeleportSection:MakeDropdown("Select Location", teleportLocations, "Fire", function(location)
+    selectedTeleport = location
 end)
 
-local Utility = Window:MakeSection("Utility Features")
+TeleportSection:MakeButton("Teleport", function()
+    local teleportFunc = teleportFunctions[selectedTeleport]
+    if teleportFunc then
+        local cframe = teleportFunc()
+        if cframe then
+            local hrp = getHRP()
+            if hrp then
+                hrp.CFrame = cframe
+                Workspace.CurrentCamera.CFrame = cframe
+                Window:MakeNotification("Teleported!", "You are now at " .. selectedTeleport, 3)
+            end
+        else
+            Window:MakeNotification(selectedTeleport .. " Not Found", "Target part missing or invalid.", 3)
+        end
+    else
+        Window:MakeNotification("Invalid Selection", "No teleport function found for: " .. tostring(selectedTeleport), 3)
+    end
+end)
+
+local PlayerTeleportSection = Window:MakeSection("Teleport to Player")
+
+local function getPlayerList()
+    local players = {}
+    for _, plr in pairs(game.Players:GetPlayers()) do
+        if plr ~= player then
+            table.insert(players, plr.Name)
+        end
+    end
+    table.sort(players)
+    return players
+end
+
+local selectedPlayer = nil
+
+PlayerTeleportSection:MakeDropdown("Select Player", getPlayerList(), nil, function(playerName)
+    selectedPlayer = playerName
+end)
+
+PlayerTeleportSection:MakeButton("Teleport to Player", function()
+    if selectedPlayer then
+        local targetPlayer = game.Players:FindFirstChild(selectedPlayer)
+        if targetPlayer and targetPlayer.Character then
+            local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if targetHRP then
+                local hrp = getHRP()
+                if hrp then
+                    hrp.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 3)
+                    Window:MakeNotification("Teleported!", "You are now near " .. selectedPlayer, 3)
+                end
+            else
+                Window:MakeNotification("Teleport Failed", "Target player missing HumanoidRootPart.", 3)
+            end
+        else
+            Window:MakeNotification("Teleport Failed", "Player not found or character missing.", 3)
+        end
+    else
+        Window:MakeNotification("Teleport Failed", "No player selected.", 3)
+    end
+end)
+
+game.Players.PlayerAdded:Connect(function()
+    PlayerTeleportSection:UpdateDropdown("Select Player", getPlayerList())
+end)
+
+game.Players.PlayerRemoving:Connect(function()
+    PlayerTeleportSection:UpdateDropdown("Select Player", getPlayerList())
+end)
+
+local BringStuffSection = Window:MakeSection("Bring Stuff")
+local bringLocation = "Player"
+local bringLocations = {
+    Player = function()
+        local hrp = getHRP()
+        return hrp and hrp.CFrame * CFrame.new(0, 0, -3)
+    end,
+    Scrapper = CFrame.new(21, 17, -5),
+    Fire = CFrame.new(0, 20, 0)
+}
+
+local function bringItems(itemNames)
+    local items = Workspace:FindFirstChild("Items")
+    if not items then
+        Window:MakeNotification("Error", "workspace.Items not found", 3)
+        return
+    end
+    
+    local targetCFrame = bringLocations[bringLocation]
+    if not targetCFrame then
+        if type(bringLocations[bringLocation]) == "function" then
+            targetCFrame = bringLocations[bringLocation]()
+        end
+    end
+    
+    if not targetCFrame then
+        Window:MakeNotification("Error", "No valid teleport destination", 3)
+        return
+    end
+    
+    local itemCount = 0
+    local itemStats = {}
+    
+    for _, item in pairs(items:GetChildren()) do
+        if item:IsA("Model") and item.PrimaryPart then
+            if itemNames[item.Name] then
+                task.spawn(function()
+                    for _, weld in pairs(item:GetDescendants()) do
+                        if weld:IsA("Weld") or weld:IsA("Motor6D") then
+                            weld:Destroy()
+                        elseif weld:IsA("BasePart") then
+                            weld.Anchored = false
+                        end
+                    end
+                    
+                    local originalCFrame = item.PrimaryPart.CFrame
+                    item:SetPrimaryPartCFrame(originalCFrame + Vector3.new(0.01, 0, 0))
+                    task.wait(0.02)
+                    item:SetPrimaryPartCFrame(originalCFrame)
+                    task.wait(0.05)
+                    
+                    pcall(function()
+                        ReplicatedStorage.RemoteEvents.RequestStartDraggingItem:FireServer(item)
+                    end)
+                    task.wait(0.1)
+                    
+                    local offset = Vector3.new(0, 8, 0)
+                    item:SetPrimaryPartCFrame(targetCFrame + offset)
+                    task.wait(0.1)
+                    
+                    pcall(function()
+                        ReplicatedStorage.RemoteEvents.StopDraggingItem:FireServer(item)
+                    end)
+                    
+                    itemStats[item.Name] = (itemStats[item.Name] or 0) + 1
+                    itemCount = itemCount + 1
+                end)
+            end
+        end
+    end
+    
+    task.delay(0.8, function()
+        local itemList = {}
+        for itemName, count in pairs(itemStats) do
+            local plural = count ~= 1 and "s" or ""
+            table.insert(itemList, string.format("%d %s%s", count, itemName, plural))
+        end
+        
+        local summary = #itemList > 0 and table.concat(itemList, ", ") or "No matching items."
+        Window:MakeNotification(string.format("Brought %d item%s", itemCount, itemCount ~= 1 and "s" or ""), summary, 3)
+    end)
+end
+
+local function createBringCategory(categoryName, items)
+    local sortedItems = {}
+    for _, item in ipairs(items) do
+        table.insert(sortedItems, item)
+    end
+    table.sort(sortedItems, function(a, b) return string.lower(a) < string.lower(b) end)
+    table.insert(sortedItems, 1, "Deselect All")
+    table.insert(sortedItems, 1, "All")
+    
+    local selectedItems = {}
+    local dropdownRef = nil
+    
+    BringStuffSection:MakeDropdown("Select " .. categoryName, sortedItems, {}, function(values)
+        if table.find(values, "All") then
+            selectedItems = {}
+            for _, item in ipairs(sortedItems) do
+                if item ~= "All" and item ~= "Deselect All" then
+                    table.insert(selectedItems, item)
+                end
+            end
+            Window:MakeNotification("Selected All", categoryName .. " items selected.", 3)
+        elseif table.find(values, "Deselect All") then
+            selectedItems = {}
+            Window:MakeNotification("Deselected All", categoryName .. " cleared.", 3)
+        else
+            selectedItems = values
+        end
+    end)
+    
+    BringStuffSection:MakeButton("Bring " .. categoryName, function()
+        if #selectedItems > 0 then
+            local itemMap = {}
+            for _, itemName in ipairs(selectedItems) do
+                itemMap[itemName] = true
+            end
+            bringItems(itemMap)
+        else
+            Window:MakeNotification("Nothing Selected", "Pick items first.", 3)
+        end
+    end)
+end
+
+BringStuffSection:MakeDropdown("Teleport Target", {"Player", "Scrapper", "Fire"}, "Player", function(value)
+    bringLocation = value
+end)
+
+createBringCategory("Heals / Food", {
+    "Bandage", "Cake", "Carrot", "Corn", "MedKit", "Pumpkin", "Stew", "Mackerel", 
+    "Cooked Mackerel", "Salmon", "Cooked Salmon", "Steak", "Cooked Steak", 
+    "Steak Dinner", "Chili", "Carrot Cake", "Meat? Sandwich", "Apple", 
+    "Morsel", "Cooked Morsel"
+})
+
+createBringCategory("Fuel", {
+    "Coal", "Fuel Canister", "Log", "Oil Barrel", "Sapling", "Cultist", "Crossbow Cultist"
+})
+
+createBringCategory("Metal / Scrap", {
+    "Bolt", "Broken Fan", "Broken Microwave", "Old Radio", "Metal Chair", 
+    "Old Car Engine", "Sheet Metal", "Tyre", "Washing Machine", "Cultist Gem", 
+    "UFO Junk", "UFO Component", "Cultist Experiment", "Cultist Prototype", 
+    "UFO Scrap", "Forest Gem", "Forest Gem Fragment"
+})
+
+createBringCategory("Tools / Gear", {
+    "Alien Armour", "Armour Trim Kit", "Axe Trim Kit", "Chainsaw", "Frog Boots", 
+    "Giant Sack", "Good Axe", "Good Sack", "Infernal Crossbow", "Infernal Sack", 
+    "Infernal Sword", "Ice Axe", "Ice Sword", "Laser Cannon", "Leather Body", 
+    "Iron Body", "Mammoth Helmet", "Morningstar", "Obsidiron Body", 
+    "Obsidiron Boots", "Old Axe", "Poison Armour", "Raygun", "Revolver", 
+    "Revolver Ammo", "Rifle", "Rifle Ammo", "Spear", "Strong Axe", 
+    "Tactical Shotgun", "Thorn Body"
+})
+
+createBringCategory("Other", {
+    "Alpha Wolf Pelt", "Bear Corpse", "Bear Pelt", "Bunny Foot", "Candy", 
+    "Defense Blueprint", "Diamond", "Feather", "Flower", "Frog Key", 
+    "Gem of the Forest Fragment", "Gold Shard", "Halloween Candle", 
+    "Mammoth Tusk", "Meteor Shard", "Old Flashlight", "Old Rod", 
+    "Raw Obsidiron Ore", "Sacrifice Totem", "Seed Box", "Strong Flashlight", 
+    "Wildfire", "Wolf Pelt"
+})
+
+BringStuffSection:MakeButton("Bring All Items", function()
+    local items = Workspace:FindFirstChild("Items")
+    if items then
+        local allItems = {}
+        for _, item in pairs(items:GetChildren()) do
+            if item:IsA("Model") then
+                allItems[item.Name] = true
+            end
+        end
+        bringItems(allItems)
+        Window:MakeNotification("Bring All", "Bringing all available items (CAN CAUSE LAG)", 3)
+    else
+        Window:MakeNotification("Error", "workspace.Items not found.", 3)
+    end
+end)
+
+local MiscSection = Window:MakeSection("Miscellaneous")
 local instantInteractEnabled = false
 local instantInteractConnections = {}
 local instantInteractData = {}
 local autoOpenChestsEnabled = false
 local autoOpenChestsThread = nil
 
-Utility:MakeToggle("Instant Interact", false, function(enabled)
+local fishing100Enabled = false
+local flute100Enabled = false
+local destroyItemsList = {}
+local destroyItemsDropdown = nil
+
+local function enableFishing100()
+    task.spawn(function()
+        repeat task.wait() until player:FindFirstChild("PlayerScripts") and 
+              ReplicatedStorage:FindFirstChild("Tools") and 
+              ReplicatedStorage.Tools:FindFirstChild("Fishing Rod")
+        
+        local fishingRod = require(ReplicatedStorage.Tools["Fishing Rod"])
+        local client = require(player.PlayerScripts:WaitForChild("Client"))
+        
+        local originalPull = fishingRod.Pull
+        fishingRod.Pull = function(self)
+            self.CatchProgress = self.CatchProgress + 1
+            client.Sound.Play("FishHitMarker")
+            
+            if self.CatchProgress < self.CatchGoal then
+                if self.CatchProgress > 0 then
+                    self.LastPullTime = time()
+                    client.Events.PlayAnimation:Fire("Rod_Reel", {Speed = 2})
+                    
+                    if client.FirstPersonModule and client.FirstPersonModule.PlayAnimation then
+                        client.FirstPersonModule.PlayAnimation("Rod_Reel", nil, 4, 2)
+                    end
+                else
+                    self.ItemCaught = nil
+                    self:Reel()
+                end
+            else
+                self.ItemCaught = true
+                client.Events.ConfirmCatchItem:FireServer()
+                
+                local soundParams = {
+                    Volume = 0.5,
+                    Replicate = true,
+                    ReplicationProperties = {
+                        Instance = player.Character and player.Character:FindFirstChild("Head"),
+                        Volume = 0.4
+                    }
+                }
+                client.Sound.Play("FishCatch", soundParams)
+                self:Reel()
+            end
+        end
+    end)
+end
+
+local function enableFlute100()
+    task.spawn(function()
+        repeat task.wait() until ReplicatedStorage:FindFirstChild("Tools") and 
+              ReplicatedStorage.Tools:FindFirstChild("Taming Flute")
+        
+        local tamingFlute = require(ReplicatedStorage.Tools["Taming Flute"])
+        local client = require(player.PlayerScripts:WaitForChild("Client"))
+        
+        local originalStart = tamingFlute.StartTamingMinigame
+        tamingFlute.StartTamingMinigame = function(self, target, realModel)
+            originalStart(self, target, realModel)
+            RunService:UnbindFromRenderStep("TamingFluteMinigame")
+            RunService:BindToRenderStep("TamingFluteMinigame", Enum.RenderPriority.First.Value, function()
+                if self.TamingMinigameActive then
+                    local maxTime = 3
+                    local delta = RunService.RenderStepped:Wait()
+                    self.TamingTime = math.clamp(self.TamingTime + 5 * delta, 0, maxTime)
+                    
+                    if self.TamingTime >= maxTime then
+                        self:StopTamingMinigame()
+                        
+                        if client.Sound then
+                            local soundParams = {
+                                Volume = 0.45,
+                                Replicate = true,
+                                ReplicationProperties = {
+                                    Instance = player.Character and player.Character:FindFirstChild("Head"),
+                                    Volume = 0.35
+                                }
+                            }
+                            client.Sound.Play("FluteAlert", soundParams)
+                        end
+                        
+                        if client.Events and client.Events.RequestTame_Hungry then
+                            client.Events.RequestTame_Hungry:FireServer(target, self.RealModel)
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+end
+
+local function getDestroyableItems()
+    local items = Workspace:FindFirstChild("Items")
+    if not items then return {} end
+    
+    local itemList = {}
+    local seen = {}
+    
+    for _, item in pairs(items:GetChildren()) do
+        if item:IsA("Model") and item.PrimaryPart and not item.PrimaryPart.Anchored then
+            if not seen[item.Name] then
+                seen[item.Name] = true
+                table.insert(itemList, item.Name)
+            end
+        end
+    end
+    
+    table.sort(itemList, function(a, b) return string.lower(a) < string.lower(b) end)
+    table.insert(itemList, 1, "Deselect All")
+    table.insert(itemList, 1, "All")
+    
+    return itemList
+end
+
+local function destroySelectedItems()
+    if #destroyItemsList == 0 then
+        Window:MakeNotification("Nothing Selected", "Pick items first.", 3)
+        return
+    end
+    
+    local items = Workspace:FindFirstChild("Items")
+    if not items then
+        Window:MakeNotification("Error", "workspace.Items not found.", 3)
+        return
+    end
+    
+    local destroyCount = 0
+    local voidPos = CFrame.new(20.9845886, -750, 2.40254974)
+    
+    for _, item in pairs(items:GetChildren()) do
+        if table.find(destroyItemsList, item.Name) and item:IsA("Model") and item.PrimaryPart and not item.PrimaryPart.Anchored then
+            task.spawn(function()
+                item.PrimaryPart.Anchored = false
+                
+                for _, weld in pairs(item:GetDescendants()) do
+                    if weld:IsA("Weld") or weld:IsA("Motor6D") then
+                        weld:Destroy()
+                    end
+                end
+                
+                pcall(function()
+                    ReplicatedStorage.RemoteEvents.DragItem:FireServer(item)
+                end)
+                task.wait(0.03)
+                item:SetPrimaryPartCFrame(voidPos)
+                task.wait(0.03)
+                pcall(function()
+                    ReplicatedStorage.RemoteEvents.StopDraggingItem:FireServer(item)
+                end)
+                
+                destroyCount = destroyCount + 1
+            end)
+        end
+    end
+    
+    task.delay(0.5, function()
+        Window:MakeNotification("Destroyed Items", "Teleported " .. destroyCount .. " item(s) to the void.", 3)
+    end)
+end
+
+MiscSection:MakeToggle("Instant Interact", false, function(enabled)
     instantInteractEnabled = enabled
     if enabled then
         for _, prompt in pairs(Workspace:GetDescendants()) do
@@ -1022,6 +2288,12 @@ Utility:MakeToggle("Instant Interact", false, function(enabled)
                     instantInteractData[descendant] = descendant.HoldDuration
                 end
                 descendant.HoldDuration = 0
+            end
+        end))
+        
+        table.insert(instantInteractConnections, ProximityPromptService.PromptButtonHoldBegan:Connect(function(prompt)
+            if instantInteractEnabled and prompt:IsA("ProximityPrompt") then
+                prompt.HoldDuration = 0
             end
         end))
         
@@ -1043,65 +2315,262 @@ Utility:MakeToggle("Instant Interact", false, function(enabled)
     end
 end)
 
-Utility:MakeButton("Collect All Coins", function()
-    local collectCoinsRemote = ReplicatedStorage.RemoteEvents:FindFirstChild("RequestCollectCoins") or 
-                               ReplicatedStorage.RemoteEvents:FindFirstChild("RequestCollectCoints")
-    if collectCoinsRemote then
-        local hrp = getHRP()
-        if hrp then
-            local collected = 0
-            for _, descendant in pairs(Workspace:GetDescendants()) do
-                if descendant:IsA("Model") and (descendant.Name == "Coin Stack" or descendant:HasTag("Coins")) and 
-                   not descendant:GetAttribute("QueuedToTake") then
-                    task.spawn(function()
-                        descendant:SetAttribute("QueuedToTake", true)
-                        hrp.CFrame = descendant:GetPivot() + Vector3.new(0, 3, 0)
-                        task.wait(0.2)
-                        collectCoinsRemote:InvokeServer(descendant)
-                        collected = collected + 1
-                    end)
-                    task.wait(0.1)
-                end
-            end
-            Window:MakeNotification("Collect Coins", "Collected " .. collected .. " coin stack(s)", 3)
-        end
+MiscSection:MakeToggle("100% Fishing", false, function(enabled)
+    fishing100Enabled = enabled
+    if enabled then
+        enableFishing100()
+        Window:MakeNotification("Fishing Enabled", "Instant catch active.", 3)
     else
-        Window:MakeNotification("Error", "Could not find collect coins remote", 3)
+        Window:MakeNotification("Fishing Disabled", "Rejoin to restore normal.", 3)
     end
 end)
 
-Utility:MakeButton("Collect All Flowers", function()
-    local pickFlowerRemote = ReplicatedStorage.RemoteEvents:FindFirstChild("RequestPickFlower")
-    if pickFlowerRemote then
-        local hrp = getHRP()
-        if hrp then
-            local collected = 0
-            for _, descendant in pairs(Workspace:GetDescendants()) do
-                if descendant:IsA("Model") and (descendant.Name == "Flower" or descendant:HasTag("Flower")) and 
-                   not descendant:GetAttribute("QueuedToTake") then
-                    task.spawn(function()
-                        descendant:SetAttribute("QueuedToTake", true)
-                        hrp.CFrame = descendant:GetPivot() + Vector3.new(0, 3, 0)
-                        task.wait(0.25)
-                        pickFlowerRemote:InvokeServer(descendant)
-                        descendant:Destroy()
-                        collected = collected + 1
-                    end)
+MiscSection:MakeToggle("100% Flute", false, function(enabled)
+    flute100Enabled = enabled
+    if enabled then
+        enableFlute100()
+        Window:MakeNotification("Flute Enabled", "100% Flute active.", 3)
+    else
+        Window:MakeNotification("Flute Disabled", "Rejoin to restore normal.", 3)
+    end
+end)
+
+local destroyItems = getDestroyableItems()
+MiscSection:MakeDropdown("Select Items to Destroy", destroyItems, {}, function(values)
+    if table.find(values, "All") then
+        destroyItemsList = {}
+        for _, item in ipairs(destroyItems) do
+            if item ~= "All" and item ~= "Deselect All" then
+                table.insert(destroyItemsList, item)
+            end
+        end
+        Window:MakeNotification("Selected All", "All unanchored items selected.", 3)
+    elseif table.find(values, "Deselect All") then
+        destroyItemsList = {}
+        Window:MakeNotification("Deselected All", "Cleared selection.", 3)
+    else
+        destroyItemsList = values
+    end
+end)
+
+MiscSection:MakeButton("Destroy Selected", function()
+    destroySelectedItems()
+end)
+
+MiscSection:MakeButton("Update Destroy List", function()
+    local newItems = getDestroyableItems()
+    Window:MakeNotification("Destroy Items", "List updated (" .. tostring(#newItems - 2) .. " unanchored types found).", 3)
+end)
+
+local function revealMap()
+    if _G.RevealMapRunning then return end
+    _G.RevealMapRunning = true
+    
+    Window:MakeNotification("Reveal Map", "Starting reveal and auto-fuel...", 3)
+    
+    task.spawn(function()
+        local function getCharacter()
+            return player.Character or player.CharacterAdded:Wait()
+        end
+        
+        local function getCampfire()
+            local map = Workspace:FindFirstChild("Map")
+            local campground = map and map:FindFirstChild("Campground")
+            return campground and campground:FindFirstChild("MainFire")
+        end
+        
+        task.spawn(function()
+            while _G.RevealMapRunning do
+                task.wait(0.15)
+                local campfire = getCampfire()
+                local items = Workspace:FindFirstChild("Items")
+                local requestDrag = ReplicatedStorage.RemoteEvents:FindFirstChild("RequestStartDraggingItem")
+                
+                if campfire and items and requestDrag then
+                    local firePos = campfire:GetPivot() + Vector3.new(0, 12, 0)
+                    for _, item in pairs(items:GetChildren()) do
+                        if item:IsA("Model") and item.PrimaryPart then
+                            local name = item.Name
+                            if name == "Log" or name == "Fuel Canister" or name == "Oil Barrel" or name == "Coal" then
+                                pcall(function()
+                                    requestDrag:FireServer(item)
+                                    item:SetPrimaryPartCFrame(firePos)
+                                end)
+                                task.wait(0.02)
+                            end
+                        end
+                    end
+                else
                     task.wait(0.15)
                 end
             end
-            Window:MakeNotification("Collect Flowers", "Picked " .. collected .. " flower(s)", 3)
+        end)
+        
+        local campfire = getCampfire()
+        if not campfire then
+            Window:MakeNotification("Reveal Map Failed", "Campfire not found.", 3)
+            _G.RevealMapRunning = false
+            return
         end
-    else
-        Window:MakeNotification("Error", "Could not find pick flower remote", 3)
+        
+        local firePart = campfire:FindFirstChild("Center") or campfire:FindFirstChildWhichIsA("BasePart")
+        if not firePart then
+            Window:MakeNotification("Reveal Map Failed", "Fire center missing.", 3)
+            _G.RevealMapRunning = false
+            return
+        end
+        
+        local firePos = firePart.Position
+        local character = getCharacter()
+        local hrp = character:WaitForChild("HumanoidRootPart")
+        
+        local function smoothMove(targetPos, duration)
+            local startPos = hrp.Position
+            local steps = math.max(1, math.floor(duration / 0.016666666666666666))
+            
+            for i = 1, steps do
+                if not _G.RevealMapRunning then return end
+                local t = i / steps
+                local smoothT = t * t * (3 - 2 * t)
+                local newPos = startPos:Lerp(targetPos, smoothT)
+                character:SetPrimaryPartCFrame(CFrame.new(newPos, firePos))
+                RunService.Heartbeat:Wait()
+            end
+        end
+        
+        for radius = 200, 1400, 50 do
+            if not _G.RevealMapRunning then break end
+            
+            for angle = 0, 315, 45 do
+                local rad = math.rad(angle)
+                local targetPos = Vector3.new(
+                    firePos.X + math.cos(rad) * radius,
+                    100,
+                    firePos.Z + math.sin(rad) * radius
+                )
+                smoothMove(targetPos, 0.2)
+                task.wait(0.03)
+            end
+            task.wait(0.25)
+        end
+        
+        if _G.RevealMapRunning then
+            Window:MakeNotification("Reveal Map", "Returning safely to campfire...", 3)
+        else
+            Window:MakeNotification("Reveal Map", "Reveal stopped early, returning...", 3)
+        end
+        
+        local returnTween = TweenService:Create(hrp, TweenInfo.new(2.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            CFrame = CFrame.new(firePos + Vector3.new(0, 12, 0))
+        })
+        returnTween:Play()
+        returnTween.Completed:Wait()
+        
+        _G.RevealMapRunning = false
+        Window:MakeNotification("Reveal Map", "✓ Map fully revealed — safely back at fire.", 3)
+    end)
+end
+
+MiscSection:MakeToggle("Reveal Map", false, function(enabled)
+    if enabled then
+        revealMap()
+    elseif _G.RevealMapRunning then
+        _G.RevealMapRunning = false
+        Window:MakeNotification("Reveal Map", "Stopping reveal safely...", 3)
     end
 end)
 
-Utility:MakeToggle("Auto Open Chests", false, function(enabled)
+local CollectionSection = Window:MakeSection("Collection")
+
+local function teleportToItem(item)
+    local hrp = getHRP()
+    if hrp and item then
+        local targetCFrame
+        if item.GetPivot then
+            targetCFrame = item:GetPivot()
+        elseif item.PrimaryPart then
+            targetCFrame = item.PrimaryPart.CFrame
+        end
+        if targetCFrame then
+            hrp.CFrame = targetCFrame + Vector3.new(0, 3, 0)
+        end
+    end
+end
+
+CollectionSection:MakeButton("Collect All Coins", function()
+    local collectCoins = ReplicatedStorage.RemoteEvents:FindFirstChild("RequestCollectCoins") or 
+                        ReplicatedStorage.RemoteEvents:FindFirstChild("RequestCollectCoints")
+    if collectCoins then
+        local collected = 0
+        for _, descendant in pairs(Workspace:GetDescendants()) do
+            if descendant:IsA("Model") and (descendant.Name == "Coin Stack" or descendant:HasTag("Coins")) and 
+               not descendant:GetAttribute("QueuedToTake") then
+                task.spawn(function()
+                    descendant:SetAttribute("QueuedToTake", true)
+                    teleportToItem(descendant)
+                    task.wait(0.2)
+                    collectCoins:InvokeServer(descendant)
+                    collected = collected + 1
+                end)
+                task.wait(0.1)
+            end
+        end
+        Window:MakeNotification("Collect All Coins", "Collected " .. collected .. " coin stack(s).", 3)
+    else
+        Window:MakeNotification("Error", "Could not find collect coins remote!", 3)
+    end
+end)
+
+CollectionSection:MakeButton("Collect All Flowers", function()
+    local pickFlower = ReplicatedStorage.RemoteEvents:FindFirstChild("RequestPickFlower")
+    if pickFlower then
+        local collected = 0
+        for _, descendant in pairs(Workspace:GetDescendants()) do
+            if descendant:IsA("Model") and (descendant.Name == "Flower" or descendant:HasTag("Flower")) and 
+               not descendant:GetAttribute("QueuedToTake") then
+                task.spawn(function()
+                    descendant:SetAttribute("QueuedToTake", true)
+                    teleportToItem(descendant)
+                    task.wait(0.25)
+                    pickFlower:InvokeServer(descendant)
+                    descendant:Destroy()
+                    collected = collected + 1
+                end)
+                task.wait(0.15)
+            end
+        end
+        Window:MakeNotification("Collect All Flowers", "Picked " .. collected .. " flower(s).", 3)
+    else
+        Window:MakeNotification("Error", "Could not find pick flower remote!", 3)
+    end
+end)
+
+CollectionSection:MakeButton("Collect All Ammo", function()
+    local consumeItem = ReplicatedStorage.RemoteEvents:FindFirstChild("RequestConsumeItem")
+    if consumeItem then
+        local items = Workspace:WaitForChild("Items")
+        local collected = 0
+        for _, item in pairs(items:GetChildren()) do
+            if item:IsA("Model") and string.find(string.lower(item.Name), "ammo") then
+                task.spawn(function()
+                    teleportToItem(item)
+                    task.wait(0.25)
+                    consumeItem:InvokeServer(item)
+                    collected = collected + 1
+                end)
+                task.wait(0.15)
+            end
+        end
+        Window:MakeNotification("Auto Collect Ammo", "Collected " .. collected .. " ammo item(s).", 3)
+    end
+end)
+
+CollectionSection:MakeToggle("Auto-Open Chests", false, function(enabled)
     autoOpenChestsEnabled = enabled
     if enabled then
-        Window:MakeNotification("Auto Open Chests", "Enabled - scanning every 5 seconds", 3)
+        Window:MakeNotification("Auto-Open Chests", "Enabled — scanning every 5 seconds.", 3)
         autoOpenChestsThread = task.spawn(function()
+            local firstScan = true
             while autoOpenChestsEnabled do
                 local items = Workspace:FindFirstChild("Items")
                 local opened = 0
@@ -1115,10 +2584,11 @@ Utility:MakeToggle("Auto Open Chests", false, function(enabled)
                         end
                     end
                 end
-                if opened > 0 then
-                    Window:MakeNotification("Auto Open Chests", "Opened " .. opened .. " chest(s)", 3)
+                if opened > 0 and not firstScan then
+                    Window:MakeNotification("Auto-Open Chests", "Opened " .. opened .. " chest(s).", 3)
                 end
                 task.wait(5)
+                firstScan = false
             end
         end)
     else
@@ -1126,11 +2596,11 @@ Utility:MakeToggle("Auto Open Chests", false, function(enabled)
             task.cancel(autoOpenChestsThread)
             autoOpenChestsThread = nil
         end
-        Window:MakeNotification("Auto Open Chests", "Stopped scanning", 3)
+        Window:MakeNotification("Auto-Open Chests", "Stopped scanning for new chests.", 3)
     end
 end)
 
-Utility:MakeButton("Safe Zone", function()
+CollectionSection:MakeButton("Safe Zone", function()
     Window:MakeNotification("Safe Zone", "Loading model...", 3)
     task.spawn(function()
         for _, obj in pairs(Workspace:GetChildren()) do
@@ -1174,110 +2644,15 @@ Utility:MakeButton("Safe Zone", function()
                     
                     task.wait(0.5)
                     hrp.CFrame = cframe * CFrame.new(0, 3, 0)
-                    Window:MakeNotification("Safe Zone", "Spawned successfully!", 3)
+                    Window:MakeNotification("Safe Zone", "✓ Spawned upright, flat, and rotated correctly!", 3)
                 end
             else
-                Window:MakeNotification("Safe Zone", "Model missing BasePart", 3)
+                Window:MakeNotification("Safe Zone", "✗ Model missing BasePart PrimaryPart.", 3)
             end
         else
-            Window:MakeNotification("Safe Zone", "Failed to load model", 3)
+            Window:MakeNotification("Safe Zone", "✗ Failed to load asset.", 3)
         end
     end)
-end)
-
-Utility:MakeButton("Reveal Map", function()
-    Window:MakeNotification("Reveal Map", "Starting map reveal...", 3)
-    task.spawn(function()
-        local map = Workspace:FindFirstChild("Map")
-        if map then
-            local campground = map:FindFirstChild("Campground")
-            if campground then
-                local mainFire = campground:FindFirstChild("MainFire")
-                if mainFire then
-                    local firePos = mainFire:GetPivot().Position
-                    local hrp = getHRP()
-                    if hrp then
-                        for radius = 200, 1400, 50 do
-                            for angle = 0, 315, 45 do
-                                local rad = math.rad(angle)
-                                local pos = Vector3.new(
-                                    firePos.X + math.cos(rad) * radius,
-                                    100,
-                                    firePos.Z + math.sin(rad) * radius
-                                )
-                                hrp.CFrame = CFrame.new(pos)
-                                task.wait(0.03)
-                            end
-                            task.wait(0.25)
-                        end
-                        hrp.CFrame = CFrame.new(firePos + Vector3.new(0, 12, 0))
-                        Window:MakeNotification("Reveal Map", "Map revealed successfully!", 3)
-                    end
-                end
-            end
-        end
-    end)
-end)
-
-local ScrapItems = Window:MakeSection("Scrap Items")
-local scrapItemList = {
-    "Bolt", "Broken Fan", "Broken Microwave", "Broken Radio", "Metal Chair", 
-    "Old Car Engine", "Sheet Metal", "Tyre", "Washing Machine", "Log", 
-    "Chair", "Cultist Gem", "Forest Gem Fragment", "Forest Gem", "UFO Scrap", 
-    "Cultist Prototype", "Cultist Experiment", "UFO Component", "UFO Junk"
-}
-table.sort(scrapItemList, function(a, b) return a:lower() < b:lower() end)
-table.insert(scrapItemList, 1, "Deselect All")
-table.insert(scrapItemList, 1, "All")
-
-local selectedScrapItems = {}
-
-ScrapItems:MakeDropdown("Scrap Items", scrapItemList, {}, function(values)
-    if table.find(values, "All") then
-        local allItems = {}
-        for _, item in ipairs(scrapItemList) do
-            if item ~= "All" and item ~= "Deselect All" then
-                table.insert(allItems, item)
-            end
-        end
-        selectedScrapItems = allItems
-        Window:MakeNotification("Scrap Items", "All items selected", 3)
-    elseif table.find(values, "Deselect All") then
-        selectedScrapItems = {}
-        Window:MakeNotification("Scrap Items", "All items deselected", 3)
-    else
-        selectedScrapItems = values
-    end
-end)
-
-ScrapItems:MakeToggle("Auto Scrapper", false, function(enabled)
-    autoScrapperEnabled = enabled
-    if enabled then
-        Window:MakeNotification("Auto Scrapper", "Enabled", 3)
-        autoScrapperThread = task.spawn(function()
-            while autoScrapperEnabled do
-                local items = Workspace:FindFirstChild("Items")
-                if items then
-                    for _, item in pairs(items:GetChildren()) do
-                        if item:IsA("Model") and item.PrimaryPart and table.find(selectedScrapItems, item.Name) then
-                            pcall(function()
-                                ReplicatedStorage.RemoteEvents.RequestStartDraggingItem:FireServer(item)
-                                task.wait(0.05)
-                                item:SetPrimaryPartCFrame(CFrame.new(21, 17, -5))
-                            end)
-                        end
-                    end
-                end
-                task.wait(2)
-            end
-        end)
-    else
-        if autoScrapperThread then
-            task.cancel(autoScrapperThread)
-            autoScrapperThread = nil
-        end
-        Window:MakeNotification("Auto Scrapper", "Disabled", 3)
-    end
 end)
 
 RunService.Heartbeat:Connect(function()
@@ -1325,66 +2700,32 @@ RunService.Heartbeat:Connect(function()
 end)
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and flyEnabled then
-        if input.KeyCode == Enum.KeyCode.W then flyKeys.W = 1
-        elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = -1
-        elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = -1
-        elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = 1
-        elseif input.KeyCode == Enum.KeyCode.E then flyKeys.E = 1
-        elseif input.KeyCode == Enum.KeyCode.Q then flyKeys.Q = -1 end
+    if not gameProcessed and flyEnabled and not touchEnabled then
+        if input.KeyCode == Enum.KeyCode.W then flyKeys.W = flySpeed
+        elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = -flySpeed
+        elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = -flySpeed
+        elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = flySpeed
+        elseif input.KeyCode == Enum.KeyCode.E then flyKeys.E = flySpeed * 2
+        elseif input.KeyCode == Enum.KeyCode.Q then flyKeys.Q = -flySpeed * 2 end
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if flyEnabled then
+    if flyEnabled and not touchEnabled then
         if input.KeyCode == Enum.KeyCode.W then flyKeys.W = 0
-        elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = 0
         elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = 0
+        elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = 0
         elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = 0
         elseif input.KeyCode == Enum.KeyCode.E then flyKeys.E = 0
         elseif input.KeyCode == Enum.KeyCode.Q then flyKeys.Q = 0 end
     end
 end)
 
-if flyThread then task.cancel(flyThread) end
-flyThread = task.spawn(function()
-    while true do
-        if flyEnabled then
-            local char = player.Character
-            if char then
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                local humanoid = char:FindFirstChild("Humanoid")
-                if hrp and humanoid then
-                    humanoid.PlatformStand = true
-                    
-                    local camera = Workspace.CurrentCamera
-                    local moveVector = Vector3.new(
-                        flyKeys.A + flyKeys.D,
-                        flyKeys.E + flyKeys.Q,
-                        flyKeys.W + flyKeys.S
-                    )
-                    
-                    if moveVector.Magnitude > 0 then
-                        local velocity = (camera.CFrame.LookVector * moveVector.Z + 
-                                         camera.CFrame.RightVector * moveVector.X + 
-                                         camera.CFrame.UpVector * moveVector.Y) * (flySpeed * 50)
-                        hrp.Velocity = velocity
-                    else
-                        hrp.Velocity = Vector3.new(0, 0, 0)
-                    end
-                end
-            end
-        else
-            local char = player.Character
-            if char then
-                local humanoid = char:FindFirstChild("Humanoid")
-                if humanoid then
-                    humanoid.PlatformStand = false
-                end
-            end
-        end
-        task.wait()
-    end
+task.spawn(function()
+    pcall(function()
+        setclipboard("https://discord.gg/cuYwaQeHT5")
+        Window:MakeNotification("Discord Link Copied", "Invite copied to clipboard.", 3)
+    end)
 end)
 
-Window:MakeNotification("Script Loaded", "Axomic 99 Nights Hub - All features loaded successfully", 5)
+Window:MakeNotification("Script Loaded", "Axomic 99 Nights Hub - ALL features loaded successfully!", 5)
