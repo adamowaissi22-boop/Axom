@@ -4,11 +4,8 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
-local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreGui = game:GetService("CoreGui")
-local MarketPlaceService = game:GetService("MarketplaceService")
 local TextService = game:GetService("TextService")
 
 local player = Players.LocalPlayer
@@ -35,7 +32,6 @@ local noFallDamage = false
 local autoAntiFling1 = false
 local autoAntiFling2 = false
 local currentColor = Color3.fromRGB(0, 170, 255)
-local flingThread = nil
 local flyActive = false
 local freecamActive = false
 
@@ -45,17 +41,6 @@ local function notify(title, text)
         Text = text,
         Duration = 3
     })
-end
-
-local function getPlayer(name)
-    name = name:lower()
-    local found = {}
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr.Name:lower():find(name) == 1 or plr.DisplayName:lower():find(name) == 1 then
-            table.insert(found, plr)
-        end
-    end
-    return found
 end
 
 local function getRoot(char)
@@ -120,20 +105,6 @@ function CommandSystem:GetMatchingCommands(text)
     for _, cmd in ipairs(containsMatches) do table.insert(matches, cmd) end
     
     return matches
-end
-
-function Args(text, index)
-    local args = {}
-    for word in text:gmatch("%S+") do
-        table.insert(args, word)
-    end
-    
-    if index then
-        local num = tonumber(args[index])
-        return num or args[index]
-    end
-    
-    return args
 end
 
 function GetPlayer(input)
@@ -307,7 +278,7 @@ function CommandSystem:ExecuteCommand(text)
     end
     
     for _, cmd in ipairs(self.commands) do
-        for _, alias in ipairs(cmd.Alias) do
+        for _, alias in  do
             if alias:lower() == commandWord then
                 if cmd.HasArgs and #cmd.Variables > 0 then
                     local parsedArgs = {}
@@ -2451,7 +2422,7 @@ CloseButton.MouseButton1Click:Connect(function()
     notify("Axomic CMD", "GUI Closed")
 end)
 
-function PlayIntro()
+local function PlayIntro()
     task.wait(0.2)
     
     local IconAnim = TweenService:Create(
@@ -2512,7 +2483,7 @@ function PlayIntro()
     startHideTimer()
 end
 
-function SetUpChatCommands()
+local function SetUpChatCommands()
     local prefix = ":"
     
     function OnChat(message)
