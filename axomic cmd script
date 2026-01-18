@@ -1,0 +1,2575 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CoreGui = game:GetService("CoreGui")
+local MarketPlaceService = game:GetService("MarketplaceService")
+local TextService = game:GetService("TextService")
+
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+local camera = Workspace.CurrentCamera
+local PlaceId = game.PlaceId
+local JobId = game.JobId
+local isNoclipping = false
+local isVehicleFlying = false
+local spinSpeed = 0
+local currentViewTarget = nil
+local infiniteJump = false
+local antiAfk = false
+local isXray = false
+local isESP = false
+local espParts = {}
+local xrayParts = {}
+local invisRunning = false
+local stareLoop = nil
+local spinConnection = nil
+local afkConnection = nil
+local walkFlingEnabled = false
+local noFallDamage = false
+local autoAntiFling1 = false
+local autoAntiFling2 = false
+local currentColor = Color3.fromRGB(0, 170, 255)
+local flingThread = nil
+local flyActive = false
+local freecamActive = false
+
+local function notify(title, text)
+    game.StarterGui:SetCore("SendNotification", {
+        Title = title,
+        Text = text,
+        Duration = 3
+    })
+end
+
+local function getPlayer(name)
+    name = name:lower()
+    local found = {}
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr.Name:lower():find(name) == 1 or plr.DisplayName:lower():find(name) == 1 then
+            table.insert(found, plr)
+        end
+    end
+    return found
+end
+
+local function getRoot(char)
+    return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+end
+
+local CommandSystem = {
+    commands = {}
+}
+
+function CommandSystem:AddCmd(data)
+    local command = {
+        Title = data.Title or "NoName",
+        Alias = data.Alias or {},
+        HasArgs = data.Args or false,
+        Variables = data.Variables or {"me"},
+        SelfCallback = data.SelfCallback or {},
+        Callback = data.Callback or function() end
+    }
+    table.insert(self.commands, command)
+end
+
+function CommandSystem:GetMatchingCommands(text)
+    if text == "" then
+        return {}
+    end
+    
+    local exactMatches = {}
+    local startsWithMatches = {}
+    local containsMatches = {}
+    local lowerText = text:lower()
+    
+    for _, cmd in ipairs(self.commands) do
+        local cmdLower = cmd.Title:lower()
+        
+        if cmdLower == lowerText then
+            table.insert(exactMatches, cmd)
+        elseif cmdLower:sub(1, #lowerText) == lowerText then
+            table.insert(startsWithMatches, cmd)
+        elseif cmdLower:find(lowerText, 1, true) then
+            table.insert(containsMatches, cmd)
+        else
+            for _, alias in ipairs(cmd.Alias) do
+                local aliasLower = alias:lower()
+                if aliasLower == lowerText then
+                    table.insert(exactMatches, cmd)
+                    break
+                elseif aliasLower:sub(1, #lowerText) == lowerText then
+                    table.insert(startsWithMatches, cmd)
+                    break
+                elseif aliasLower:find(lowerText, 1, true) then
+                    table.insert(containsMatches, cmd)
+                    break
+                end
+            end
+        end
+    end
+    
+    local matches = {}
+    for _, cmd in ipairs(exactMatches) do table.insert(matches, cmd) end
+    for _, cmd in ipairs(startsWithMatches) do table.insert(matches, cmd) end
+    for _, cmd in ipairs(containsMatches) do table.insert(matches, cmd) end
+    
+    return matches
+end
+
+function Args(text, index)
+    local args = {}
+    for word in text:gmatch("%S+") do
+        table.insert(args, word)
+    end
+    
+    if index then
+        local num = tonumber(args[index])
+        return num or args[index]
+    end
+    
+    return args
+end
+
+function GetPlayer(input)
+    if not input then return nil end
+    
+    local lowerInput = input:lower()
+    
+    if lowerInput == "me" then
+        return {player}
+    end
+    
+    if lowerInput == "all" then
+        local allPlayers = {}
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= player then
+                table.insert(allPlayers, p)
+            end
+        end
+        return allPlayers
+    end
+    
+    if lowerInput == "random" then
+        local allPlayers = {}
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= player then
+                table.insert(allPlayers, p)
+            end
+        end
+        if #allPlayers > 0 then
+            return {allPlayers[math.random(1, #allPlayers)]}
+        end
+        return nil
+    end
+    
+    local foundPlayers = {}
+    
+    for _, p in ipairs(Players:GetPlayers()) do
+        local name = p.Name:lower()
+        local displayName = p.DisplayName:lower()
+        
+        if name == lowerInput or displayName == lowerInput then
+            return {p}
+        end
+        
+        if name:sub(1, #lowerInput) == lowerInput or displayName:sub(1, #lowerInput) == lowerInput then
+            table.insert(foundPlayers, p)
+        end
+    end
+    
+    if #foundPlayers > 0 then
+        return foundPlayers
+    end
+    
+    for _, p in ipairs(Players:GetPlayers()) do
+        local name = p.Name:lower()
+        local displayName = p.DisplayName:lower()
+        
+        if name:find(lowerInput, 1, true) or displayName:find(lowerInput, 1, true) then
+            table.insert(foundPlayers, p)
+        end
+    end
+    
+    return #foundPlayers > 0 and foundPlayers or nil
+end
+
+function CommandSystem:ExecuteCommand(text)
+    local lowerText = text:lower()
+    local args = {}
+    for word in text:gmatch("%S+") do
+        table.insert(args, word)
+    end
+    
+    local commandWord = args[1] and args[1]:lower() or lowerText
+    
+    for _, cmd in ipairs(self.commands) do
+        if cmd.Title:lower() == commandWord then
+            if cmd.HasArgs and #cmd.Variables > 0 then
+                local parsedArgs = {}
+                
+                for i, varType in ipairs(cmd.Variables) do
+                    local argIndex = i + 1
+                    
+                    local selfCallbackValue = nil
+                    if cmd.SelfCallback then
+                        if type(cmd.SelfCallback) == "table" then
+                            selfCallbackValue = cmd.SelfCallback[i]
+                        else
+                            selfCallbackValue = (i == 1) and cmd.SelfCallback or nil
+                        end
+                    end
+                    
+                    if varType == "Player" then
+                        local playerArg = args[argIndex]
+                        if playerArg then
+                            local players = GetPlayer(playerArg)
+                            if players then
+                                table.insert(parsedArgs, players)
+                            else
+                                notify("Error", "Player not found")
+                                return true
+                            end
+                        else
+                            if selfCallbackValue == "me" or selfCallbackValue == true then
+                                table.insert(parsedArgs, {player})
+                            elseif selfCallbackValue then
+                                local players = GetPlayer(selfCallbackValue)
+                                if players then
+                                    table.insert(parsedArgs, players)
+                                else
+                                    table.insert(parsedArgs, {player})
+                                end
+                            else
+                                notify("Error", "Player argument required")
+                                return true
+                            end
+                        end
+                    elseif varType == "Number" then
+                        local numArg = tonumber(args[argIndex])
+                        if numArg then
+                            table.insert(parsedArgs, numArg)
+                        else
+                            if selfCallbackValue and type(selfCallbackValue) == "number" then
+                                table.insert(parsedArgs, selfCallbackValue)
+                            else
+                                notify("Error", "Invalid Number")
+                                return true
+                            end
+                        end
+                    elseif varType == "String" then
+                        local strArg = args[argIndex]
+                        if strArg then
+                            table.insert(parsedArgs, strArg)
+                        else
+                            if selfCallbackValue and type(selfCallbackValue) == "string" then
+                                table.insert(parsedArgs, selfCallbackValue)
+                            else
+                                table.insert(parsedArgs, "")
+                            end
+                        end
+                    elseif varType == "Text" then
+                        local textArgs = {}
+                        for j = argIndex, #args do
+                            table.insert(textArgs, args[j])
+                        end
+                        local textResult = table.concat(textArgs, " ")
+                        if textResult == "" and selfCallbackValue and type(selfCallbackValue) == "string" then
+                            table.insert(parsedArgs, selfCallbackValue)
+                        else
+                            table.insert(parsedArgs, textResult)
+                        end
+                        break
+                    end
+                end
+                
+                if #parsedArgs > 0 and parsedArgs[1] and type(parsedArgs[1]) == "table" then
+                    for _, targetPlayer in ipairs(parsedArgs[1]) do
+                        local callbackArgs = {targetPlayer}
+                        for i = 2, #parsedArgs do
+                            table.insert(callbackArgs, parsedArgs[i])
+                        end
+                        cmd.Callback(table.unpack(callbackArgs))
+                    end
+                else
+                    cmd.Callback(table.unpack(parsedArgs))
+                end
+            else
+                cmd.Callback()
+            end
+            return true
+        end
+    end
+    
+    for _, cmd in ipairs(self.commands) do
+        for _, alias in ipairs(cmd.Alias) do
+            if alias:lower() == commandWord then
+                if cmd.HasArgs and #cmd.Variables > 0 then
+                    local parsedArgs = {}
+                    
+                    for i, varType in ipairs(cmd.Variables) do
+                        local argIndex = i + 1
+                        
+                        local selfCallbackValue = nil
+                        if cmd.SelfCallback then
+                            if type(cmd.SelfCallback) == "table" then
+                                selfCallbackValue = cmd.SelfCallback[i]
+                            else
+                                selfCallbackValue = (i == 1) and cmd.SelfCallback or nil
+                            end
+                        end
+                        
+                        if varType == "Player" then
+                            local playerArg = args[argIndex]
+                            if playerArg then
+                                local players = GetPlayer(playerArg)
+                                if players then
+                                    table.insert(parsedArgs, players)
+                                else
+                                    notify("Error", "Player not found")
+                                    return true
+                                end
+                            else
+                                if selfCallbackValue == "me" or selfCallbackValue == true then
+                                    table.insert(parsedArgs, {player})
+                                elseif selfCallbackValue then
+                                    local players = GetPlayer(selfCallbackValue)
+                                    if players then
+                                        table.insert(parsedArgs, players)
+                                    else
+                                        table.insert(parsedArgs, {player})
+                                    end
+                                else
+                                    notify("Error", "Player argument required")
+                                    return true
+                                end
+                            end
+                        elseif varType == "Number" then
+                            local numArg = tonumber(args[argIndex])
+                            if numArg then
+                                table.insert(parsedArgs, numArg)
+                            else
+                                if selfCallbackValue and type(selfCallbackValue) == "number" then
+                                    table.insert(parsedArgs, selfCallbackValue)
+                                else
+                                    notify("Error", "Invalid number")
+                                    return true
+                                end
+                            end
+                        elseif varType == "String" then
+                            local strArg = args[argIndex]
+                            if strArg then
+                                table.insert(parsedArgs, strArg)
+                            else
+                                if selfCallbackValue and type(selfCallbackValue) == "string" then
+                                    table.insert(parsedArgs, selfCallbackValue)
+                                else
+                                    table.insert(parsedArgs, "")
+                                end
+                            end
+                        elseif varType == "Text" then
+                            local textArgs = {}
+                            for j = argIndex, #args do
+                                table.insert(textArgs, args[j])
+                            end
+                            local textResult = table.concat(textArgs, " ")
+                            if textResult == "" and selfCallbackValue and type(selfCallbackValue) == "string" then
+                                table.insert(parsedArgs, selfCallbackValue)
+                            else
+                                table.insert(parsedArgs, textResult)
+                            end
+                            break
+                        end
+                    end
+                    
+                    if #parsedArgs > 0 and parsedArgs[1] and type(parsedArgs[1]) == "table" then
+                        for _, targetPlayer in ipairs(parsedArgs[1]) do
+                            local callbackArgs = {targetPlayer}
+                            for i = 2, #parsedArgs do
+                                table.insert(callbackArgs, parsedArgs[i])
+                            end
+                            cmd.Callback(table.unpack(callbackArgs))
+                        end
+                    else
+                        cmd.Callback(table.unpack(parsedArgs))
+                    end
+                else
+                    cmd.Callback()
+                end
+                return true
+            end
+        end
+    end
+    
+    return false
+end
+
+local MainGui = Instance.new("ScreenGui")
+MainGui.Name = "AxoAdminGUI"
+MainGui.ResetOnSpawn = false
+MainGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+MainGui.Parent = CoreGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 400, 0, 540)
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -270)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = MainGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = MainFrame
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = currentColor
+UIStroke.Thickness = 2
+UIStroke.Transparency = 0
+UIStroke.Parent = MainFrame
+
+local TitleBar = Instance.new("Frame")
+TitleBar.Name = "TitleBar"
+TitleBar.Size = UDim2.new(1, 0, 0, 48)
+TitleBar.Position = UDim2.new(0, 0, 0, 0)
+TitleBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+TitleBar.BackgroundTransparency = 0.2
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 12)
+TitleCorner.Parent = TitleBar
+
+local TitleGradient = Instance.new("UIGradient")
+TitleGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 30)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
+}
+TitleGradient.Rotation = 90
+TitleGradient.Parent = TitleBar
+
+local TitleText = Instance.new("TextLabel")
+TitleText.Name = "TitleText"
+TitleText.Size = UDim2.new(1, -130, 1, 0)
+TitleText.Position = UDim2.new(0, 15, 0, 0)
+TitleText.BackgroundTransparency = 1
+TitleText.Text = "Axomic CMD"
+TitleText.TextColor3 = Color3.new(1, 1, 1)
+TitleText.Font = Enum.Font.GothamBlack
+TitleText.TextSize = 22
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+TitleText.Parent = TitleBar
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Size = UDim2.new(0, 40, 0, 40)
+ToggleButton.Position = UDim2.new(1, -45, 0.5, -20)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+ToggleButton.BackgroundTransparency = 0
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Text = "−"
+ToggleButton.TextColor3 = currentColor
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.TextSize = 32
+ToggleButton.Parent = TitleBar
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0, 8)
+ToggleCorner.Parent = ToggleButton
+
+local ToggleStroke = Instance.new("UIStroke")
+ToggleStroke.Color = currentColor
+ToggleStroke.Thickness = 1
+ToggleStroke.Parent = ToggleButton
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 40, 0, 40)
+CloseButton.Position = UDim2.new(1, -95, 0.5, -20)
+CloseButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+CloseButton.BackgroundTransparency = 0
+CloseButton.BorderSizePixel = 0
+CloseButton.Text = "X"
+CloseButton.TextColor3 = currentColor
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 32
+CloseButton.Parent = TitleBar
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseButton
+
+local CloseStroke = Instance.new("UIStroke")
+CloseStroke.Color = currentColor
+CloseStroke.Thickness = 1
+CloseStroke.Parent = CloseButton
+
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Size = UDim2.new(1, 0, 1, -48)
+ContentFrame.Position = UDim2.new(0, 0, 0, 48)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent = MainFrame
+
+local SearchFrame = Instance.new("Frame")
+SearchFrame.Name = "SearchFrame"
+SearchFrame.Size = UDim2.new(1, -24, 0, 52)
+SearchFrame.Position = UDim2.new(0, 12, 0, 12)
+SearchFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+SearchFrame.BackgroundTransparency = 0.2
+SearchFrame.BorderSizePixel = 0
+SearchFrame.Parent = ContentFrame
+
+local SearchCorner = Instance.new("UICorner")
+SearchCorner.CornerRadius = UDim.new(0, 10)
+SearchCorner.Parent = SearchFrame
+
+local SearchStroke = Instance.new("UIStroke")
+SearchStroke.Color = currentColor
+SearchStroke.Thickness = 1
+SearchStroke.Parent = SearchFrame
+
+local SearchIcon = Instance.new("ImageLabel")
+SearchIcon.Name = "SearchIcon"
+SearchIcon.Size = UDim2.new(0, 26, 0, 26)
+SearchIcon.Position = UDim2.new(0, 16, 0.5, -13)
+SearchIcon.BackgroundTransparency = 1
+SearchIcon.Image = "rbxassetid://6031094678"
+SearchIcon.ImageColor3 = currentColor
+SearchIcon.Parent = SearchFrame
+
+local CommandInput = Instance.new("TextBox")
+CommandInput.Name = "CommandInput"
+CommandInput.Size = UDim2.new(1, -68, 1, 0)
+CommandInput.Position = UDim2.new(0, 58, 0, 0)
+CommandInput.BackgroundTransparency = 1
+CommandInput.TextColor3 = Color3.new(1, 1, 1)
+CommandInput.Font = Enum.Font.Gotham
+CommandInput.PlaceholderText = "Search commands..."
+CommandInput.PlaceholderColor3 = Color3.fromRGB(180, 180, 180)
+CommandInput.TextSize = 18
+CommandInput.Text = ""
+CommandInput.TextXAlignment = Enum.TextXAlignment.Left
+CommandInput.Parent = SearchFrame
+
+local CommandsFrame = Instance.new("ScrollingFrame")
+CommandsFrame.Name = "CommandsFrame"
+CommandsFrame.Size = UDim2.new(1, -24, 1, -80)
+CommandsFrame.Position = UDim2.new(0, 12, 0, 76)
+CommandsFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+CommandsFrame.BackgroundTransparency = 0.2
+CommandsFrame.BorderSizePixel = 0
+CommandsFrame.ScrollBarThickness = 6
+CommandsFrame.ScrollBarImageColor3 = currentColor
+CommandsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+CommandsFrame.Parent = ContentFrame
+
+local CommandsCorner = Instance.new("UICorner")
+CommandsCorner.CornerRadius = UDim.new(0, 10)
+CommandsCorner.Parent = CommandsFrame
+
+local CommandsStroke = Instance.new("UIStroke")
+CommandsStroke.Color = currentColor
+CommandsStroke.Thickness = 1
+CommandsStroke.Parent = CommandsFrame
+
+local CommandsList = Instance.new("UIListLayout")
+CommandsList.Padding = UDim.new(0, 8)
+CommandsList.Parent = CommandsFrame
+
+local CommandBarGui = Instance.new("ScreenGui")
+CommandBarGui.Name = "AxoAdminCommandBar"
+CommandBarGui.ResetOnSpawn = false
+CommandBarGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+CommandBarGui.Parent = CoreGui
+
+local CommandBarFrame = Instance.new("Frame")
+CommandBarFrame.Name = "CommandBarFrame"
+CommandBarFrame.Size = UDim2.new(0, 0, 0, 44)
+CommandBarFrame.Position = UDim2.new(0, 230, 0, -50)
+CommandBarFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+CommandBarFrame.BackgroundTransparency = 0.2
+CommandBarFrame.Visible = false
+CommandBarFrame.ClipsDescendants = false
+CommandBarFrame.Parent = CommandBarGui
+
+local CommandBarCorner = Instance.new("UICorner")
+CommandBarCorner.CornerRadius = UDim.new(0, 12)
+CommandBarCorner.Parent = CommandBarFrame
+
+local CommandBarGradient = Instance.new("UIGradient")
+CommandBarGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0.000, Color3.fromRGB(30, 30, 30)),
+    ColorSequenceKeypoint.new(1.000, Color3.fromRGB(20, 20, 20))
+}
+CommandBarGradient.Rotation = 90
+CommandBarGradient.Parent = CommandBarFrame
+
+local CommandBarStroke = Instance.new("UIStroke")
+CommandBarStroke.Thickness = 0
+CommandBarStroke.Color = currentColor
+CommandBarStroke.Transparency = 1
+CommandBarStroke.Parent = CommandBarFrame
+
+local CommandBarInnerFrame = Instance.new("Frame")
+CommandBarInnerFrame.Name = "CommandBarInnerFrame"
+CommandBarInnerFrame.Size = UDim2.new(0, 190, 0, 30)
+CommandBarInnerFrame.Position = UDim2.new(0, 8, 0, 7)
+CommandBarInnerFrame.BackgroundTransparency = 1
+CommandBarInnerFrame.Parent = CommandBarFrame
+
+local CommandBarInnerCorner = Instance.new("UICorner")
+CommandBarInnerCorner.CornerRadius = UDim.new(0, 8)
+CommandBarInnerCorner.Parent = CommandBarInnerFrame
+
+local CommandBarInput = Instance.new("TextBox")
+CommandBarInput.Name = "CommandBarInput"
+CommandBarInput.CursorPosition = -1
+CommandBarInput.PlaceholderColor3 = Color3.fromRGB(156, 156, 156)
+CommandBarInput.BorderSizePixel = 0
+CommandBarInput.TextSize = 18
+CommandBarInput.TextColor3 = Color3.fromRGB(211, 211, 211)
+CommandBarInput.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+CommandBarInput.FontFace = Font.new("rbxasset://fonts/families/Gotham.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
+CommandBarInput.PlaceholderText = "Welcome, " .. player.Name .. " to Axomic CMD"
+CommandBarInput.Size = UDim2.new(0, 190, 0, 30)
+CommandBarInput.Text = ""
+CommandBarInput.BackgroundTransparency = 0.1
+CommandBarInput.TextXAlignment = Enum.TextXAlignment.Center
+CommandBarInput.Parent = CommandBarInnerFrame
+
+local CommandBarInputCorner = Instance.new("UICorner")
+CommandBarInputCorner.CornerRadius = UDim.new(0, 8)
+CommandBarInputCorner.Parent = CommandBarInput
+
+local CommandBarInputStroke = Instance.new("UIStroke")
+CommandBarInputStroke.Thickness = 1
+CommandBarInputStroke.Color = currentColor
+CommandBarInputStroke.Parent = CommandBarInput
+
+local CommandBarInnerStroke = Instance.new("UIStroke")
+CommandBarInnerStroke.Thickness = 0
+CommandBarInnerStroke.Color = Color3.fromRGB(99, 99, 99)
+CommandBarInnerStroke.Parent = CommandBarInnerFrame
+
+local AutocompleteFrame = Instance.new("Frame")
+AutocompleteFrame.Name = "AutocompleteFrame"
+AutocompleteFrame.BorderSizePixel = 0
+AutocompleteFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+AutocompleteFrame.Size = UDim2.new(0, 200, 0, 0)
+AutocompleteFrame.Position = UDim2.new(0, 2, 1, 6)
+AutocompleteFrame.BackgroundTransparency = 0.2
+AutocompleteFrame.Visible = false
+AutocompleteFrame.ClipsDescendants = false
+AutocompleteFrame.ZIndex = 10
+AutocompleteFrame.Parent = CommandBarFrame
+
+local AutocompleteCorner = Instance.new("UICorner")
+AutocompleteCorner.CornerRadius = UDim.new(0, 8)
+AutocompleteCorner.Parent = AutocompleteFrame
+
+local AutocompleteStroke = Instance.new("UIStroke")
+AutocompleteStroke.Thickness = 1
+AutocompleteStroke.Color = currentColor
+AutocompleteStroke.Parent = AutocompleteFrame
+
+local AutocompleteScroll = Instance.new("ScrollingFrame")
+AutocompleteScroll.Name = "AutocompleteScroll"
+AutocompleteScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+AutocompleteScroll.BorderSizePixel = 0
+AutocompleteScroll.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+AutocompleteScroll.ScrollBarImageTransparency = 0.3
+AutocompleteScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+AutocompleteScroll.Size = UDim2.new(1, -8, 1, -8)
+AutocompleteScroll.ScrollBarImageColor3 = currentColor
+AutocompleteScroll.Position = UDim2.new(0, 4, 0, 4)
+AutocompleteScroll.ScrollBarThickness = 2
+AutocompleteScroll.BackgroundTransparency = 1
+AutocompleteScroll.Parent = AutocompleteFrame
+
+local AutocompleteList = Instance.new("UIListLayout")
+AutocompleteList.Padding = UDim.new(0, 4)
+AutocompleteList.Parent = AutocompleteScroll
+
+local AutocompletePadding = Instance.new("UIPadding")
+AutocompletePadding.PaddingLeft = UDim.new(0, 4)
+AutocompletePadding.PaddingTop = UDim.new(0, 4)
+AutocompletePadding.PaddingBottom = UDim.new(0, 2)
+AutocompletePadding.Parent = AutocompleteScroll
+
+local CommandBarIcon = Instance.new("Frame")
+CommandBarIcon.Name = "CommandBarIcon"
+CommandBarIcon.BorderSizePixel = 0
+CommandBarIcon.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+CommandBarIcon.Size = UDim2.new(0, 55, 0, 55)
+CommandBarIcon.Position = UDim2.new(0, 230, 0, -150)
+CommandBarIcon.BackgroundTransparency = 0.2
+CommandBarIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+CommandBarIcon.Active = true
+CommandBarIcon.Parent = CommandBarGui
+
+local CommandBarIconCorner = Instance.new("UICorner")
+CommandBarIconCorner.CornerRadius = UDim.new(0, 12)
+CommandBarIconCorner.Parent = CommandBarIcon
+
+local CommandBarIconGradient = Instance.new("UIGradient")
+CommandBarIconGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 40)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 25))
+}
+CommandBarIconGradient.Rotation = 45
+CommandBarIconGradient.Parent = CommandBarIcon
+
+local CommandBarIconButton = Instance.new("TextButton")
+CommandBarIconButton.Name = "CommandBarIconButton"
+CommandBarIconButton.BorderSizePixel = 0
+CommandBarIconButton.TextSize = 22
+CommandBarIconButton.TextColor3 = currentColor
+CommandBarIconButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+CommandBarIconButton.FontFace = Font.new("rbxasset://fonts/families/Gotham.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+CommandBarIconButton.BackgroundTransparency = 1
+CommandBarIconButton.Size = UDim2.new(1, 0, 1, 0)
+CommandBarIconButton.Text = "A"
+CommandBarIconButton.Active = false
+CommandBarIconButton.Parent = CommandBarIcon
+
+local CommandBarIconButtonCorner = Instance.new("UICorner")
+CommandBarIconButtonCorner.CornerRadius = UDim.new(0, 12)
+CommandBarIconButtonCorner.Parent = CommandBarIconButton
+
+local CommandBarIconStroke = Instance.new("UIStroke")
+CommandBarIconStroke.Thickness = 2
+CommandBarIconStroke.Color = currentColor
+CommandBarIconStroke.Parent = CommandBarIconButton
+
+local Settings = {
+    isCommandFrameOpen = false,
+    isDragging = false,
+    isTyping = false,
+    dragStart = nil,
+    startPos = nil,
+    inputStartPos = nil,
+    dragThreshold = 3,
+    lastTypingTime = 0,
+    hideTimerActive = false,
+    selectedCommandIndex = 1,
+    currentMatches = {},
+    dragConnection = nil,
+    savedPosition = nil,
+    cmdBarAutoClose = true,
+    isAAToggled = false
+}
+
+local function createCommandLabel(text, index)
+    local container = Instance.new("Frame")
+    container.BorderSizePixel = 0
+    container.BackgroundTransparency = 1
+    container.Size = UDim2.new(1, 0, 0, 42)
+    container.Name = "CommandContainer_" .. index
+    container.ZIndex = 11
+    container.ClipsDescendants = true
+    
+    local label = Instance.new("TextLabel")
+    label.BorderSizePixel = 0
+    label.TextSize = 18
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    label.FontFace = Font.new("rbxasset://fonts/families/Gotham.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.Text = text
+    label.Name = "CommandLabel"
+    label.ZIndex = 11
+    label.TextTransparency = 0
+    label.Position = UDim2.new(0, 0, 0, 0)
+    label.Parent = container
+    
+    local textSize = TextService:GetTextSize(text, 18, Enum.Font.GothamSemibold, Vector2.new(math.huge, 42))
+    
+    if textSize.X > 180 then
+        task.spawn(function()
+            local slideDistance = textSize.X - 180
+            task.wait(0.2)
+            while label and label.Parent do
+                TweenService:Create(
+                    label,
+                    TweenInfo.new(slideDistance / 30, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+                    {Position = UDim2.new(0, -slideDistance, 0, 0)}
+                ):Play()
+                task.wait(slideDistance / 30 + 1)
+                TweenService:Create(
+                    label,
+                    TweenInfo.new(slideDistance / 30, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+                    {Position = UDim2.new(0, 0, 0, 0)}
+                ):Play()
+                task.wait(slideDistance / 30 + 1)
+            end
+        end)
+    end
+    
+    return container
+end
+
+local function updateSelectionHighlight()
+    for i, child in ipairs(AutocompleteScroll:GetChildren()) do
+        if child:IsA("Frame") and child.Name:match("CommandContainer") then
+            local label = child:FindFirstChild("CommandLabel")
+            if label then
+                if i == Settings.selectedCommandIndex then
+                    label.TextColor3 = currentColor
+                else
+                    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+                end
+            end
+        end
+    end
+end
+
+local function updateAutocomplete(text)
+    for _, child in ipairs(AutocompleteScroll:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+    
+    local matches = CommandSystem:GetMatchingCommands(text)
+    Settings.currentMatches = matches
+    
+    if #matches > 0 then
+        Settings.selectedCommandIndex = 1
+        
+        local minWidth = 200
+        local maxWidth = 200
+        
+        for i, cmd in ipairs(matches) do
+            local container = createCommandLabel(cmd.Title, i)
+            container.Parent = AutocompleteScroll
+            
+            local textSize = TextService:GetTextSize(
+                cmd.Title,
+                18,
+                Enum.Font.GothamSemibold,
+                Vector2.new(math.huge, 42)
+            )
+            
+            local requiredWidth = math.min(textSize.X + 20, 200)
+            if requiredWidth > maxWidth then
+                maxWidth = requiredWidth
+            end
+            
+            container.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    CommandSystem:ExecuteCommand(cmd.Title)
+                    CommandBarInput.Text = ""
+                    Settings.isCommandFrameOpen = false
+                    CommandBarFrame.Visible = false
+                    AutocompleteFrame.Visible = false
+                end
+            end)
+        end
+        
+        maxWidth = math.max(minWidth, math.min(maxWidth, 500))
+        updateSelectionHighlight()
+        
+        local targetHeight = math.min(#matches * 46, 600)
+        
+        AutocompleteFrame.Visible = true
+        AutocompleteFrame.Size = UDim2.new(0, maxWidth, 0, 0)
+        
+        TweenService:Create(
+            AutocompleteFrame,
+            TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+            {Size = UDim2.new(0, maxWidth, 0, targetHeight)}
+        ):Play()
+    else
+        TweenService:Create(
+            AutocompleteFrame,
+            TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+            {Size = UDim2.new(0, 200, 0, 0)}
+        ):Play()
+        task.wait(0.25)
+        AutocompleteFrame.Visible = false
+    end
+end
+
+local function updateCommandFramePosition()
+    if Settings.isCommandFrameOpen then
+        local circleX = CommandBarIcon.Position.X.Offset
+        local circleY = CommandBarIcon.Position.Y.Offset
+        CommandBarFrame.Position = UDim2.new(0, circleX + 20, 0, circleY)
+    end
+end
+
+local function startHideTimer()
+    if Settings.hideTimerActive then
+        Settings.hideTimerActive = false
+        task.wait(0.1)
+    end
+    
+    if not Settings.cmdBarAutoClose then
+        return
+    end
+    
+    Settings.hideTimerActive = true
+    task.spawn(function()
+        while Settings.hideTimerActive and Settings.isCommandFrameOpen do
+            task.wait(0.5)
+            
+            if not Settings.isTyping and Settings.isCommandFrameOpen and (tick() - Settings.lastTypingTime) >= 1.5 then
+                Settings.isCommandFrameOpen = false
+                Settings.hideTimerActive = false
+                
+                TweenService:Create(
+                    AutocompleteFrame,
+                    TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+                    {Size = UDim2.new(0, 200, 0, 0)}
+                ):Play()
+                
+                local hideCommandTween = TweenService:Create(
+                    CommandBarFrame,
+                    TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+                    {Size = UDim2.new(0, 0, 0, 44)}
+                )
+                
+                hideCommandTween:Play()
+                hideCommandTween.Completed:Wait()
+                CommandBarFrame.Visible = false
+                break
+            end
+        end
+    end
+end
+
+local function toggleCommandFrame()
+    if Settings.isTyping then
+        return
+    end
+    
+    if Settings.isCommandFrameOpen then
+        Settings.isCommandFrameOpen = false
+        TweenService:Create(
+            AutocompleteFrame,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+            {Size = UDim2.new(0, 200, 0, 0)}
+        ):Play()
+        TweenService:Create(
+            CommandBarFrame,
+            TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+            {Size = UDim2.new(0, 0, 0, 44)}
+        ):Play()
+        task.wait(0.3)
+        CommandBarFrame.Visible = false
+    else
+        Settings.isCommandFrameOpen = true
+        updateCommandFramePosition()
+        CommandBarFrame.Visible = true
+        TweenService:Create(
+            CommandBarFrame,
+            TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+            {Size = UDim2.new(0, 206, 0, 44)}
+        ):Play()
+        task.wait(0.35)
+        CommandBarInput:CaptureFocus()
+        startHideTimer()
+    end
+end
+
+local function handleAAToggle()
+    Settings.isAAToggled = not Settings.isAAToggled
+    
+    if Settings.isAAToggled then
+        Settings.isCommandFrameOpen = true
+        Settings.cmdBarAutoClose = false
+        updateCommandFramePosition()
+        CommandBarFrame.Visible = true
+        TweenService:Create(
+            CommandBarFrame,
+            TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+            {Size = UDim2.new(0, 206, 0, 44)}
+        ):Play()
+        task.wait(0.35)
+        CommandBarInput:CaptureFocus()
+        
+        if Settings.hideTimerActive then
+            Settings.hideTimerActive = false
+        end
+    else
+        Settings.isCommandFrameOpen = false
+        TweenService:Create(
+            AutocompleteFrame,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+            {Size = UDim2.new(0, 200, 0, 0)}
+        ):Play()
+        TweenService:Create(
+            CommandBarFrame,
+            TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+            {Size = UDim2.new(0, 0, 0, 44)}
+        ):Play()
+        task.wait(0.3)
+        CommandBarFrame.Visible = false
+    end
+end
+
+CommandBarIcon.MouseEnter:Connect(function()
+    if not Settings.isDragging then
+        TweenService:Create(
+            CommandBarIcon,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = UDim2.new(0, 60, 0, 60)}
+        ):Play()
+    end
+end)
+
+CommandBarIcon.MouseLeave:Connect(function()
+    if not Settings.isDragging then
+        TweenService:Create(
+            CommandBarIcon,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = UDim2.new(0, 55, 0, 55)}
+        ):Play()
+    end
+end)
+
+local isIconDragging = false
+local iconDragStart = nil
+local iconStartPos = nil
+
+CommandBarIcon.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isIconDragging = true
+        iconDragStart = input.Position
+        iconStartPos = CommandBarIcon.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                isIconDragging = false
+                Settings.isDragging = false
+                
+                if not Settings.isCommandFrameOpen then
+                    toggleCommandFrame()
+                else
+                    CommandBarInput:CaptureFocus()
+                end
+            end
+        end)
+    end
+end)
+
+CommandBarIcon.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if isIconDragging and iconDragStart then
+            local delta = input.Position - iconDragStart
+            if delta.Magnitude > Settings.dragThreshold then
+                Settings.isDragging = true
+                local newPos = UDim2.new(
+                    iconStartPos.X.Scale,
+                    iconStartPos.X.Offset + delta.X,
+                    iconStartPos.Y.Scale,
+                    iconStartPos.Y.Offset + delta.Y
+                )
+                CommandBarIcon.Position = newPos
+                
+                if Settings.isCommandFrameOpen then
+                    updateCommandFramePosition()
+                end
+            end
+        end
+    end
+end)
+
+CommandBarIconButton.MouseButton1Click:Connect(function()
+    toggleCommandFrame()
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not Settings.isTyping or gameProcessed then return end
+    
+    if input.KeyCode == Enum.KeyCode.Up then
+        if #Settings.currentMatches > 0 then
+            Settings.selectedCommandIndex = math.max(1, Settings.selectedCommandIndex - 1)
+            updateSelectionHighlight()
+        end
+    elseif input.KeyCode == Enum.KeyCode.Down then
+        if #Settings.currentMatches > 0 then
+            Settings.selectedCommandIndex = math.min(#Settings.currentMatches, Settings.selectedCommandIndex + 1)
+            updateSelectionHighlight()
+        end
+    elseif input.KeyCode == Enum.KeyCode.Tab then
+        if #Settings.currentMatches > 0 then
+            CommandBarInput.Text = Settings.currentMatches[Settings.selectedCommandIndex].Title
+            CommandBarInput.CursorPosition = string.len(CommandBarInput.Text) + 1
+        end
+    end
+end)
+
+CommandBarInput.Focused:Connect(function()
+    Settings.isTyping = true
+    Settings.lastTypingTime = tick()
+    CommandBarStroke.Thickness = 2
+    CommandBarStroke.Transparency = 0
+    
+    if CommandBarFrame.Size.X.Offset >= 200 then
+        updateAutocomplete(CommandBarInput.Text)
+    end
+end)
+
+CommandBarInput.FocusLost:Connect(function(enterPressed)
+    Settings.isTyping = false
+    Settings.lastTypingTime = tick()
+    
+    local textToExecute = CommandBarInput.Text
+    
+    CommandBarInput.Text = ""
+    
+    if textToExecute ~= "" and (enterPressed or UserInputService.TouchEnabled) then
+        CommandSystem:ExecuteCommand(textToExecute)
+        Settings.isCommandFrameOpen = false
+        CommandBarFrame.Visible = false
+        AutocompleteFrame.Visible = false
+    end
+    
+    CommandBarStroke.Thickness = 0
+    CommandBarStroke.Transparency = 1
+    
+    TweenService:Create(
+        AutocompleteFrame,
+        TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+        {Size = UDim2.new(0, 200, 0, 0)}
+    ):Play()
+    
+    if Settings.cmdBarAutoClose then
+        startHideTimer()
+    end
+end)
+
+CommandBarInput:GetPropertyChangedSignal("Text"):Connect(function()
+    Settings.lastTypingTime = tick()
+    if CommandBarInput.Text ~= "" then
+        CommandBarStroke.Thickness = 2
+        CommandBarStroke.Transparency = 0
+        CommandBarInput.PlaceholderText = "Type command..."
+    else
+        if not Settings.isTyping then
+            CommandBarStroke.Thickness = 0
+            CommandBarStroke.Transparency = 1
+            CommandBarInput.PlaceholderText = "Welcome, " .. player.Name .. " to Axomic CMD"
+        end
+    end
+    
+    updateAutocomplete(CommandBarInput.Text)
+end)
+
+CommandSystem:AddCmd({
+    Title = "aa",
+    Alias = {"aa"},
+    Callback = function()
+        handleAAToggle()
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "fly",
+    Alias = {"fly"},
+    Callback = function()
+        if not flyActive then
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/Fly%20Script"))()
+            flyActive = true
+            notify("Fly", "Enabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unfly",
+    Alias = {"unfly"},
+    Callback = function()
+        if flyActive then
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                player.Character.Humanoid.PlatformStand = false
+                player.Character.Animate.Disabled = false
+            end
+            flyActive = false
+            notify("Fly", "Disabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "noclip",
+    Alias = {"noclip"},
+    Callback = function()
+        if not isNoclipping then
+            isNoclipping = true
+            if player.Character then
+                for _, part in pairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
+            notify("Noclip", "Enabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unnoclip",
+    Alias = {"unnoclip", "clip"},
+    Callback = function()
+        if isNoclipping then
+            isNoclipping = false
+            if player.Character then
+                for _, part in pairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = true
+                    end
+                end
+            end
+            notify("Noclip", "Disabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "esp",
+    Alias = {"esp"},
+    Callback = function()
+        if not isESP then
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/Esp%20Script"))()
+            isESP = true
+            notify("ESP", "Enabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unesp",
+    Alias = {"unesp"},
+    Callback = function()
+        if isESP then
+            for _, part in pairs(espParts) do
+                if part then
+                    part:Destroy()
+                end
+            end
+            espParts = {}
+            isESP = false
+            notify("ESP", "Disabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "xray",
+    Alias = {"xray"},
+    Callback = function()
+        if not isXray then
+            for _, part in pairs(Workspace:GetDescendants()) do
+                if part:IsA("BasePart") and part.Transparency < 1 then
+                    table.insert(xrayParts, part)
+                    part.LocalTransparencyModifier = 0.5
+                end
+            end
+            isXray = true
+            notify("Xray", "Enabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unxray",
+    Alias = {"unxray"},
+    Callback = function()
+        if isXray then
+            for _, part in pairs(xrayParts) do
+                if part then
+                    part.LocalTransparencyModifier = 0
+                end
+            end
+            xrayParts = {}
+            isXray = false
+            notify("Xray", "Disabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "walkfling",
+    Alias = {"walkfling"},
+    Callback = function()
+        if not walkFlingEnabled then
+            walkFlingEnabled = true
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/Walk%20Fling"))()
+            notify("WalkFling", "Enabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unwalkfling",
+    Alias = {"unwalkfling"},
+    Callback = function()
+        if walkFlingEnabled then
+            walkFlingEnabled = false
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                player.Character.Humanoid.PlatformStand = false
+            end
+            notify("WalkFling", "Disabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "reset",
+    Alias = {"reset"},
+    Callback = function()
+        if player.Character then
+            player.Character:BreakJoints()
+            notify("Reset", "Character reset")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "respawn",
+    Alias = {"respawn"},
+    Callback = function()
+        player:LoadCharacter()
+        notify("Respawn", "Character respawned")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "spin",
+    Alias = {"spin"},
+    Args = true,
+    Variables = {"Number"},
+    SelfCallback = {10},
+    Callback = function(speed)
+        spinSpeed = speed or 10
+        if spinConnection then
+            spinConnection:Disconnect()
+        end
+        spinConnection = RunService.Stepped:Connect(function()
+            if player.Character and getRoot(player.Character) then
+                local root = getRoot(player.Character)
+                root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(spinSpeed), 0)
+            end
+        end)
+        notify("Spin", "Enabled (" .. spinSpeed .. ")")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unspin",
+    Alias = {"unspin"},
+    Callback = function()
+        if spinConnection then
+            spinConnection:Disconnect()
+            spinConnection = nil
+        end
+        spinSpeed = 0
+        notify("Spin", "Disabled")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "view",
+    Alias = {"view", "spectate"},
+    Args = true,
+    Variables = {"Player"},
+    Callback = function(players)
+        local target = players[1]
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            currentViewTarget = target
+            camera.CameraSubject = target.Character.Humanoid
+            notify("View", "Now spectating " .. target.Name)
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unview",
+    Alias = {"unview", "unspectate"},
+    Callback = function()
+        if currentViewTarget then
+            currentViewTarget = nil
+            camera.CameraSubject = player.Character and player.Character:FindFirstChild("Humanoid")
+            notify("View", "Stopped spectating")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "vehiclefly",
+    Alias = {"vehiclefly", "vfly"},
+    Callback = function()
+        if not isVehicleFlying then
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/Vfly%20script"))()
+            isVehicleFlying = true
+            notify("VehicleFly", "Enabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unvehiclefly",
+    Alias = {"unvehiclefly", "unvfly"},
+    Callback = function()
+        if isVehicleFlying then
+            isVehicleFlying = false
+            notify("VehicleFly", "Disabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "discord",
+    Alias = {"discord"},
+    Callback = function()
+        pcall(function()
+            setclipboard("https://discord.gg/FgR3MXqZy9")
+            notify("Discord", "Link copied to clipboard")
+        end)
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "youtube",
+    Alias = {"youtube"},
+    Callback = function()
+        pcall(function()
+            setclipboard("https://youtube.com/@axos0022")
+            notify("YouTube", "Link copied to clipboard")
+        end)
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "tiktok",
+    Alias = {"tiktok"},
+    Callback = function()
+        pcall(function()
+            setclipboard("https://tiktok.com/@axos002")
+            notify("TikTok", "Link copied to clipboard")
+        end)
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "walkspeed",
+    Alias = {"walkspeed", "speed"},
+    Args = true,
+    Variables = {"Number"},
+    SelfCallback = {16},
+    Callback = function(speed)
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = speed or 16
+            notify("Walkspeed", "Set to " .. (speed or 16))
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "jumppower",
+    Alias = {"jumppower"},
+    Args = true,
+    Variables = {"Number"},
+    SelfCallback = {50},
+    Callback = function(power)
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.JumpPower = power or 50
+            notify("Jumppower", "Set to " .. (power or 50))
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "sit",
+    Alias = {"sit"},
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.Sit = true
+            notify("Sit", "Sitting")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unsit",
+    Alias = {"unsit"},
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.Sit = false
+            notify("Sit", "Standing")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "goto",
+    Alias = {"goto", "tp", "tp me"},
+    Args = true,
+    Variables = {"Player"},
+    Callback = function(players)
+        local target = players[1]
+        if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
+            local targetRoot = getRoot(target.Character)
+            local playerRoot = getRoot(player.Character)
+            playerRoot.CFrame = targetRoot.CFrame
+            notify("Teleport", "Teleported to " .. target.Name)
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "ragdoll",
+    Alias = {"ragdoll"},
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.PlatformStand = true
+            notify("Ragdoll", "Enabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unragdoll",
+    Alias = {"unragdoll"},
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.PlatformStand = false
+            notify("Ragdoll", "Disabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "infinitejump",
+    Alias = {"infinitejump", "ij"},
+    Callback = function()
+        infiniteJump = not infiniteJump
+        if infiniteJump then
+            UserInputService.JumpRequest:Connect(function()
+                if infiniteJump then
+                    player.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+                end
+            end)
+            notify("InfiniteJump", "Enabled")
+        else
+            notify("InfiniteJump", "Disabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "uninfinitejump",
+    Alias = {"uninfinitejump", "unij"},
+    Callback = function()
+        infiniteJump = false
+        notify("InfiniteJump", "Disabled")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "gravity",
+    Alias = {"gravity"},
+    Args = true,
+    Variables = {"Number"},
+    SelfCallback = {196.2},
+    Callback = function(value)
+        Workspace.Gravity = value or 196.2
+        notify("Gravity", "Set to " .. (value or 196.2))
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "serverhop",
+    Alias = {"serverhop", "serverh"},
+    Callback = function()
+        local servers = {}
+        local req = game:HttpGet("https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+        local data = HttpService:JSONDecode(req)
+        
+        for _, server in ipairs(data.data) do
+            if server.playing < server.maxPlayers and server.id ~= JobId then
+                table.insert(servers, server.id)
+            end
+        end
+        
+        if #servers > 0 then
+            TeleportService:TeleportToPlaceInstance(PlaceId, servers[math.random(1, #servers)])
+        else
+            notify("ServerHop", "No servers found")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "antiafk",
+    Alias = {"antiafk"},
+    Callback = function()
+        if not antiAfk then
+            antiAfk = true
+            afkConnection = RunService.Heartbeat:Connect(function()
+                if antiAfk then
+                    game:GetService("VirtualUser"):CaptureController()
+                    game:GetService("VirtualUser"):ClickButton2(Vector2.new())
+                end
+            end)
+            notify("AntiAFK", "Enabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unantiafk",
+    Alias = {"unantiafk"},
+    Callback = function()
+        if antiAfk then
+            antiAfk = false
+            if afkConnection then
+                afkConnection:Disconnect()
+                afkConnection = nil
+            end
+            notify("AntiAFK", "Disabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "tools",
+    Alias = {"tools"},
+    Callback = function()
+        for i = 1, 10 do
+            local tool = Instance.new("Tool")
+            tool.Name = "Tool " .. i
+            tool.Parent = player.Backpack
+        end
+        notify("Tools", "Added tools to backpack")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "tptool",
+    Alias = {"tptool"},
+    Callback = function()
+        local tool = Instance.new("Tool")
+        tool.Name = "Teleport Tool"
+        tool.CanBeDropped = false
+        
+        local handle = Instance.new("Part")
+        handle.Size = Vector3.new(1, 1, 1)
+        handle.Name = "Handle"
+        handle.Parent = tool
+        
+        tool.Activated:Connect(function()
+            if player.Character and getRoot(player.Character) then
+                local root = getRoot(player.Character)
+                root.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 5, 0))
+            end
+        end)
+        
+        tool.Parent = player.Backpack
+        notify("TPTool", "Added teleport tool")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "animation",
+    Alias = {"animation", "anim"},
+    Args = true,
+    Variables = {"Number"},
+    Callback = function(id)
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            local animation = Instance.new("Animation")
+            animation.AnimationId = "rbxassetid://" .. id
+            local animationTrack = player.Character.Humanoid:LoadAnimation(animation)
+            animationTrack:Play()
+            notify("Animation", "Playing ID: " .. id)
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "stopanimation",
+    Alias = {"stopanimation", "stopanim"},
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid:StopAllAnimations()
+            notify("Animation", "Stopped all animations")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "hipheight",
+    Alias = {"hipheight"},
+    Args = true,
+    Variables = {"Number"},
+    SelfCallback = {0},
+    Callback = function(height)
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.HipHeight = height or 0
+            notify("HipHeight", "Set to " .. (height or 0))
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "antifling1",
+    Alias = {"antifling1"},
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/AntiFling%20Script"))()
+        notify("AntiFling1", "Enabled")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "antifling2",
+    Alias = {"antifling2"},
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/AntiFling%20Script2"))()
+        notify("AntiFling2", "Enabled")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unantifling1",
+    Alias = {"unantifling1"},
+    Callback = function()
+        notify("AntiFling1", "Disabled (Rejoin to fully disable)")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unantifling2",
+    Alias = {"unantifling2"},
+    Callback = function()
+        notify("AntiFling2", "Disabled (Rejoin to fully disable)")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "nofalldamage",
+    Alias = {"nofalldamage"},
+    Callback = function()
+        noFallDamage = true
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+        end
+        notify("NoFallDamage", "Enabled")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unnofalldamage",
+    Alias = {"unnofalldamage"},
+    Callback = function()
+        noFallDamage = false
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+        end
+        notify("NoFallDamage", "Disabled")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "autoantifling1",
+    Alias = {"autoantifling1", "autoantif1"},
+    Callback = function()
+        autoAntiFling1 = true
+        notify("AutoAntiFling1", "Enabled")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "autoantifling2",
+    Alias = {"autoantifling2", "autoantif2"},
+    Callback = function()
+        autoAntiFling2 = true
+        notify("AutoAntiFling2", "Enabled")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unautoantifling1",
+    Alias = {"unautoantifling1", "unautoantif1"},
+    Callback = function()
+        autoAntiFling1 = false
+        notify("AutoAntiFling1", "Disabled")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unautoantifling2",
+    Alias = {"unautoantifling2", "unautoantif2"},
+    Callback = function()
+        autoAntiFling2 = false
+        notify("AutoAntiFling2", "Disabled")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "invisible",
+    Alias = {"invisible"},
+    Callback = function()
+        if player.Character then
+            for _, part in pairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") or part:IsA("Decal") then
+                    part.Transparency = 1
+                end
+            end
+            notify("Invisible", "Enabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "visible",
+    Alias = {"visible", "uninvisible"},
+    Callback = function()
+        if player.Character then
+            for _, part in pairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Transparency = 0
+                elseif part:IsA("Decal") then
+                    part.Transparency = 0
+                end
+            end
+            notify("Invisible", "Disabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "f3x",
+    Alias = {"f3x", "fex", "btools"},
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/F3X%20Script"))()
+        notify("F3X", "Loaded")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "walkonwalls",
+    Alias = {"walkonwalls", "wallwalk"},
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Climbing)
+            notify("WallWalk", "Enabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unwalkonwalls",
+    Alias = {"unwalkonwalls", "unwallwalk"},
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Running)
+            notify("WallWalk", "Disabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "handlekill",
+    Alias = {"handlekill", "hkill"},
+    Callback = function()
+        if player.Character then
+            for _, part in pairs(player.Character:GetDescendants()) do
+                if part.Name == "Handle" and part:IsA("BasePart") then
+                    part.Touched:Connect(function(hit)
+                        if hit.Parent and hit.Parent:FindFirstChild("Humanoid") then
+                            hit.Parent.Humanoid.Health = 0
+                        end
+                    end)
+                end
+            end
+            notify("HandleKill", "Enabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unhandlekill",
+    Alias = {"unhandlekill", "unhkill"},
+    Callback = function()
+        notify("HandleKill", "Disabled (Rejoin to fully disable)")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "invisfling",
+    Alias = {"invisfling", "invisiblefling"},
+    Callback = function()
+        if not invisRunning then
+            invisRunning = true
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/Invis%20Fling%20script"))()
+            notify("InvisFling", "Enabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "uninvisfling",
+    Alias = {"uninvisfling", "uninvisiblefling"},
+    Callback = function()
+        invisRunning = false
+        notify("InvisFling", "Disabled")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "stareat",
+    Alias = {"stareat"},
+    Args = true,
+    Variables = {"Player"},
+    Callback = function(players)
+        local target = players[1]
+        if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
+            if stareLoop then
+                stareLoop:Disconnect()
+            end
+            stareLoop = RunService.Stepped:Connect(function()
+                if player.Character and getRoot(player.Character) and target.Character and getRoot(target.Character) then
+                    local playerRoot = getRoot(player.Character)
+                    local targetRoot = getRoot(target.Character)
+                    playerRoot.CFrame = CFrame.new(playerRoot.Position, targetRoot.Position)
+                end
+            end)
+            notify("Stare", "Staring at " .. target.Name)
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unstareat",
+    Alias = {"unstareat"},
+    Callback = function()
+        if stareLoop then
+            stareLoop:Disconnect()
+            stareLoop = nil
+        end
+        notify("Stare", "Stopped staring")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "scare",
+    Alias = {"scare", "spook"},
+    Args = true,
+    Variables = {"Player"},
+    Callback = function(players)
+        local target = players[1]
+        if target and target.Character and getRoot(target.Character) and player.Character then
+            for i = 1, 5 do
+                player.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
+                task.wait(0.1)
+                player.Character.HumanoidRootPart.CFrame = CFrame.new(0, 10000, 0)
+                task.wait(0.1)
+            end
+            notify("Scare", "Scared " .. target.Name)
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unscare",
+    Alias = {"unscare", "unspook"},
+    Callback = function()
+        notify("Scare", "Stopped scaring")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "jerk",
+    Alias = {"jerk"},
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            for i = 1, 50 do
+                player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                task.wait(0.05)
+            end
+            notify("Jerk", "Activated")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "rejoin",
+    Alias = {"rejoin"},
+    Callback = function()
+        TeleportService:TeleportToPlaceInstance(PlaceId, JobId, player)
+        notify("Rejoin", "Rejoining server...")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "jobid",
+    Alias = {"jobid"},
+    Callback = function()
+        setclipboard(JobId)
+        notify("JobID", "Copied to clipboard: " .. JobId)
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "permdeath",
+    Alias = {"permdeath", "permanentdeath"},
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.Health = 0
+            player.Character:BreakJoints()
+            notify("PermDeath", "Activated")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "freecam",
+    Alias = {"freecam"},
+    Callback = function()
+        if not freecamActive then
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/Freecam%20Script"))()
+            freecamActive = true
+            notify("Freecam", "Enabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unfreecam",
+    Alias = {"unfreecam"},
+    Callback = function()
+        if freecamActive then
+            camera.CameraType = Enum.CameraType.Custom
+            freecamActive = false
+            notify("Freecam", "Disabled")
+        end
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "clicktp",
+    Alias = {"clicktp"},
+    Callback = function()
+        local connection
+        connection = mouse.Button1Down:Connect(function()
+            if player.Character and getRoot(player.Character) then
+                local root = getRoot(player.Character)
+                root.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 5, 0))
+            end
+        end)
+        notify("ClickTP", "Enabled (Click to teleport)")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unclicktp",
+    Alias = {"unclicktp"},
+    Callback = function()
+        notify("ClickTP", "Disabled")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "teleportgui",
+    Alias = {"teleportgui"},
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/TeleportGui%20Script"))()
+        notify("TeleportGUI", "Loaded")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "antilag",
+    Alias = {"antilag"},
+    Callback = function()
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and not obj.Anchored then
+                obj.Anchored = true
+            end
+        end
+        notify("AntiLag", "Enabled")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "unantilag",
+    Alias = {"unantilag"},
+    Callback = function()
+        notify("AntiLag", "Disabled (Rejoin to fully disable)")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "flyspeed",
+    Alias = {"flyspeed"},
+    Args = true,
+    Variables = {"Number"},
+    SelfCallback = {50},
+    Callback = function(speed)
+        notify("FlySpeed", "Set to " .. (speed or 50) .. " (Reapply fly)")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "dex",
+    Alias = {"dex"},
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/Dex%20Script"))()
+        notify("Dex", "Loaded")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "remotespy",
+    Alias = {"remotespy"},
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/RemoteSpy%20Script"))()
+        notify("RemoteSpy", "Loaded")
+    end
+})
+
+CommandSystem:AddCmd({
+    Title = "color",
+    Alias = {"color"},
+    Args = true,
+    Variables = {"String"},
+    Callback = function(colorName)
+        local colors = {
+            red = Color3.fromRGB(255, 50, 50),
+            blue = Color3.fromRGB(0, 170, 255),
+            green = Color3.fromRGB(50, 255, 50),
+            purple = Color3.fromRGB(180, 50, 255),
+            yellow = Color3.fromRGB(255, 255, 50),
+            pink = Color3.fromRGB(255, 50, 200),
+            orange = Color3.fromRGB(255, 150, 50),
+            cyan = Color3.fromRGB(50, 255, 255),
+            white = Color3.fromRGB(255, 255, 255),
+            black = Color3.fromRGB(0, 0, 0)
+        }
+        
+        if colors[colorName:lower()] then
+            currentColor = colors[colorName:lower()]
+            
+            UIStroke.Color = currentColor
+            TitleText.TextColor3 = currentColor
+            ToggleButton.TextColor3 = currentColor
+            ToggleStroke.Color = currentColor
+            CloseButton.TextColor3 = currentColor
+            CloseStroke.Color = currentColor
+            SearchStroke.Color = currentColor
+            SearchIcon.ImageColor3 = currentColor
+            CommandsStroke.Color = currentColor
+            CommandsFrame.ScrollBarImageColor3 = currentColor
+            CommandBarStroke.Color = currentColor
+            CommandBarInputStroke.Color = currentColor
+            CommandBarIconStroke.Color = currentColor
+            CommandBarIconButton.TextColor3 = currentColor
+            AutocompleteStroke.Color = currentColor
+            AutocompleteScroll.ScrollBarImageColor3 = currentColor
+            
+            notify("Color", "Changed to " .. colorName)
+        else
+            notify("Error", "Color not found. Available: red, blue, green, purple, yellow, pink, orange, cyan, white, black")
+        end
+    end
+})
+
+local allCommands = {
+    "aa",
+    "fly",
+    "unfly",
+    "noclip",
+    "unnoclip",
+    "clip",
+    "esp",
+    "unesp",
+    "xray",
+    "unxray",
+    "walkfling",
+    "unwalkfling",
+    "reset",
+    "respawn",
+    "spin <speed>",
+    "unspin",
+    "view <player>",
+    "spectate <player>",
+    "unview",
+    "unspectate",
+    "vehiclefly",
+    "vfly",
+    "unvehiclefly",
+    "unvfly",
+    "discord",
+    "youtube",
+    "tiktok",
+    "walkspeed <value>",
+    "speed <value>",
+    "jumppower <value>",
+    "sit",
+    "unsit",
+    "goto <player>",
+    "tp <player>",
+    "tp me <player>",
+    "ragdoll",
+    "unragdoll",
+    "infinitejump",
+    "ij",
+    "uninfinitejump",
+    "unij",
+    "gravity <value>",
+    "serverhop",
+    "serverh",
+    "antiafk",
+    "unantiafk",
+    "tools",
+    "tptool",
+    "animation <ID>",
+    "anim <ID>",
+    "stopanimation",
+    "stopanim",
+    "hipheight <value>",
+    "antifling1",
+    "antifling2",
+    "unantifling1",
+    "unantifling2",
+    "nofalldamage",
+    "unnofalldamage",
+    "autoantifling1",
+    "autoantif1",
+    "autoantifling2",
+    "autoantif2",
+    "unautoantifling1",
+    "unautoantif1",
+    "unautoantifling2",
+    "unautoantif2",
+    "invisible",
+    "visible",
+    "uninvisible",
+    "f3x",
+    "fex",
+    "btools",
+    "walkonwalls",
+    "wallwalk",
+    "unwalkonwalls",
+    "unwallwalk",
+    "handlekill",
+    "hkill",
+    "unhandlekill",
+    "unhkill",
+    "invisfling",
+    "invisiblefling",
+    "uninvisfling",
+    "uninvisiblefling",
+    "stareat <player>",
+    "unstareat",
+    "scare <player>",
+    "spook <player>",
+    "unscare",
+    "unspook",
+    "jerk",
+    "rejoin",
+    "jobid",
+    "permdeath",
+    "permanentdeath",
+    "freecam",
+    "unfreecam",
+    "clicktp",
+    "unclicktp",
+    "teleportgui",
+    "antilag",
+    "unantilag",
+    "flyspeed <value>",
+    "dex",
+    "remotespy",
+    "color <colorName>"
+}
+
+local commandElements = {}
+
+local function updateCommandList(searchText)
+    for _, element in pairs(commandElements) do
+        element:Destroy()
+    end
+    commandElements = {}
+    
+    local filteredCommands = {}
+    if searchText == "" then
+        filteredCommands = allCommands
+    else
+        searchText = searchText:lower()
+        for _, cmd in pairs(allCommands) do
+            if cmd:lower():find(searchText, 1, true) then
+                table.insert(filteredCommands, cmd)
+            end
+        end
+    end
+    
+    for _, cmd in pairs(filteredCommands) do
+        local cmdLabel = Instance.new("TextButton")
+        cmdLabel.Size = UDim2.new(1, -20, 0, 40)
+        cmdLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        cmdLabel.BackgroundTransparency = 0.1
+        cmdLabel.BorderSizePixel = 0
+        cmdLabel.TextColor3 = Color3.new(1, 1, 1)
+        cmdLabel.Font = Enum.Font.GothamSemibold
+        cmdLabel.TextSize = 16
+        cmdLabel.Text = cmd
+        cmdLabel.TextXAlignment = Enum.TextXAlignment.Left
+        cmdLabel.Parent = CommandsFrame
+        
+        local cmdCorner = Instance.new("UICorner")
+        cmdCorner.CornerRadius = UDim.new(0, 8)
+        cmdCorner.Parent = cmdLabel
+        
+        local cmdStroke = Instance.new("UIStroke")
+        cmdStroke.Color = currentColor
+        cmdStroke.Thickness = 1
+        cmdStroke.Parent = cmdLabel
+        
+        local padding = Instance.new("UIPadding")
+        padding.PaddingLeft = UDim.new(0, 16)
+        padding.Parent = cmdLabel
+        
+        cmdLabel.MouseButton1Click:Connect(function()
+            CommandInput.Text = cmd
+            CommandInput:CaptureFocus()
+        end)
+        
+        cmdLabel.MouseEnter:Connect(function()
+            cmdLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        end)
+        
+        cmdLabel.MouseLeave:Connect(function()
+            cmdLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        end)
+        
+        table.insert(commandElements, cmdLabel)
+    end
+    
+    local totalHeight = (#filteredCommands * 40) + ((#filteredCommands - 1) * CommandsList.Padding.Offset)
+    CommandsFrame.CanvasSize = UDim2.new(0, 0, 0, math.max(totalHeight, CommandsFrame.AbsoluteSize.Y))
+end
+
+updateCommandList("")
+
+CommandInput:GetPropertyChangedSignal("Text"):Connect(function()
+    updateCommandList(CommandInput.Text)
+end)
+
+CommandInput.FocusLost:Connect(function(enterPressed)
+    if enterPressed and CommandInput.Text ~= "" then
+        updateCommandList("")
+    end
+end)
+
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
+local function updateDrag(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+TitleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input == dragInput) then
+        local mouseLocation = UserInputService:GetMouseLocation()
+        local viewportSize = MainGui.AbsoluteSize
+        
+        updateDrag(input)
+        
+        local framePos = MainFrame.AbsolutePosition
+        local frameSize = MainFrame.AbsoluteSize
+        
+        if framePos.X < 0 then
+            MainFrame.Position = UDim2.new(0, 0, startPos.Y.Scale, startPos.Y.Offset)
+        elseif framePos.X + frameSize.X > viewportSize.X then
+            MainFrame.Position = UDim2.new(0, viewportSize.X - frameSize.X, startPos.Y.Scale, startPos.Y.Offset)
+        end
+        
+        if framePos.Y < 0 then
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset, 0, 0)
+        elseif framePos.Y + frameSize.Y > viewportSize.Y then
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset, 0, viewportSize.Y - frameSize.Y)
+        end
+    end
+end)
+
+local minimized = false
+ToggleButton.MouseButton1Click:Connect(function()
+    if minimized then
+        MainFrame.Size = UDim2.new(0, 400, 0, 540)
+        ContentFrame.Visible = true
+        ToggleButton.Text = "−"
+        minimized = false
+    else
+        MainFrame.Size = UDim2.new(0, 400, 0, 48)
+        ContentFrame.Visible = false
+        ToggleButton.Text = "+"
+        minimized = true
+    end
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    MainGui.Enabled = false
+    notify("Axomic CMD", "GUI Closed")
+end)
+
+function PlayIntro()
+    task.wait(0.2)
+    
+    local IconAnim = TweenService:Create(
+        CommandBarIcon,
+        TweenInfo.new(0.8, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        {Position = UDim2.new(0, 250, 0, -26)}
+    )
+    
+    IconAnim:Play()
+    IconAnim.Completed:Wait()
+    
+    CommandBarFrame.Position = UDim2.new(0, 270, 0, -26)
+    CommandBarFrame.Visible = true
+    
+    local CommandFrameAnim = TweenService:Create(
+        CommandBarFrame,
+        TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+        {Size = UDim2.new(0, 206, 0, 44)}
+    )
+    
+    CommandFrameAnim:Play()
+    CommandFrameAnim.Completed:Wait()
+    
+    local S = TweenService:Create(
+        CommandBarFrame,
+        TweenInfo.new(0.2, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out),
+        {Size = UDim2.new(0, 206, 0, 44)}
+    )
+    
+    S:Play()
+    S.Completed:Wait()
+    
+    task.wait(2)
+    
+    local fadePlaceholder = TweenService:Create(
+        CommandBarInput,
+        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+        {PlaceholderColor3 = Color3.fromRGB(50, 50, 50)}
+    )
+    
+    fadePlaceholder:Play()
+    fadePlaceholder.Completed:Wait()
+    
+    CommandBarInput.PlaceholderText = "Type command..."
+    
+    local fadeInPlaceholder = TweenService:Create(
+        CommandBarInput,
+        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+        {PlaceholderColor3 = Color3.fromRGB(156, 156, 156)}
+    )
+    
+    fadeInPlaceholder:Play()
+    fadeInPlaceholder.Completed:Wait()
+    
+    Settings.isCommandFrameOpen = true
+    Settings.isTyping = false
+    Settings.lastTypingTime = tick()
+    startHideTimer()
+end
+
+function SetUpChatCommands()
+    local prefix = ":"
+    
+    function OnChat(message)
+        if message:sub(1, #prefix) == prefix then
+            local command = message:sub(#prefix + 1)
+            CommandSystem:ExecuteCommand(command)
+        end
+    end
+    
+    player.Chatted:Connect(OnChat)
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == Enum.KeyCode.Insert then
+        if CommandBarIcon.Visible then
+            CommandBarIcon.Visible = false
+            CommandBarFrame.Visible = false
+            AutocompleteFrame.Visible = false
+        else
+            CommandBarIcon.Visible = true
+            CommandBarFrame.Visible = true
+        end
+    end
+    
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        MainGui.Enabled = not MainGui.Enabled
+        notify("Axomic CMD", MainGui.Enabled and "GUI Enabled" or "GUI Disabled")
+    end
+end)
+
+MainGui.Enabled = true
+MainGui.DisplayOrder = 999
+
+CommandBarGui.Enabled = true
+CommandBarGui.DisplayOrder = 1000
+
+task.spawn(function()
+    pcall(function()
+        task.wait(0.2)
+        PlayIntro()
+        SetUpChatCommands()
+        notify("Axomic CMD", "Command Bar Loaded! Use the A button to toggle.")
+        notify("Warning", "Join the Discord for Updates!")
+    end)
+end)
+
+RunService.Stepped:Connect(function()
+    if isNoclipping and player.Character then
+        for _, part in pairs(player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+wait(1)
+notify("Axomic CMD", "GUI Loaded! Type commands in the search bar.")
