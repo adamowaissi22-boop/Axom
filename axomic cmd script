@@ -278,7 +278,7 @@ function CommandSystem:ExecuteCommand(text)
     end
     
     for _, cmd in ipairs(self.commands) do
-        for _, alias in  do
+        for _, alias in ipairs(cmd.Alias) do
             if alias:lower() == commandWord then
                 if cmd.HasArgs and #cmd.Variables > 0 then
                     local parsedArgs = {}
