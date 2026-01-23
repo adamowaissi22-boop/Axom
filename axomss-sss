@@ -1,26 +1,19 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local DataStoreService = game:GetService("DataStoreService")
+local HttpService = game:GetService("HttpService")
 
 local AxomServerside = {}
-AxomServerside.Whitelist = {}
-AxomServerside.Config = {WhitelistSaveName = "AxomWhitelist"}
-
-local ADMIN_USERS = {
-    "adamofficial0022",
-    "adamofficial055", 
-    "adamofficial002",
-    "adamofficial022"
+AxomServerside.Config = {
+    WhitelistURL = "https://raw.githubusercontent.com/adamowaissi22-boop/Axom/main/whitelist.json",
+    CacheTime = 60
 }
 
 local Remotes = {
     CheckWhitelist = Instance.new("RemoteEvent"),
     RequestInterface = Instance.new("RemoteEvent"),
-    WhitelistUpdated = Instance.new("RemoteEvent"),
     ExecuteScript = Instance.new("RemoteEvent"),
     SpawnAsset = Instance.new("RemoteEvent"),
-    InsertTool = Instance.new("RemoteEvent"),
-    AdminCommand = Instance.new("RemoteEvent")
+    InsertTool = Instance.new("RemoteEvent")
 }
 
 local AxomFolder = Instance.new("Folder")
@@ -32,87 +25,42 @@ for name, remote in pairs(Remotes) do
     remote.Parent = AxomFolder
 end
 
-local whitelistStore = DataStoreService:GetDataStore(AxomServerside.Config.WhitelistSaveName)
+local whitelistCache = {}
+local lastFetchTime = 0
 
-local function saveWhitelist()
-    pcall(function()
-        whitelistStore:SetAsync("whitelist", AxomServerside.Whitelist)
-    end)
-end
-
-local function loadWhitelist()
-    local success, data = pcall(function()
-        return whitelistStore:GetAsync("whitelist")
-    end)
-    if success and data then
-        AxomServerside.Whitelist = data
+function AxomServerside.fetchWhitelist()
+    local currentTime = os.time()
+    
+    if currentTime - lastFetchTime < AxomServerside.Config.CacheTime and #whitelistCache > 0 then
+        return whitelistCache
     end
+    
+    local success, response = pcall(function()
+        return HttpService:GetAsync(AxomServerside.Config.WhitelistURL)
+    end)
+    
+    if success and response then
+        local decoded = HttpService:JSONDecode(response)
+        if decoded and decoded.usernames then
+            whitelistCache = decoded.usernames
+            lastFetchTime = currentTime
+            return whitelistCache
+        end
+    end
+    
+    return whitelistCache
 end
-
-loadWhitelist()
 
 function AxomServerside.isWhitelisted(player)
-    local userId = player.UserId
-    for _, id in ipairs(AxomServerside.Whitelist) do
-        if id == userId then
+    local whitelist = AxomServerside.fetchWhitelist()
+    local playerName = player.Name
+    
+    for _, username in ipairs(whitelist) do
+        if username == playerName then
             return true
         end
     end
     return false
-end
-
-function AxomServerside.isAdmin(player)
-    for _, adminName in ipairs(ADMIN_USERS) do
-        if player.Name == adminName then
-            return true
-        end
-    end
-    return false
-end
-
-function AxomServerside.addToWhitelist(userId)
-    table.insert(AxomServerside.Whitelist, userId)
-    saveWhitelist()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.UserId == userId then
-            Remotes.CheckWhitelist:FireClient(player, true)
-        end
-    end
-    Remotes.WhitelistUpdated:FireAllClients(AxomServerside.Whitelist)
-    return true
-end
-
-function AxomServerside.removeFromWhitelist(userId)
-    local newList = {}
-    for _, id in ipairs(AxomServerside.Whitelist) do
-        if id ~= userId then
-            table.insert(newList, id)
-        end
-    end
-    AxomServerside.Whitelist = newList
-    saveWhitelist()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.UserId == userId then
-            Remotes.CheckWhitelist:FireClient(player, false)
-        end
-    end
-    Remotes.WhitelistUpdated:FireAllClients(AxomServerside.Whitelist)
-    return true
-end
-
-function AxomServerside.getUserFromInput(input)
-    local userId = tonumber(input)
-    if userId then
-        return userId
-    end
-    
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.Name:lower() == input:lower() then
-            return player.UserId
-        end
-    end
-    
-    return nil
 end
 
 Remotes.CheckWhitelist.OnServerEvent:Connect(function(player)
@@ -182,34 +130,11 @@ Remotes.InsertTool.OnServerEvent:Connect(function(player, assetId)
     end
 end)
 
-Remotes.AdminCommand.OnServerEvent:Connect(function(player, command, target)
-    if not AxomServerside.isAdmin(player) then return end
-    
-    if command == "addwhitelist" then
-        local userId = AxomServerside.getUserFromInput(target)
-        if userId then
-            AxomServerside.addToWhitelist(userId)
-        end
-    elseif command == "removewhitelist" then
-        local userId = AxomServerside.getUserFromInput(target)
-        if userId then
-            AxomServerside.removeFromWhitelist(userId)
-        end
-    end
-end)
-
 Players.PlayerAdded:Connect(function(player)
     task.wait(1)
     Remotes.CheckWhitelist:FireClient(player, AxomServerside.isWhitelisted(player))
-    
-    if AxomServerside.isAdmin(player) then
-        Remotes.WhitelistUpdated:FireClient(player, AxomServerside.Whitelist)
-    end
 end)
 
 for _, player in ipairs(Players:GetPlayers()) do
     Remotes.CheckWhitelist:FireClient(player, AxomServerside.isWhitelisted(player))
-    if AxomServerside.isAdmin(player) then
-        Remotes.WhitelistUpdated:FireClient(player, AxomServerside.Whitelist)
-    end
 end
