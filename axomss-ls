@@ -2,7 +2,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local backpack = player:WaitForChild("Backpack")
 
 local AxomFolder = ReplicatedStorage:WaitForChild("AxomServerside")
 local Remotes = {
@@ -10,9 +9,7 @@ local Remotes = {
     RequestInterface = AxomFolder:WaitForChild("RequestInterface"),
     ExecuteScript = AxomFolder:WaitForChild("ExecuteScript"),
     SpawnAsset = AxomFolder:WaitForChild("SpawnAsset"),
-    InsertTool = AxomFolder:WaitForChild("InsertTool"),
-    AdminCommand = AxomFolder:WaitForChild("AdminCommand"),
-    WhitelistUpdated = AxomFolder:WaitForChild("WhitelistUpdated")
+    InsertTool = AxomFolder:WaitForChild("InsertTool")
 }
 
 local isWhitelisted = false
@@ -165,10 +162,6 @@ local function createInterface()
     local FlagsButton = createSectionButton("Flags")
     local ToolsButton = createSectionButton("Tools")
     local ExecutorButton = createSectionButton("Executor")
-
-    if player.Name == "adamofficial0022" or player.Name == "adamofficial055" or player.Name == "adamofficial002" or player.Name == "adamofficial022" then
-        createSectionButton("Admin Panel")
-    end
 
     local function clearContent()
         for _, child in ipairs(ContentScrolling:GetChildren()) do
@@ -334,7 +327,7 @@ local function createInterface()
         ScriptBox.ClearTextOnFocus = false
         ScriptBox.MultiLine = true
         ScriptBox.TextWrapped = true
-        ScriptBox.PlaceholderText = "excute serverscript or require... axom on top.."
+        ScriptBox.PlaceholderText = "Enter script here..."
         ScriptBox.Parent = ExecutorFrame
         
         local BoxCorner = Instance.new("UICorner")
@@ -423,129 +416,6 @@ local function createInterface()
         end)
     end)
 
-    local function createAdminPanel()
-        clearContent()
-        
-        local AdminFrame = Instance.new("Frame")
-        AdminFrame.Name = "AdminFrame"
-        AdminFrame.Size = UDim2.new(1, 0, 1, 0)
-        AdminFrame.BackgroundTransparency = 1
-        AdminFrame.Parent = ContentScrolling
-        
-        local AddFrame = Instance.new("Frame")
-        AddFrame.Name = "AddFrame"
-        AddFrame.Size = UDim2.new(1, 0, 0, 100)
-        AddFrame.BackgroundTransparency = 1
-        AddFrame.Parent = AdminFrame
-        
-        local AddLabel = Instance.new("TextLabel")
-        AddLabel.Size = UDim2.new(1, 0, 0, 30)
-        AddLabel.Text = "Add to Whitelist"
-        AddLabel.TextColor3 = Color3.new(1, 1, 1)
-        AddLabel.Font = Enum.Font.FredokaOne
-        AddLabel.TextSize = 20
-        AddLabel.BackgroundTransparency = 1
-        AddLabel.Parent = AddFrame
-        
-        local AddInput = Instance.new("TextBox")
-        AddInput.Size = UDim2.new(0.7, -10, 0, 40)
-        AddInput.Position = UDim2.new(0, 0, 0, 40)
-        AddInput.PlaceholderText = "Username or User ID"
-        AddInput.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-        AddInput.TextColor3 = Color3.new(1, 1, 1)
-        AddInput.Parent = AddFrame
-        
-        local AddButton = Instance.new("TextButton")
-        AddButton.Size = UDim2.new(0.3, -10, 0, 40)
-        AddButton.Position = UDim2.new(0.7, 10, 0, 40)
-        AddButton.Text = "Add"
-        AddButton.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
-        AddButton.TextColor3 = Color3.new(1, 1, 1)
-        AddButton.Font = Enum.Font.FredokaOne
-        AddButton.Parent = AddFrame
-        
-        local RemoveFrame = Instance.new("Frame")
-        RemoveFrame.Name = "RemoveFrame"
-        RemoveFrame.Size = UDim2.new(1, 0, 0, 100)
-        RemoveFrame.Position = UDim2.new(0, 0, 0, 110)
-        RemoveFrame.BackgroundTransparency = 1
-        RemoveFrame.Parent = AdminFrame
-        
-        local RemoveLabel = Instance.new("TextLabel")
-        RemoveLabel.Size = UDim2.new(1, 0, 0, 30)
-        RemoveLabel.Text = "Remove from Whitelist"
-        RemoveLabel.TextColor3 = Color3.new(1, 1, 1)
-        RemoveLabel.Font = Enum.Font.FredokaOne
-        RemoveLabel.TextSize = 20
-        RemoveLabel.BackgroundTransparency = 1
-        RemoveLabel.Parent = RemoveFrame
-        
-        local RemoveInput = Instance.new("TextBox")
-        RemoveInput.Size = UDim2.new(0.7, -10, 0, 40)
-        RemoveInput.Position = UDim2.new(0, 0, 0, 40)
-        RemoveInput.PlaceholderText = "Username or User ID"
-        RemoveInput.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-        RemoveInput.TextColor3 = Color3.new(1, 1, 1)
-        RemoveInput.Parent = RemoveFrame
-        
-        local RemoveButton = Instance.new("TextButton")
-        RemoveButton.Size = UDim2.new(0.3, -10, 0, 40)
-        RemoveButton.Position = UDim2.new(0.7, 10, 0, 40)
-        RemoveButton.Text = "Remove"
-        RemoveButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-        RemoveButton.TextColor3 = Color3.new(1, 1, 1)
-        RemoveButton.Font = Enum.Font.FredokaOne
-        RemoveButton.Parent = RemoveFrame
-        
-        local WhitelistFrame = Instance.new("ScrollingFrame")
-        WhitelistFrame.Name = "WhitelistFrame"
-        WhitelistFrame.Size = UDim2.new(1, 0, 0, 200)
-        WhitelistFrame.Position = UDim2.new(0, 0, 0, 220)
-        WhitelistFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-        WhitelistFrame.Parent = AdminFrame
-        
-        local WhitelistLayout = Instance.new("UIListLayout")
-        WhitelistLayout.Parent = WhitelistFrame
-        
-        AddButton.MouseButton1Click:Connect(function()
-            local input = AddInput.Text
-            if input ~= "" then
-                Remotes.AdminCommand:FireServer("addwhitelist", input)
-                AddInput.Text = ""
-            end
-        end)
-        
-        RemoveButton.MouseButton1Click:Connect(function()
-            local input = RemoveInput.Text
-            if input ~= "" then
-                Remotes.AdminCommand:FireServer("removewhitelist", input)
-                RemoveInput.Text = ""
-            end
-        end)
-        
-        Remotes.WhitelistUpdated.OnClientEvent:Connect(function(whitelist)
-            WhitelistFrame:ClearAllChildren()
-            
-            for _, userId in ipairs(whitelist) do
-                local entry = Instance.new("TextLabel")
-                entry.Size = UDim2.new(1, -10, 0, 30)
-                entry.Position = UDim2.new(0, 5, 0, 0)
-                entry.BackgroundTransparency = 1
-                entry.Text = "User ID: " .. userId
-                entry.TextColor3 = Color3.new(1, 1, 1)
-                entry.Parent = WhitelistFrame
-            end
-        end)
-    end
-
-    for _, button in ipairs(SideBar:GetChildren()) do
-        if button:IsA("TextButton") and button.Text == "Admin Panel" then
-            button.MouseButton1Click:Connect(function()
-                createAdminPanel()
-            end)
-        end
-    end
-
     ToggleButton.MouseButton1Click:Connect(function()
         MainFrame.Visible = not MainFrame.Visible
         if MainFrame.Visible then
@@ -557,14 +427,13 @@ local function createInterface()
         MainFrame.Visible = false
     end)
 
-    Remotes.CheckWhitelist:FireServer()
-    
-    task.wait(1)
-    
-    if not isWhitelisted then
-        Remotes.RequestInterface:FireServer()
-    end
+    ScriptLibraryButton:Fire()
 end
 
-task.wait(2)
 Remotes.CheckWhitelist:FireServer()
+
+task.wait(2)
+
+if not isWhitelisted then
+    Remotes.RequestInterface:FireServer()
+end
