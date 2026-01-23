@@ -1,215 +1,570 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local DataStoreService = game:GetService("DataStoreService")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local backpack = player:WaitForChild("Backpack")
 
-local AxomServerside = {}
-AxomServerside.Whitelist = {}
-AxomServerside.Config = {WhitelistSaveName = "AxomWhitelist"}
-
-local ADMIN_USERS = {
-    "adamofficial0022",
-    "adamofficial055", 
-    "adamofficial002",
-    "adamofficial022"
-}
-
+local AxomFolder = ReplicatedStorage:WaitForChild("AxomServerside")
 local Remotes = {
-    CheckWhitelist = Instance.new("RemoteEvent"),
-    RequestInterface = Instance.new("RemoteEvent"),
-    WhitelistUpdated = Instance.new("RemoteEvent"),
-    ExecuteScript = Instance.new("RemoteEvent"),
-    SpawnAsset = Instance.new("RemoteEvent"),
-    InsertTool = Instance.new("RemoteEvent"),
-    AdminCommand = Instance.new("RemoteEvent")
+    CheckWhitelist = AxomFolder:WaitForChild("CheckWhitelist"),
+    RequestInterface = AxomFolder:WaitForChild("RequestInterface"),
+    ExecuteScript = AxomFolder:WaitForChild("ExecuteScript"),
+    SpawnAsset = AxomFolder:WaitForChild("SpawnAsset"),
+    InsertTool = AxomFolder:WaitForChild("InsertTool"),
+    AdminCommand = AxomFolder:WaitForChild("AdminCommand"),
+    WhitelistUpdated = AxomFolder:WaitForChild("WhitelistUpdated")
 }
 
-local AxomFolder = Instance.new("Folder")
-AxomFolder.Name = "AxomServerside"
-AxomFolder.Parent = ReplicatedStorage
+local isWhitelisted = false
 
-for name, remote in pairs(Remotes) do
-    remote.Name = name
-    remote.Parent = AxomFolder
-end
-
-local whitelistStore = DataStoreService:GetDataStore(AxomServerside.Config.WhitelistSaveName)
-
-local function saveWhitelist()
-    pcall(function()
-        whitelistStore:SetAsync("whitelist", AxomServerside.Whitelist)
-    end)
-end
-
-local function loadWhitelist()
-    local success, data = pcall(function()
-        return whitelistStore:GetAsync("whitelist")
-    end)
-    if success and data then
-        AxomServerside.Whitelist = data
-    end
-end
-
-loadWhitelist()
-
-function AxomServerside.isWhitelisted(player)
-    local userId = player.UserId
-    for _, id in ipairs(AxomServerside.Whitelist) do
-        if id == userId then
-            return true
-        end
-    end
-    return false
-end
-
-function AxomServerside.isAdmin(player)
-    for _, adminName in ipairs(ADMIN_USERS) do
-        if player.Name == adminName then
-            return true
-        end
-    end
-    return false
-end
-
-function AxomServerside.addToWhitelist(userId)
-    table.insert(AxomServerside.Whitelist, userId)
-    saveWhitelist()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.UserId == userId then
-            Remotes.CheckWhitelist:FireClient(player, true)
-        end
-    end
-    Remotes.WhitelistUpdated:FireAllClients(AxomServerside.Whitelist)
-    return true
-end
-
-function AxomServerside.removeFromWhitelist(userId)
-    local newList = {}
-    for _, id in ipairs(AxomServerside.Whitelist) do
-        if id ~= userId then
-            table.insert(newList, id)
-        end
-    end
-    AxomServerside.Whitelist = newList
-    saveWhitelist()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.UserId == userId then
-            Remotes.CheckWhitelist:FireClient(player, false)
-        end
-    end
-    Remotes.WhitelistUpdated:FireAllClients(AxomServerside.Whitelist)
-    return true
-end
-
-function AxomServerside.getUserFromInput(input)
-    local userId = tonumber(input)
-    if userId then
-        return userId
-    end
-    
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.Name:lower() == input:lower() then
-            return player.UserId
-        end
-    end
-    
-    return nil
-end
-
-Remotes.CheckWhitelist.OnServerEvent:Connect(function(player)
-    Remotes.CheckWhitelist:FireClient(player, AxomServerside.isWhitelisted(player))
-end)
-
-Remotes.RequestInterface.OnServerEvent:Connect(function(player)
-    if AxomServerside.isWhitelisted(player) then
-        Remotes.RequestInterface:FireClient(player, true)
-    else
-        Remotes.RequestInterface:FireClient(player, false)
+Remotes.CheckWhitelist.OnClientEvent:Connect(function(whitelisted)
+    isWhitelisted = whitelisted
+    if whitelisted then
+        createInterface()
     end
 end)
 
-Remotes.ExecuteScript.OnServerEvent:Connect(function(player, scriptContent)
-    if not AxomServerside.isWhitelisted(player) then return end
-    
-    local success, err = pcall(function()
-        loadstring(scriptContent)()
-    end)
-    if not success then
-        warn("Script execution error from " .. player.Name .. ":", err)
+Remotes.RequestInterface.OnClientEvent:Connect(function(granted)
+    if granted then
+        createInterface()
     end
 end)
 
-local function safeGetObjects(assetId)
-    local success, result = pcall(function()
-        return game:GetObjects("rbxassetid://" .. assetId)
-    end)
-    return success, result
-end
+local function createInterface()
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "ScreenGui"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.Parent = playerGui
 
-Remotes.SpawnAsset.OnServerEvent:Connect(function(player, assetId, spawnType)
-    if not AxomServerside.isWhitelisted(player) then return end
-    
-    local success, objects = safeGetObjects(assetId)
-    if not success or #objects == 0 then return end
-    
-    local model = objects[1]:Clone()
-    
-    if spawnType == "tool" then
-        if player.Character then
-            local backpack = player:FindFirstChild("Backpack")
-            if backpack then
-                model.Parent = backpack
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Name = "ToggleButton"
+    ToggleButton.Size = UDim2.new(0, 60, 0, 60)
+    ToggleButton.Position = UDim2.new(0, 20, 0, 20)
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+    ToggleButton.Text = "Axom"
+    ToggleButton.TextColor3 = Color3.new(1, 1, 1)
+    ToggleButton.TextScaled = true
+    ToggleButton.Font = Enum.Font.FredokaOne
+    ToggleButton.ZIndex = 10
+    ToggleButton.Parent = ScreenGui
+
+    local ToggleCorner = Instance.new("UICorner")
+    ToggleCorner.CornerRadius = UDim.new(1, 0)
+    ToggleCorner.Parent = ToggleButton
+
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainFrame"
+    MainFrame.Size = UDim2.new(0, 700, 0, 500)
+    MainFrame.Position = UDim2.new(0.5, -350, 0.5, -250)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(173, 216, 230)
+    MainFrame.BackgroundTransparency = 0.5
+    MainFrame.Visible = false
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+    MainFrame.Parent = ScreenGui
+
+    local MainCorner = Instance.new("UICorner")
+    MainCorner.CornerRadius = UDim.new(0, 12)
+    MainCorner.Parent = MainFrame
+
+    local MainStroke = Instance.new("UIStroke")
+    MainStroke.Color = Color3.fromRGB(100, 150, 200)
+    MainStroke.Thickness = 2
+    MainStroke.Parent = MainFrame
+
+    local CloseButton = Instance.new("TextButton")
+    CloseButton.Name = "CloseButton"
+    CloseButton.Size = UDim2.new(0, 30, 0, 30)
+    CloseButton.Position = UDim2.new(1, -35, 0, 10)
+    CloseButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+    CloseButton.Text = "X"
+    CloseButton.TextColor3 = Color3.new(1, 1, 1)
+    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.TextScaled = true
+    CloseButton.Parent = MainFrame
+
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0, 8)
+    CloseCorner.Parent = CloseButton
+
+    local SideBar = Instance.new("Frame")
+    SideBar.Name = "SideBar"
+    SideBar.Size = UDim2.new(0, 150, 1, -20)
+    SideBar.Position = UDim2.new(0, 10, 0, 10)
+    SideBar.BackgroundColor3 = Color3.fromRGB(200, 230, 255)
+    SideBar.BackgroundTransparency = 0.3
+    SideBar.Parent = MainFrame
+
+    local SideBarCorner = Instance.new("UICorner")
+    SideBarCorner.CornerRadius = UDim.new(0, 8)
+    SideBarCorner.Parent = SideBar
+
+    local SideBarStroke = Instance.new("UIStroke")
+    SideBarStroke.Color = Color3.fromRGB(150, 180, 220)
+    SideBarStroke.Thickness = 2
+    SideBarStroke.Parent = SideBar
+
+    local SideBarLayout = Instance.new("UIListLayout")
+    SideBarLayout.Padding = UDim.new(0, 5)
+    SideBarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    SideBarLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+    SideBarLayout.Parent = SideBar
+
+    local SideBarPadding = Instance.new("UIPadding")
+    SideBarPadding.PaddingTop = UDim.new(0, 10)
+    SideBarPadding.Parent = SideBar
+
+    local ContentFrame = Instance.new("Frame")
+    ContentFrame.Name = "ContentFrame"
+    ContentFrame.Size = UDim2.new(1, -190, 1, -20)
+    ContentFrame.Position = UDim2.new(0, 170, 0, 10)
+    ContentFrame.BackgroundTransparency = 1
+    ContentFrame.Parent = MainFrame
+
+    local ContentScrolling = Instance.new("ScrollingFrame")
+    ContentScrolling.Name = "ContentScrolling"
+    ContentScrolling.Size = UDim2.new(1, 0, 1, 0)
+    ContentScrolling.BackgroundTransparency = 1
+    ContentScrolling.BorderSizePixel = 0
+    ContentScrolling.ScrollBarThickness = 8
+    ContentScrolling.Parent = ContentFrame
+
+    local ContentLayout = Instance.new("UIGridLayout")
+    ContentLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+    ContentLayout.CellSize = UDim2.new(0, 150, 0, 150)
+    ContentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ContentLayout.Parent = ContentScrolling
+
+    local function createSectionButton(name)
+        local button = Instance.new("TextButton")
+        button.Name = name .. "Button"
+        button.Size = UDim2.new(0.9, 0, 0, 40)
+        button.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+        button.Text = name
+        button.TextColor3 = Color3.new(1, 1, 1)
+        button.TextScaled = true
+        button.Font = Enum.Font.FredokaOne
+        button.AutoButtonColor = false
+        button.Parent = SideBar
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 8)
+        corner.Parent = button
+        
+        local stroke = Instance.new("UIStroke")
+        stroke.Color = Color3.fromRGB(80, 130, 220)
+        stroke.Thickness = 2
+        stroke.Parent = button
+        
+        return button
+    end
+
+    local ScriptLibraryButton = createSectionButton("Script Library")
+    local VehiclesButton = createSectionButton("Vehicles")
+    local FlagsButton = createSectionButton("Flags")
+    local ToolsButton = createSectionButton("Tools")
+    local ExecutorButton = createSectionButton("Executor")
+
+    if player.Name == "adamofficial0022" or player.Name == "adamofficial055" or player.Name == "adamofficial002" or player.Name == "adamofficial022" then
+        createSectionButton("Admin Panel")
+    end
+
+    local function clearContent()
+        for _, child in ipairs(ContentScrolling:GetChildren()) do
+            if not child:IsA("UIGridLayout") then
+                child:Destroy()
             end
         end
-    else
-        local offset = CFrame.new(0, 0, -5)
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            model:PivotTo(player.Character.HumanoidRootPart.CFrame * offset)
-        end
-        model.Parent = workspace
     end
-end)
 
-Remotes.InsertTool.OnServerEvent:Connect(function(player, assetId)
-    if not AxomServerside.isWhitelisted(player) then return end
-    
-    local success, objects = safeGetObjects(assetId)
-    if not success or #objects == 0 then return end
-    
-    local tool = objects[1]:Clone()
-    local backpack = player:FindFirstChild("Backpack")
-    if backpack then
-        tool.Parent = backpack
+    local function createCardButton(name, callback)
+        local card = Instance.new("TextButton")
+        card.Name = name .. "Card"
+        card.Size = UDim2.new(0, 150, 0, 150)
+        card.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+        card.Text = name
+        card.TextColor3 = Color3.new(1, 1, 1)
+        card.TextScaled = true
+        card.Font = Enum.Font.FredokaOne
+        card.AutoButtonColor = false
+        card.Parent = ContentScrolling
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 12)
+        corner.Parent = card
+        
+        local stroke = Instance.new("UIStroke")
+        stroke.Color = Color3.fromRGB(80, 130, 220)
+        stroke.Thickness = 3
+        stroke.Parent = card
+        
+        card.MouseEnter:Connect(function()
+            card.BackgroundColor3 = Color3.fromRGB(120, 170, 255)
+        end)
+        
+        card.MouseLeave:Connect(function()
+            card.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+        end)
+        
+        card.MouseButton1Click:Connect(callback)
+        
+        return card
     end
-end)
 
-Remotes.AdminCommand.OnServerEvent:Connect(function(player, command, target)
-    if not AxomServerside.isAdmin(player) then return end
-    
-    if command == "addwhitelist" then
-        local userId = AxomServerside.getUserFromInput(target)
-        if userId then
-            AxomServerside.addToWhitelist(userId)
+    ScriptLibraryButton.MouseButton1Click:Connect(function()
+        clearContent()
+        
+        local scriptList = {
+            {"Goner", "loadstring(game:HttpGet('https://rawscripts.net/raw/Universal-Script-FE-Goner-Scrpit-82044'))()"},
+            {"Void Boss", "loadstring(game:HttpGet('https://rawscripts.net/raw/Universal-Script-FE-Void-Boss-53777'))()"},
+            {"Cleetus", "loadstring(game:HttpGet('https://rawscripts.net/raw/Universal-Script-Cleetus-Converted-77740'))()"},
+            {"soul reaper", "loadstring(game:HttpGet('https://rawscripts.net/raw/Universal-Script-Soul-Reaper-55330'))()"},
+            {"vereus monster", "loadstring(game:HttpGet('https://rawscripts.net/raw/Universal-Script-Roblox-VEREUS-monster-script-3746'))()"},
+            {"Caducus", "loadstring(game:HttpGet('https://rawscripts.net/raw/Universal-Script-caducus-visual-CREDITS-TO-IM-PATRICK-71280'))()"},
+            {"Pandora", "loadstring(game:HttpGet('https://rawscripts.net/raw/Universal-Script-Pandora-Fe-55559'))()"},
+            {"Void Dragon", "loadstring(game:HttpGet('https://rawscripts.net/raw/Universal-Script-Void-dragon-46302'))()"},
+            {"Killbot", "loadstring(game:HttpGet('https://rawscripts.net/raw/Universal-Script-Killbot-Gauntlet-51822'))()"},
+            {"Ban Hammer", "loadstring(game:HttpGet('https://rawscripts.net/raw/Universal-Script-Ban-Hammer-Script-58232'))()"},
+            {"MrByeBye", "loadstring(game:HttpGet('https://rawscripts.net/raw/Universal-Script-Mr-bye-bye-check-description-73940'))()"}
+        }
+        
+        for _, scriptInfo in ipairs(scriptList) do
+            local name, loadstringCmd = scriptInfo[1], scriptInfo[2]
+            createCardButton(name, function()
+                Remotes.ExecuteScript:FireServer(loadstringCmd)
+            end)
         end
-    elseif command == "removewhitelist" then
-        local userId = AxomServerside.getUserFromInput(target)
-        if userId then
-            AxomServerside.removeFromWhitelist(userId)
+    end)
+
+    VehiclesButton.MouseButton1Click:Connect(function()
+        clearContent()
+        
+        local vehicleList = {
+            {"Super Car", "15681295144"},
+            {"f1 car", "106844475991344"},
+            {"supra", "5457007929"},
+            {"bmw car", "10708581052"},
+            {"Lamborghini car", "5211116333"},
+            {"bike", "3775846262"},
+            {"Bmw moto", "9846492074"},
+            {"Panzer WWe Tank", "83315905996841"}
+        }
+        
+        for _, vehicleInfo in ipairs(vehicleList) do
+            local name, id = vehicleInfo[1], vehicleInfo[2]
+            createCardButton(name, function()
+                Remotes.SpawnAsset:FireServer(id, "vehicle")
+            end)
+        end
+    end)
+
+    FlagsButton.MouseButton1Click:Connect(function()
+        clearContent()
+        
+        local flagList = {
+            {"Lebanon 🇱🇧", "4174138"},
+            {"Armenia 🇦🇲", "2155508886"},
+            {"Philippines 🇵🇭", "13542883640"},
+            {"Russia 🇷🇺", "14586815502"},
+            {"USA 🇺🇸", "9488198458"},
+            {"United Kingdom 🇬🇧", "9488220262"},
+            {"Sweden 🇸🇪", "5144921822"},
+            {"Egypt 🇪🇬", "5344743080"},
+            {"Japan 🇯🇵", "5390866768"},
+            {"France 🇫🇷", "15398781631"},
+            {"Vietnam 🇻🇳", "6979252261"},
+            {"Iraq 🇮🇶", "5344788585"},
+            {"Palestine 🇵🇸", "83354671819470"},
+            {"Germany 🇩🇪", "1428700073"}
+        }
+        
+        for _, flagInfo in ipairs(flagList) do
+            local name, id = flagInfo[1], flagInfo[2]
+            createCardButton(name, function()
+                Remotes.SpawnAsset:FireServer(id, "flag")
+            end)
+        end
+    end)
+
+    ToolsButton.MouseButton1Click:Connect(function()
+        clearContent()
+        
+        local toolList = {
+            {"Spartan Shield", "430249190"},
+            {"Riot Shield", "4626276803"},
+            {"Azure sword", "10288498712"},
+            {"Devil Sword", "13078237623"},
+            {"Godly Ban Hammer", "8821996850"},
+            {"money tool", "5163961721"},
+            {"lantern tool", "3060834159"},
+            {"flashlight", "10093563208"},
+            {"btools", "142785488"}
+        }
+        
+        for _, toolInfo in ipairs(toolList) do
+            local name, id = toolInfo[1], toolInfo[2]
+            createCardButton(name, function()
+                Remotes.InsertTool:FireServer(id)
+            end)
+        end
+    end)
+
+    ExecutorButton.MouseButton1Click:Connect(function()
+        clearContent()
+        
+        local ExecutorFrame = Instance.new("Frame")
+        ExecutorFrame.Name = "ExecutorFrame"
+        ExecutorFrame.Size = UDim2.new(1, 0, 1, -80)
+        ExecutorFrame.BackgroundTransparency = 1
+        ExecutorFrame.Parent = ContentScrolling
+        
+        local ScriptBox = Instance.new("TextBox")
+        ScriptBox.Name = "ScriptBox"
+        ScriptBox.Size = UDim2.new(1, -20, 1, -10)
+        ScriptBox.Position = UDim2.new(0, 10, 0, 10)
+        ScriptBox.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+        ScriptBox.TextColor3 = Color3.new(1, 1, 1)
+        ScriptBox.Text = ""
+        ScriptBox.TextScaled = false
+        ScriptBox.TextSize = 14
+        ScriptBox.Font = Enum.Font.Code
+        ScriptBox.TextXAlignment = Enum.TextXAlignment.Left
+        ScriptBox.TextYAlignment = Enum.TextYAlignment.Top
+        ScriptBox.ClearTextOnFocus = false
+        ScriptBox.MultiLine = true
+        ScriptBox.TextWrapped = true
+        ScriptBox.PlaceholderText = "excute serverscript or require... axom on top.."
+        ScriptBox.Parent = ExecutorFrame
+        
+        local BoxCorner = Instance.new("UICorner")
+        BoxCorner.CornerRadius = UDim.new(0, 8)
+        BoxCorner.Parent = ScriptBox
+        
+        local BoxStroke = Instance.new("UIStroke")
+        BoxStroke.Color = Color3.fromRGB(100, 100, 150)
+        BoxStroke.Thickness = 2
+        BoxStroke.Parent = ScriptBox
+        
+        local ButtonFrame = Instance.new("Frame")
+        ButtonFrame.Name = "ButtonFrame"
+        ButtonFrame.Size = UDim2.new(1, -20, 0, 60)
+        ButtonFrame.Position = UDim2.new(0, 10, 1, 10)
+        ButtonFrame.BackgroundTransparency = 1
+        ButtonFrame.Parent = ContentScrolling
+        
+        local ClearButton = Instance.new("TextButton")
+        ClearButton.Name = "ClearButton"
+        ClearButton.Size = UDim2.new(0.45, 0, 1, 0)
+        ClearButton.Position = UDim2.new(0, 0, 0, 0)
+        ClearButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+        ClearButton.Text = "Clear"
+        ClearButton.TextColor3 = Color3.new(1, 1, 1)
+        ClearButton.TextScaled = true
+        ClearButton.Font = Enum.Font.FredokaOne
+        ClearButton.AutoButtonColor = false
+        ClearButton.Parent = ButtonFrame
+        
+        local ClearCorner = Instance.new("UICorner")
+        ClearCorner.CornerRadius = UDim.new(0, 8)
+        ClearCorner.Parent = ClearButton
+        
+        local ClearStroke = Instance.new("UIStroke")
+        ClearStroke.Color = Color3.fromRGB(200, 60, 60)
+        ClearStroke.Thickness = 2
+        ClearStroke.Parent = ClearButton
+        
+        local ExecuteButton = Instance.new("TextButton")
+        ExecuteButton.Name = "ExecuteButton"
+        ExecuteButton.Size = UDim2.new(0.45, 0, 1, 0)
+        ExecuteButton.Position = UDim2.new(0.55, 0, 0, 0)
+        ExecuteButton.BackgroundColor3 = Color3.fromRGB(80, 180, 80)
+        ExecuteButton.Text = "Execute"
+        ExecuteButton.TextColor3 = Color3.new(1, 1, 1)
+        ExecuteButton.TextScaled = true
+        ExecuteButton.Font = Enum.Font.FredokaOne
+        ExecuteButton.AutoButtonColor = false
+        ExecuteButton.Parent = ButtonFrame
+        
+        local ExecuteCorner = Instance.new("UICorner")
+        ExecuteCorner.CornerRadius = UDim.new(0, 8)
+        ExecuteCorner.Parent = ExecuteButton
+        
+        local ExecuteStroke = Instance.new("UIStroke")
+        ExecuteStroke.Color = Color3.fromRGB(60, 150, 60)
+        ExecuteStroke.Thickness = 2
+        ExecuteStroke.Parent = ExecuteButton
+        
+        ClearButton.MouseEnter:Connect(function()
+            ClearButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+        end)
+        
+        ClearButton.MouseLeave:Connect(function()
+            ClearButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+        end)
+        
+        ExecuteButton.MouseEnter:Connect(function()
+            ExecuteButton.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+        end)
+        
+        ExecuteButton.MouseLeave:Connect(function()
+            ExecuteButton.BackgroundColor3 = Color3.fromRGB(80, 180, 80)
+        end)
+        
+        ClearButton.MouseButton1Click:Connect(function()
+            ScriptBox.Text = ""
+        end)
+        
+        ExecuteButton.MouseButton1Click:Connect(function()
+            local scriptContent = ScriptBox.Text
+            if scriptContent and #scriptContent > 0 then
+                Remotes.ExecuteScript:FireServer(scriptContent)
+            end
+        end)
+    end)
+
+    local function createAdminPanel()
+        clearContent()
+        
+        local AdminFrame = Instance.new("Frame")
+        AdminFrame.Name = "AdminFrame"
+        AdminFrame.Size = UDim2.new(1, 0, 1, 0)
+        AdminFrame.BackgroundTransparency = 1
+        AdminFrame.Parent = ContentScrolling
+        
+        local AddFrame = Instance.new("Frame")
+        AddFrame.Name = "AddFrame"
+        AddFrame.Size = UDim2.new(1, 0, 0, 100)
+        AddFrame.BackgroundTransparency = 1
+        AddFrame.Parent = AdminFrame
+        
+        local AddLabel = Instance.new("TextLabel")
+        AddLabel.Size = UDim2.new(1, 0, 0, 30)
+        AddLabel.Text = "Add to Whitelist"
+        AddLabel.TextColor3 = Color3.new(1, 1, 1)
+        AddLabel.Font = Enum.Font.FredokaOne
+        AddLabel.TextSize = 20
+        AddLabel.BackgroundTransparency = 1
+        AddLabel.Parent = AddFrame
+        
+        local AddInput = Instance.new("TextBox")
+        AddInput.Size = UDim2.new(0.7, -10, 0, 40)
+        AddInput.Position = UDim2.new(0, 0, 0, 40)
+        AddInput.PlaceholderText = "Username or User ID"
+        AddInput.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+        AddInput.TextColor3 = Color3.new(1, 1, 1)
+        AddInput.Parent = AddFrame
+        
+        local AddButton = Instance.new("TextButton")
+        AddButton.Size = UDim2.new(0.3, -10, 0, 40)
+        AddButton.Position = UDim2.new(0.7, 10, 0, 40)
+        AddButton.Text = "Add"
+        AddButton.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
+        AddButton.TextColor3 = Color3.new(1, 1, 1)
+        AddButton.Font = Enum.Font.FredokaOne
+        AddButton.Parent = AddFrame
+        
+        local RemoveFrame = Instance.new("Frame")
+        RemoveFrame.Name = "RemoveFrame"
+        RemoveFrame.Size = UDim2.new(1, 0, 0, 100)
+        RemoveFrame.Position = UDim2.new(0, 0, 0, 110)
+        RemoveFrame.BackgroundTransparency = 1
+        RemoveFrame.Parent = AdminFrame
+        
+        local RemoveLabel = Instance.new("TextLabel")
+        RemoveLabel.Size = UDim2.new(1, 0, 0, 30)
+        RemoveLabel.Text = "Remove from Whitelist"
+        RemoveLabel.TextColor3 = Color3.new(1, 1, 1)
+        RemoveLabel.Font = Enum.Font.FredokaOne
+        RemoveLabel.TextSize = 20
+        RemoveLabel.BackgroundTransparency = 1
+        RemoveLabel.Parent = RemoveFrame
+        
+        local RemoveInput = Instance.new("TextBox")
+        RemoveInput.Size = UDim2.new(0.7, -10, 0, 40)
+        RemoveInput.Position = UDim2.new(0, 0, 0, 40)
+        RemoveInput.PlaceholderText = "Username or User ID"
+        RemoveInput.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+        RemoveInput.TextColor3 = Color3.new(1, 1, 1)
+        RemoveInput.Parent = RemoveFrame
+        
+        local RemoveButton = Instance.new("TextButton")
+        RemoveButton.Size = UDim2.new(0.3, -10, 0, 40)
+        RemoveButton.Position = UDim2.new(0.7, 10, 0, 40)
+        RemoveButton.Text = "Remove"
+        RemoveButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+        RemoveButton.TextColor3 = Color3.new(1, 1, 1)
+        RemoveButton.Font = Enum.Font.FredokaOne
+        RemoveButton.Parent = RemoveFrame
+        
+        local WhitelistFrame = Instance.new("ScrollingFrame")
+        WhitelistFrame.Name = "WhitelistFrame"
+        WhitelistFrame.Size = UDim2.new(1, 0, 0, 200)
+        WhitelistFrame.Position = UDim2.new(0, 0, 0, 220)
+        WhitelistFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+        WhitelistFrame.Parent = AdminFrame
+        
+        local WhitelistLayout = Instance.new("UIListLayout")
+        WhitelistLayout.Parent = WhitelistFrame
+        
+        AddButton.MouseButton1Click:Connect(function()
+            local input = AddInput.Text
+            if input ~= "" then
+                Remotes.AdminCommand:FireServer("addwhitelist", input)
+                AddInput.Text = ""
+            end
+        end)
+        
+        RemoveButton.MouseButton1Click:Connect(function()
+            local input = RemoveInput.Text
+            if input ~= "" then
+                Remotes.AdminCommand:FireServer("removewhitelist", input)
+                RemoveInput.Text = ""
+            end
+        end)
+        
+        Remotes.WhitelistUpdated.OnClientEvent:Connect(function(whitelist)
+            WhitelistFrame:ClearAllChildren()
+            
+            for _, userId in ipairs(whitelist) do
+                local entry = Instance.new("TextLabel")
+                entry.Size = UDim2.new(1, -10, 0, 30)
+                entry.Position = UDim2.new(0, 5, 0, 0)
+                entry.BackgroundTransparency = 1
+                entry.Text = "User ID: " .. userId
+                entry.TextColor3 = Color3.new(1, 1, 1)
+                entry.Parent = WhitelistFrame
+            end
+        end)
+    end
+
+    for _, button in ipairs(SideBar:GetChildren()) do
+        if button:IsA("TextButton") and button.Text == "Admin Panel" then
+            button.MouseButton1Click:Connect(function()
+                createAdminPanel()
+            end)
         end
     end
-end)
 
-Players.PlayerAdded:Connect(function(player)
+    ToggleButton.MouseButton1Click:Connect(function()
+        MainFrame.Visible = not MainFrame.Visible
+        if MainFrame.Visible then
+            ScriptLibraryButton:Fire()
+        end
+    end)
+
+    CloseButton.MouseButton1Click:Connect(function()
+        MainFrame.Visible = false
+    end)
+
+    Remotes.CheckWhitelist:FireServer()
+    
     task.wait(1)
-    Remotes.CheckWhitelist:FireClient(player, AxomServerside.isWhitelisted(player))
     
-    if AxomServerside.isAdmin(player) then
-        Remotes.WhitelistUpdated:FireClient(player, AxomServerside.Whitelist)
-    end
-end)
-
-for _, player in ipairs(Players:GetPlayers()) do
-    Remotes.CheckWhitelist:FireClient(player, AxomServerside.isWhitelisted(player))
-    if AxomServerside.isAdmin(player) then
-        Remotes.WhitelistUpdated:FireClient(player, AxomServerside.Whitelist)
+    if not isWhitelisted then
+        Remotes.RequestInterface:FireServer()
     end
 end
+
+task.wait(2)
+Remotes.CheckWhitelist:FireServer()
