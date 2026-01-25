@@ -1,0 +1,2720 @@
+Program.cs
+using MoonsecDeobfuscator.Deobfuscation;
+using MoonsecDeobfuscator.Deobfuscation.Bytecode;
+namespace MoonsecDeobfuscator;
+public static class Program
+{
+    static void Main(string[] args)
+    {
+        if (args.Length != 5 || args[1] != "-i" || args[3] != "-o")
+        {
+            Console.WriteLine("Usage:");
+            Console.WriteLine("Devirtualize and dump bytecode to file:\n\t-dev -i <input> -o <output>");
+            Console.WriteLine("Devirtualize and dump clean Lua code to file:\n\t-dis -i <input> -o <output>");
+            return;
+        };
+        var command = args[0];
+        var input = args[2];
+        var output = args[4];
+        if (!File.Exists(input))
+        {
+            Console.WriteLine("Invalid input path!");
+            return;
+        }
+        if (command == "-dev")
+        {
+            var result = new Deobfuscator().Deobfuscate(File.ReadAllText(input));
+            var outputPath = Path.Combine(Path.GetDirectoryName(output) ?? "", 
+                $"Deobfuscated_{Path.GetFileName(output)}");
+            using var stream = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
+            using var serializer = new Serializer(stream);
+            serializer.Serialize(result);
+        }
+        else if (command == "-dis")
+        {
+            var result = new Deobfuscator().Deobfuscate(File.ReadAllText(input));
+            var outputPath = Path.Combine(Path.GetDirectoryName(output) ?? "", 
+                $"Deobfuscated_{Path.GetFileName(output)}");
+            var luaCode = new LuaGenerator(result).Generate();
+            File.WriteAllText(outputPath, luaCode);
+        }
+        else
+        {
+            Console.WriteLine("Invalid command!");
+        }
+    }
+}
+
+LuaGenerator.cs
+using System.Text;
+using MoonsecDeobfuscator.Bytecode.Models;
+namespace MoonsecDeobfuscator.Deobfuscation.Bytecode;
+public class LuaGenerator(Function rootFunction)
+{
+    private readonly StringBuilder _builder = new();
+    private readonly Dictionary<int, string> _variableNames = new();
+    private readonly Dictionary<int, object?> _variableValues = new();
+    private int _tempCounter;
+    private readonly Stack<string> _currentConditions = new();
+    public string Generate()
+    {
+        GenerateFunction(rootFunction);
+        return _builder.ToString().Trim();
+    }
+    private void GenerateFunction(Function function)
+    {
+        _variableNames.Clear();
+        _variableValues.Clear();
+        _tempCounter = 0;
+        _currentConditions.Clear();
+        _builder.Append($"function {function.Name}(");
+        for (var i = 0; i < function.NumParams; i++)
+        {
+            _builder.Append($"arg{i}");
+            if (i + 1 < function.NumParams)
+                _builder.Append(", ");
+        }
+        if (function.IsVarArgFlag == 2)
+            _builder.Append(function.NumParams > 0 ? ", ..." : "...");
+        _builder.AppendLine(")");
+        var instructions = function.Instructions;
+        for (var i = 0; i < instructions.Count; i++)
+        {
+            var instruction = instructions[i];
+            if (TryOptimizePattern(instructions, ref i, function))
+                continue;
+            GenerateInstruction(instruction, function);
+        }
+        while (_currentConditions.Count > 0)
+        {
+            _builder.AppendLine("    end");
+            _currentConditions.Pop();
+        }
+        _builder.AppendLine("end\n");
+        foreach (var childFunction in function.Functions)
+            GenerateFunction(childFunction);
+    }
+    private bool TryOptimizePattern(List<Instruction> instructions, ref int index, Function function)
+    {
+        if (index + 2 < instructions.Count)
+        {
+            var inst1 = instructions[index];
+            var inst2 = instructions[index + 1];
+            var inst3 = instructions[index + 2];
+            if (inst1.OpCode == OpCode.GetGlobal && inst3.OpCode == OpCode.Call && 
+                (inst2.OpCode == OpCode.Move || inst2.OpCode == OpCode.LoadK))
+            {
+                var globalName = ((StringConstant)inst1.Function.Constants[inst1.B]).Value;
+                string argValue;
+                if (inst2.OpCode == OpCode.LoadK)
+                {
+                    argValue = inst2.Function.Constants[inst2.B].ToString()!;
+                }
+                else
+                {
+                    var movedValue = _variableValues.GetValueOrDefault(inst2.B, $"R{inst2.B}");
+                    argValue = movedValue.ToString()!;
+                }
+                _builder.AppendLine($"    {globalName}({argValue})");
+                index += 2;
+                return true;
+            }
+            if (inst1.OpCode == OpCode.LoadK && inst2.OpCode == OpCode.GetGlobal && inst3.OpCode == OpCode.Call)
+            {
+                var argValue = inst1.Function.Constants[inst1.B].ToString()!;
+                var globalName = ((StringConstant)inst2.Function.Constants[inst2.B]).Value;
+                _builder.AppendLine($"    {globalName}({argValue})");
+                index += 2;
+                return true;
+            }
+        }
+        if (index + 1 < instructions.Count)
+        {
+            var inst1 = instructions[index];
+            var inst2 = instructions[index + 1];
+            if (inst1.OpCode == OpCode.GetGlobal && inst2.OpCode == OpCode.Call)
+            {
+                var globalName = ((StringConstant)inst1.Function.Constants[inst1.B]).Value;
+                var args = BuildCallArguments(inst2, function);
+                _builder.AppendLine($"    {globalName}({args})");
+                index += 1;
+                return true;
+            }
+        }
+        return false;
+    }
+    private string BuildCallArguments(Instruction callInst, Function function)
+    {
+        var args = new List<string>();
+        var B = callInst.B;
+        if (B == 0 || B == 1)
+        {
+            return "";
+        }
+        for (var i = 1; i < B; i++)
+        {
+            var reg = callInst.A + i;
+            if (_variableValues.TryGetValue(reg, out var value))
+            {
+                args.Add(value?.ToString() ?? $"R{reg}");
+            }
+            else
+            {
+                args.Add($"R{reg}");
+            }
+        }
+        return string.Join(", ", args);
+    }
+    private void GenerateInstruction(Instruction instruction, Function function)
+    {
+        var A = instruction.A;
+        var B = instruction.B;
+        var C = instruction.C;
+        switch (instruction.OpCode)
+        {
+            case OpCode.GetGlobal:
+                var globalName = ((StringConstant)function.Constants[B]).Value;
+                _variableNames[A] = globalName;
+                _variableValues[A] = globalName;
+                if (!globalName.StartsWith("_G."))
+                {
+                    _builder.AppendLine($"    local R{A} = {globalName}");
+                }
+                break;
+            case OpCode.SetGlobal:
+                var targetGlobal = ((StringConstant)function.Constants[B]).Value;
+                var value = GetVariableValue(A);
+                _builder.AppendLine($"    {targetGlobal} = {value}");
+                break;
+            case OpCode.LoadK:
+                var constant = function.Constants.ElementAtOrDefault(B);
+                _variableValues[A] = constant;
+                var constStr = constant?.ToString() ?? "nil";
+                if (!constStr.Contains("R") && !constStr.StartsWith("UPVALUE"))
+                {
+                    _builder.AppendLine($"    local R{A} = {constStr}");
+                }
+                break;
+            case OpCode.LoadNil:
+                _variableValues[A] = "nil";
+                if (B > A)
+                {
+                    _builder.AppendLine($"    local R{A} = nil");
+                }
+                break;
+            case OpCode.LoadBool:
+                var boolValue = B != 0 ? "true" : "false";
+                _variableValues[A] = boolValue;
+                _builder.AppendLine($"    local R{A} = {boolValue}");
+                break;
+            case OpCode.Move:
+                if (_variableValues.TryGetValue(B, out var movedValue))
+                {
+                    _variableValues[A] = movedValue;
+                }
+                if (A != B)
+                {
+                    _builder.AppendLine($"    local R{A} = {GetVariableValue(B)}");
+                }
+                break;
+            case OpCode.GetUpval:
+                _builder.AppendLine($"    local R{A} = UPVALUE{B}");
+                _variableValues[A] = $"UPVALUE{B}";
+                break;
+            case OpCode.SetUpval:
+                _builder.AppendLine($"    UPVALUE_{B} = {GetVariableValue(A)}");
+                break;
+            case OpCode.GetTable:
+                var table = GetVariableValue(B);
+                var key = RegisterOrConstant(C, function);
+                _variableValues[A] = $"{table}[{key}]";
+                _builder.AppendLine($"    local R{A} = {table}[{key}]");
+                break;
+            case OpCode.SetTable:
+                var targetTable = GetVariableValue(A);
+                var tableKey = RegisterOrConstant(B, function);
+                var tableValue = RegisterOrConstant(C, function);
+                _builder.AppendLine($"    {targetTable}[{tableKey}] = {tableValue}");
+                break;
+            case OpCode.NewTable:
+                _variableValues[A] = "{}";
+                _builder.AppendLine($"    local R{A} = {{}}");
+                break;
+            case OpCode.Self:
+                var selfObj = GetVariableValue(B);
+                var method = RegisterOrConstant(C, function);
+                _variableValues[A] = $"{selfObj}:{method}";
+                _variableValues[A + 1] = selfObj;
+                _builder.AppendLine($"    local R{A} = {selfObj}:{method}");
+                _builder.AppendLine($"    local R{A + 1} = {selfObj}");
+                break;
+            case OpCode.Add:
+            case OpCode.Sub:
+            case OpCode.Mul:
+            case OpCode.Div:
+            case OpCode.Mod:
+            case OpCode.Pow:
+                var op = instruction.OpCode switch
+                {
+                    OpCode.Add => "+",
+                    OpCode.Sub => "-",
+                    OpCode.Mul => "*",
+                    OpCode.Div => "/",
+                    OpCode.Mod => "%",
+                    OpCode.Pow => "^",
+                    _ => "??"
+                };
+                var left = RegisterOrConstant(B, function);
+                var right = RegisterOrConstant(C, function);
+                _variableValues[A] = $"{left} {op} {right}";
+                _builder.AppendLine($"    local R{A} = {left} {op} {right}");
+                break;
+            case OpCode.Unm:
+                _variableValues[A] = $"-{GetVariableValue(B)}";
+                _builder.AppendLine($"    local R{A} = -{GetVariableValue(B)}");
+                break;
+            case OpCode.Not:
+                _variableValues[A] = $"not {GetVariableValue(B)}";
+                _builder.AppendLine($"    local R{A} = not {GetVariableValue(B)}");
+                break;
+            case OpCode.Len:
+                _variableValues[A] = $"#{GetVariableValue(B)}";
+                _builder.AppendLine($"    local R{A} = #{GetVariableValue(B)}");
+                break;
+            case OpCode.Concat:
+                var concatParts = new StringBuilder();
+                for (var i = B; i <= C; i++)
+                {
+                    concatParts.Append(GetVariableValue(i));
+                    if (i + 1 <= C)
+                        concatParts.Append(" .. ");
+                }
+                _variableValues[A] = concatParts.ToString();
+                _builder.AppendLine($"    local R{A} = {concatParts}");
+                break;
+            case OpCode.Eq:
+            case OpCode.Lt:
+            case OpCode.Le:
+                var compOp = instruction.OpCode switch
+                {
+                    OpCode.Eq => A == 0 ? "==" : "~=",
+                    OpCode.Lt => A == 0 ? "<" : ">",
+                    OpCode.Le => A == 0 ? "<=" : ">=",
+                    _ => "??"
+                };
+                var leftComp = RegisterOrConstant(B, function);
+                var rightComp = RegisterOrConstant(C, function);
+                _builder.AppendLine($"    if {leftComp} {compOp} {rightComp} then");
+                _currentConditions.Push("if");
+                break;
+            case OpCode.Test:
+                var testCond = C == 0 ? $"not {GetVariableValue(A)}" : GetVariableValue(A);
+                _builder.AppendLine($"    if {testCond} then");
+                _currentConditions.Push("if");
+                break;
+            case OpCode.TestSet:
+                var testSetCond = C == 0 ? $"not {GetVariableValue(B)}" : GetVariableValue(B);
+                _builder.AppendLine($"    if {testSetCond} then");
+                _builder.AppendLine($"        local R{A} = {GetVariableValue(B)}");
+                _builder.AppendLine($"    else");
+                _currentConditions.Push("if");
+                break;
+            case OpCode.Call:
+                var callArgs = BuildCallArguments(instruction, function);
+                if (C == 0)
+                {
+                    _builder.AppendLine($"    {GetVariableValue(A)}({callArgs})");
+                }
+                else if (C == 1)
+                {
+                    _builder.AppendLine($"    {GetVariableValue(A)}({callArgs})");
+                }
+                else
+                {
+                    var resultVars = string.Join(", ", Enumerable.Range(0, C - 1).Select(i => $"R{A + i}"));
+                    _builder.AppendLine($"    {resultVars} = {GetVariableValue(A)}({callArgs})");
+                }
+                break;
+            case OpCode.TailCall:
+                var tailArgs = BuildCallArguments(instruction, function);
+                _builder.AppendLine($"    return {GetVariableValue(A)}({tailArgs})");
+                break;
+            case OpCode.Return:
+                var returnVals = string.Join(", ", Enumerable.Range(0, B - 1).Select(i => GetVariableValue(A + i)));
+                _builder.AppendLine($"    return {returnVals}");
+                break;
+            case OpCode.ForLoop:
+                _builder.AppendLine($"    R{A} = R{A} + R{A + 2}");
+                _builder.AppendLine($"    if R{A} <= R{A + 1} then");
+                _currentConditions.Push("for");
+                break;
+            case OpCode.ForPrep:
+                _builder.AppendLine($"    R{A} = R{A} - R{A + 2}");
+                _builder.AppendLine($"    if R{A} <= R{A + 1} then");
+                _currentConditions.Push("for");
+                break;
+            case OpCode.TForLoop:
+                var tforResults = string.Join(", ", Enumerable.Range(3, C).Select(i => $"R{A + i}"));
+                _builder.AppendLine($"    {tforResults} = {GetVariableValue(A)}({GetVariableValue(A + 1)}, {GetVariableValue(A + 2)})");
+                _builder.AppendLine($"    if R{A + 3} ~= nil then");
+                _builder.AppendLine($"        R{A + 2} = R{A + 3}");
+                _builder.AppendLine($"    end");
+                break;
+            case OpCode.Closure:
+                var funcName = function.Functions[B].Name;
+                _variableValues[A] = funcName;
+                _builder.AppendLine($"    local R{A} = {funcName}");
+                break;
+            case OpCode.VarArg:
+                var varargVars = string.Join(", ", Enumerable.Range(0, B - 1).Select(i => $"R{A + i}"));
+                _builder.AppendLine($"    {varargVars} = ...");
+                break;
+            case OpCode.Jmp:
+                break;
+        }
+    }
+    private string GetVariableValue(int register)
+    {
+        if (_variableValues.TryGetValue(register, out var value) && value != null)
+        {
+            return value.ToString()!;
+        }
+        return $"R{register}";
+    }
+    private static string RegisterOrConstant(int register, Function function) =>
+        register > 255 ? function.Constants[register - 256].ToString()! : $"R{register}";
+}
+
+OpCodes.cs
+using MoonsecDeobfuscator.Bytecode.Models;
+namespace MoonsecDeobfuscator.Deobfuscation;
+public static class OpCodes
+{
+    public static readonly Dictionary<string, (OpCode, Action<Instruction>?)> StaticOpcodes = new()
+    {
+        ["91909190"] = (OpCode.Move, null),
+        ["1419090"] = (OpCode.LoadK, instruction => instruction.B--),
+        ["91902690"] = (OpCode.LoadBool, null),
+        ["91902690291529"] = (OpCode.LoadBool, instruction => instruction.C = 1),
+        ["13909091"] = (OpCode.LoadNil, null),
+        ["91909290"] = (OpCode.GetUpval, null),
+        ["91909390"] = (OpCode.GetGlobal, instruction => instruction.B--),
+        ["9190991909190"] = (OpCode.GetTable, null),
+        ["91909919090"] = (OpCode.GetTable, instruction => instruction.C += 255),
+        ["93909190"] = (OpCode.SetGlobal, instruction => instruction.B--),
+        ["92909190"] = (OpCode.SetUpval, null),
+        ["9919091909190"] = (OpCode.SetTable, null),
+        ["99190919090"] = (OpCode.SetTable, instruction => instruction.C += 255),
+        ["99190909190"] = (OpCode.SetTable, instruction => instruction.B += 255),
+        ["991909090"] = (OpCode.SetTable, instruction =>
+        {
+            instruction.B += 255;
+            instruction.C += 255;
+        }),
+        ["919033"] = (OpCode.NewTable, null),
+        ["909190911591990"] = (OpCode.Self, instruction => instruction.C += 255),
+        ["90919091159199190"] = (OpCode.Self, null),
+        ["91901591909190"] = (OpCode.Add, null),
+        ["919015919090"] = (OpCode.Add, instruction => instruction.C += 255),
+        ["919015909190"] = (OpCode.Add, instruction => instruction.B += 255),
+        ["9190159090"] = (OpCode.Add, instruction =>
+        {
+            instruction.B += 255;
+            instruction.C += 255;
+        }),
+        ["91901691909190"] = (OpCode.Sub, null),
+        ["919016919090"] = (OpCode.Sub, instruction => instruction.C += 255),
+        ["919016909190"] = (OpCode.Sub, instruction => instruction.B += 255),
+        ["9190169090"] = (OpCode.Sub, instruction =>
+        {
+            instruction.B += 255;
+            instruction.C += 255;
+        }),
+        ["91901791909190"] = (OpCode.Mul, null),
+        ["919017919090"] = (OpCode.Mul, instruction => instruction.C += 255),
+        ["919017909190"] = (OpCode.Mul, instruction => instruction.B += 255),
+        ["9190179090"] = (OpCode.Mul, instruction =>
+        {
+            instruction.B += 255;
+            instruction.C += 255;
+        }),
+        ["91901891909190"] = (OpCode.Div, null),
+        ["919018919090"] = (OpCode.Div, instruction => instruction.C += 255),
+        ["919018909190"] = (OpCode.Div, instruction => instruction.B += 255),
+        ["9190189090"] = (OpCode.Div, instruction =>
+        {
+            instruction.B += 255;
+            instruction.C += 255;
+        }),
+        ["91901991909190"] = (OpCode.Mod, null),
+        ["919019919090"] = (OpCode.Mod, instruction => instruction.C += 255),
+        ["919019909190"] = (OpCode.Mod, instruction => instruction.B += 255),
+        ["9190199090"] = (OpCode.Mod, instruction =>
+        {
+            instruction.B += 255;
+            instruction.C += 255;
+        }),
+        ["91902091909190"] = (OpCode.Pow, null),
+        ["919020919090"] = (OpCode.Pow, instruction => instruction.C += 255),
+        ["919020909190"] = (OpCode.Pow, instruction => instruction.B += 255),
+        ["9190209090"] = (OpCode.Pow, instruction =>
+        {
+            instruction.B += 255;
+            instruction.C += 255;
+        }),
+        ["9190319190"] = (OpCode.Unm, null),
+        ["9190349190"] = (OpCode.Not, null),
+        ["9190289190"] = (OpCode.Len, null),
+        ["909113159032919190"] = (OpCode.Concat, null),
+        ["2990"] = (OpCode.Jmp, instruction => instruction.B -= instruction.PC + 1),
+        ["101225919091902915292990"] = (OpCode.Eq, instruction =>
+        {
+            instruction.B = instruction.A;
+            instruction.A = 0;
+        }),
+        ["1012259190902915292990"] = (OpCode.Eq, instruction =>
+        {
+            instruction.B = instruction.A;
+            instruction.A = 0;
+            instruction.C += 255;
+        }),
+        ["1012259091902915292990"] = (OpCode.Eq, instruction =>
+        {
+            instruction.B = instruction.A + 255;
+            instruction.A = 0;
+        }),
+        ["10122590902915292990"] = (OpCode.Eq, instruction =>
+        {
+            instruction.B = instruction.A + 255;
+            instruction.A = 0;
+            instruction.C += 255;
+        }),
+        ["101226919091902915292990"] = (OpCode.Eq, instruction =>
+        {
+            instruction.B = instruction.A;
+            instruction.A = 1;
+        }),
+        ["1012269190902915292990"] = (OpCode.Eq, instruction =>
+        {
+            instruction.B = instruction.A;
+            instruction.A = 1;
+            instruction.C += 255;
+        }),
+        ["1012269091902915292990"] = (OpCode.Eq, instruction =>
+        {
+            instruction.B = instruction.A + 255;
+            instruction.A = 1;
+        }),
+        ["10122690902915292990"] = (OpCode.Eq, instruction =>
+        {
+            instruction.B = instruction.A + 255;
+            instruction.A = 1;
+            instruction.C += 255;
+        }),
+        ["2936352591909190901529"] = (OpCode.Eq, instruction =>
+        {
+            instruction.B = instruction.A;
+            instruction.A = 1;
+        }),
+        ["101221919091902915292990"] = (OpCode.Lt, instruction =>
+        {
+            instruction.B = instruction.A;
+            instruction.A = 0;
+        }),
+        ["1012219091902915292990"] = (OpCode.Lt, instruction =>
+        {
+            instruction.B = instruction.A + 255;
+            instruction.A = 0;
+        }),
+        ["1012219190902915292990"] = (OpCode.Lt, instruction =>
+        {
+            instruction.B = instruction.A;
+            instruction.A = 0;
+            instruction.C += 255;
+        }),
+        ["10122190902915292990"] = (OpCode.Lt, instruction =>
+        {
+            instruction.B = instruction.A + 255;
+            instruction.A = 0;
+            instruction.C += 255;
+        }),
+        ["101221919091902990291529"] = (OpCode.Lt, instruction =>
+        {
+            instruction.B = instruction.A;
+            instruction.A = 1;
+        }),
+        ["1012219091902990291529"] = (OpCode.Lt, instruction =>
+        {
+            instruction.B = instruction.A + 255;
+            instruction.A = 1;
+        }),
+        ["1012219190902990291529"] = (OpCode.Lt, instruction =>
+        {
+            instruction.B = instruction.A;
+            instruction.A = 1;
+            instruction.C += 255;
+        }),
+        ["10122190902990291529"] = (OpCode.Lt, instruction =>
+        {
+            instruction.B = instruction.A + 255;
+            instruction.A = 1;
+            instruction.C += 255;
+        }),
+        ["101223919091902915292990"] = (OpCode.Le, instruction =>
+        {
+            instruction.B = instruction.A;
+            instruction.A = 0;
+        }),
+        ["1012239091902915292990"] = (OpCode.Le, instruction =>
+        {
+            instruction.B = instruction.A + 255;
+            instruction.A = 0;
+        }),
+        ["1012239190902915292990"] = (OpCode.Le, instruction =>
+        {
+            instruction.B = instruction.A;
+            instruction.A = 0;
+            instruction.C += 255;
+        }),
+        ["10122390902915292990"] = (OpCode.Le, instruction =>
+        {
+            instruction.B = instruction.A + 255;
+            instruction.A = 0;
+            instruction.C += 255;
+        }),
+        ["101223919091902990291529"] = (OpCode.Le, instruction =>
+        {
+            instruction.B = instruction.A;
+            instruction.A = 1;
+        }),
+        ["1012239190902990291529"] = (OpCode.Le, instruction =>
+        {
+            instruction.B = instruction.A;
+            instruction.A = 1;
+            instruction.C += 255;
+        }),
+        ["1012239091902990291529"] = (OpCode.Le, instruction =>
+        {
+            instruction.B = instruction.A + 255;
+            instruction.A = 1;
+        }),
+        ["10122390902990291529"] = (OpCode.Le, instruction =>
+        {
+            instruction.B = instruction.A + 255;
+            instruction.A = 1;
+            instruction.C += 255;
+        }),
+        ["101291902915292990"] = (OpCode.Test, instruction =>
+        {
+            instruction.B = 0;
+            instruction.C = 0;
+        }),
+        ["10123491902915292990"] = (OpCode.Test, instruction =>
+        {
+            instruction.B = 0;
+            instruction.C = 1;
+        }),
+        ["9190101229152991902990"] = (OpCode.TestSet, instruction =>
+        {
+            instruction.B = instruction.C;
+            instruction.C = 0;
+        }),
+        ["919010123429152991902990"] = (OpCode.TestSet, instruction =>
+        {
+            instruction.B = instruction.C;
+            instruction.C = 1;
+        }),
+        ["149190"] = (OpCode.Call, null),
+        ["909114919115"] = (OpCode.Call, null),
+        ["9091149114511590"] = (OpCode.Call, instruction => instruction.B -= instruction.A - 1),
+        ["9014919115"] = (OpCode.Call, null),
+        ["90149114511590"] = (OpCode.Call, instruction => instruction.B -= instruction.A - 1),
+        ["9091149114511530"] = (OpCode.Call, null),
+        ["903314919115139015919"] = (OpCode.Call, instruction => instruction.C -= instruction.A - 2),
+        ["90911491"] = (OpCode.Call, null),
+        ["90141491301615133015919"] = (OpCode.Call, null),
+        ["901414919115301615133015919"] = (OpCode.Call, instruction => instruction.B -= instruction.A - 1),
+        ["9014149114511590301615133015919"] = (OpCode.Call, instruction => instruction.B -= instruction.A - 1),
+        ["90149114511530"] = (OpCode.Call, null),
+        ["9033149114511590139015919"] = (OpCode.Call, instruction =>
+        {
+            instruction.B -= instruction.A - 1;
+            instruction.C -= instruction.A - 2;
+        }),
+        ["9033149114511530139015919"] = (OpCode.Call, instruction => instruction.C -= instruction.A - 2),
+        ["90331491901315919"] = (OpCode.Call, instruction => instruction.C -= instruction.A - 2),
+        ["9014149114511530301615133015919"] = (OpCode.Call, null),
+        ["9027149114511590"] = (OpCode.TailCall, instruction => instruction.B -= instruction.A - 1),
+        ["9027149114511530"] = (OpCode.TailCall, null),
+        ["27149190"] = (OpCode.TailCall, null),
+        ["27"] = (OpCode.Return, null),
+        ["279190"] = (OpCode.Return, null),
+        ["9027145130"] = (OpCode.Return, null),
+        ["902714511590"] = (OpCode.Return, instruction => instruction.B += 2),
+        ["9027919115"] = (OpCode.Return, null),
+        ["909115159191101122102391152990911524911529909115"] = (OpCode.ForLoop, instruction =>
+            instruction.B -= instruction.PC + 1),
+        ["909191151011122210122291152990911521911529909115"] = (OpCode.ForPrep, instruction =>
+            instruction.B -= instruction.PC + 2),
+        ["909015331491911591139115991012912990291529"] = (OpCode.TForLoop, instruction => instruction.B = 0),
+        ["909113153014691"] = (OpCode.SetList, null),
+        ["909113159014691"] = (OpCode.SetList, instruction => instruction.B -= instruction.A),
+        ["3313289132899910352512490999"] = (OpCode.Close, null),
+        ["990331473333927999999913902915299291012259916331991633299152891901483"] = (OpCode.Closure, null),
+        ["91901489903"] = (OpCode.Closure, null),
+        ["903016151330941691"] = (OpCode.VarArg, null),
+        ["909013919416"] = (OpCode.VarArg, instruction => instruction.B -= instruction.A - 1)
+    };
+}
+
+Deobfuscator.cs
+using System.Text;
+using MoonsecDeobfuscator.Ast;
+using MoonsecDeobfuscator.Ast.Literals;
+using MoonsecDeobfuscator.Ast.Statements;
+using MoonsecDeobfuscator.Bytecode.Models;
+using MoonsecDeobfuscator.Deobfuscation.Bytecode;
+using MoonsecDeobfuscator.Deobfuscation.Rewriters;
+using MoonsecDeobfuscator.Deobfuscation.Utils;
+using MoonsecDeobfuscator.Deobfuscation.Walkers;
+using NLua;
+using Function = MoonsecDeobfuscator.Bytecode.Models.Function;
+namespace MoonsecDeobfuscator.Deobfuscation;
+public class Deobfuscator
+{
+    private Context _ctx = new();
+    private Block _root = null!;
+    public Function Deobfuscate(string code, bool antiTamper = false)
+    {
+        _root = Block.FromString(code);
+        new Renamer().Walk(_root);
+        new ConstantReplacer(DecodeConstants()).Rewrite(_root, Order.PreOrder);
+        new ConstantFolder().Rewrite(_root, Order.PostOrder);
+        new Analyzer(_ctx).Walk(_root, symbols: true);
+        if (_root.Statements.Count > 3 && !antiTamper)
+            return Deobfuscate(HandleAntiTamper(), true);
+        new ControlFlowSolver().Rewrite(_ctx.Wrapper, Order.PostOrder);
+        new Renamer(_ctx.IdentifiedNames).Walk(_root);
+        var function = DeserializeBytecode();
+        var bytecodeDeobfuscator = new BytecodeDeobfuscator(function, _ctx);
+        function = bytecodeDeobfuscator.Deobfuscate();
+        return function;
+    }
+    private Dictionary<string, string[]> DecodeConstants()
+    {
+        var constants = StringCollector.Collect(_root);
+        return constants
+            .Select(it => it.Item1 != null
+                ? StringDecoding.Decode(it.Item2, (int) it.Item1)
+                : StringDecoding.DecodeEscape(it.Item2))
+            .Select(StringDecoding.DecodeConstants)
+            .SelectMany(map => map)
+            .ToDictionary(entry => entry.Key, entry => entry.Value);
+    }
+    private string HandleAntiTamper()
+    {
+        var function = DeserializeBytecode();
+        var instructions = function.Instructions
+            .Where(instr => instr is { IsKA: false, IsKB: true, IsKC: false })
+            .ToList();
+        var constant = function.Constants[instructions[^2].B - 1];
+        var key = ((NumberConstant) constant).Value;
+        var bytecodeString = ((StringLiteral) ((Assign) _root.Statements[2]).Values[0]).Value[1..^1];
+        var scriptString = ((StringLiteral) ((Assign) _root.Statements[3]).Values[0]).Value[1..^1];
+        _ctx = new Context
+        {
+            BytecodeString = bytecodeString
+        };
+        return Encoding.UTF8.GetString(StringDecoding.Decode(scriptString, (int) key));
+    }
+    private Function DeserializeBytecode()
+    {
+        SolveKeys();
+        var bytecode = StringDecoding.Decode(_ctx.BytecodeString, _ctx.BytecodeKey);
+        var deserializer = new Deserializer(bytecode, _ctx);
+        return deserializer.ReadFunction();
+    }
+    private void SolveKeys()
+    {
+        using var L = new Lua(openLibs: false);
+        if (_ctx.KeyExpressions.Count == 2)
+        {
+            var code = $"return {PrettyPrinter.AsString(_ctx.KeyExpressions.First())}";
+            _ctx.ConstantKey = Convert.ToInt32(L.DoString(code)[0]);
+        }
+        {
+            var code = $"return {PrettyPrinter.AsString(_ctx.KeyExpressions.Last())}";
+            _ctx.BytecodeKey = Convert.ToInt32(L.DoString(code)[0]);
+        }
+    }
+}
+
+Context.cs
+using MoonsecDeobfuscator.Ast.Expressions;
+using MoonsecDeobfuscator.Ast.Statements;
+using MoonsecDeobfuscator.Deobfuscation.Bytecode;
+namespace MoonsecDeobfuscator.Deobfuscation;
+public class Context
+{
+    public readonly Dictionary<string, string> IdentifiedNames = [];
+    public readonly List<BinaryExpression> KeyExpressions = [];
+    public readonly List<ProtoStep> ProtoFormat = [];
+    public readonly Dictionary<int, ProtoStep> ConstantFormat = [];
+    public LocalFunction Wrapper;
+    public If VmTree;
+    public string BytecodeString;
+    public int BytecodeKey, ConstantKey;
+}
+
+Handler.cs
+using MoonsecDeobfuscator.Ast;
+using MoonsecDeobfuscator.Bytecode.Models;
+using MoonsecDeobfuscator.Deobfuscation.Rewriters;
+using MoonsecDeobfuscator.Deobfuscation.Utils;
+using MoonsecDeobfuscator.Deobfuscation.Walkers;
+using Function = MoonsecDeobfuscator.Bytecode.Models.Function;
+namespace MoonsecDeobfuscator.Deobfuscation;
+public class Handler(Block body, string fingerprint)
+{
+    public readonly Block Body = body;
+    public readonly string Fingerprint = fingerprint;
+}
+public class BytecodeDeobfuscator(Function function, Context ctx)
+{
+    private readonly Dictionary<int, List<Handler>> _handlerMapping = [];
+    private readonly Function _rootFunction = function;
+    public Function Deobfuscate()
+    {
+        CreateHandlerMapping();
+        DeobfuscateOpcodes(_rootFunction);
+        DeobfuscateControlFlow(_rootFunction);
+        FixProgramEntry();
+        RebuildConstantPool(_rootFunction);
+        SetFlags(_rootFunction);
+        _rootFunction.IsVarArgFlag = 2;
+        return _rootFunction;
+    }
+    private static void DeobfuscateControlFlow(Function function)
+    {
+        var jumpReferences = ComputeJumpReferences(function);
+        RemoveDeadCode(function);
+        RemoveTestFlip(function);
+        FixTailCall(function);
+        FixJumpOffsets(function, jumpReferences);
+        foreach (var childFunction in function.Functions)
+            DeobfuscateControlFlow(childFunction);
+    }
+    private static void RebuildConstantPool(Function function)
+    {
+        var remapping = new Dictionary<int, int>(function.Constants.Count);
+        var newOrder = new List<Constant>(function.Constants.Count);
+        var next = 0;
+        foreach (var instruction in function.Instructions)
+        {
+            switch (instruction.OpCode)
+            {
+                case OpCode.LoadK:
+                case OpCode.GetGlobal:
+                case OpCode.SetGlobal:
+                    instruction.B = Remap(instruction.B);
+                    break;
+                case OpCode.SetTable:
+                case OpCode.Eq:
+                case OpCode.Lt:
+                case OpCode.Le:
+                case OpCode.Add:
+                case OpCode.Sub:
+                case OpCode.Mul:
+                case OpCode.Div:
+                case OpCode.Mod:
+                case OpCode.Pow:
+                    instruction.B = RemapRK(instruction.B);
+                    instruction.C = RemapRK(instruction.C);
+                    break;
+                case OpCode.GetTable:
+                case OpCode.Self:
+                    instruction.C = RemapRK(instruction.C);
+                    break;
+            }
+        }
+        function.Constants = newOrder;
+        function.Functions.ForEach(RebuildConstantPool);
+        return;
+        int Remap(int oldIdx)
+        {
+            if (!remapping.TryGetValue(oldIdx, out var newIdx))
+            {
+                newIdx = next++;
+                remapping[oldIdx] = newIdx;
+                newOrder.Add(function.Constants[oldIdx]);
+            }
+            return newIdx;
+        }
+        int RemapRK(int operand) => operand >= 256 ? Remap(operand - 256) + 256 : operand;
+    }
+    private static void RemoveTestFlip(Function function)
+    {
+        var instructions = function.Instructions;
+        for (var i = 0; i < instructions.Count; i++)
+        {
+            var instruction = instructions[i];
+            if (instruction.OpCode is not (OpCode.Eq or OpCode.Lt or OpCode.Le or OpCode.Test))
+                continue;
+            var next1 = instructions[i + 1];
+            var next2 = instructions[i + 2];
+            if (!(next1.OpCode == OpCode.Jmp && next2.OpCode == OpCode.Jmp))
+                continue;
+            switch (instruction.OpCode)
+            {
+                case OpCode.Eq:
+                case OpCode.Lt:
+                case OpCode.Le:
+                    instruction.A = instruction.A == 1 ? 0 : 1;
+                    break;
+                case OpCode.Test:
+                    instruction.C = instruction.C == 1 ? 0 : 1;
+                    break;
+            }
+            instructions.RemoveAt(i + 1);
+        }
+    }
+    private static void FixTailCall(Function function)
+    {
+        var instructions = function.Instructions;
+        for (var i = 0; i < instructions.Count; i++)
+        {
+            var instruction = instructions[i];
+            if (instruction.OpCode != OpCode.TailCall)
+                continue;
+            if (i + 1 < instructions.Count && instructions[i + 1].OpCode == OpCode.Return)
+                continue;
+            instructions.Insert(i + 1, new Instruction
+            {
+                OpCode = OpCode.Return,
+                A = instruction.A
+            });
+        }
+    }
+    private void FixProgramEntry()
+    {
+        var check = _rootFunction.Instructions
+            .FirstOrDefault(instr => instr is { OpCode: OpCode.Eq, C: > 255 }
+                && instr.Function.Constants[instr.C - 256] is StringConstant sc
+                && sc.Value.StartsWith("This file was protected with MoonSec V3"));
+        if (check == null)
+            return;
+        var idx = _rootFunction.Instructions.IndexOf(check);
+        for (var i = idx; i < _rootFunction.Instructions.Count; i++)
+        {
+            var instruction = _rootFunction.Instructions[i];
+            if (instruction.OpCode == OpCode.Return)
+            {
+                _rootFunction.Instructions.RemoveRange(0, i + 1);
+                break;
+            }
+        }
+        RemoveUnusedFunctions();
+    }
+    private void RemoveUnusedFunctions()
+    {
+        var functionReferences = new Dictionary<Instruction, Function>();
+        foreach (var instruction in _rootFunction.Instructions)
+        {
+            if (instruction.OpCode == OpCode.Closure)
+                functionReferences[instruction] = _rootFunction.Functions[instruction.B];
+        }
+        _rootFunction.Functions.RemoveAll(f => !functionReferences.ContainsValue(f));
+        foreach (var (instr, function) in functionReferences)
+            instr.B = _rootFunction.Functions.IndexOf(function);
+    }
+    private static void RemoveDeadCode(Function function)
+    {
+        function.Instructions.RemoveAll(instruction => instruction.IsDead);
+    }
+    private static void FixJumpOffsets(Function function, Dictionary<Instruction, Instruction> jumpReferences)
+    {
+        var instructions = function.Instructions;
+        var pos = new Dictionary<Instruction, int>();
+        for (var i = 0; i < instructions.Count; i++)
+            pos[instructions[i]] = i;
+        for (var i = 0; i < instructions.Count; i++)
+        {
+            var instruction = instructions[i];
+            if (jumpReferences.TryGetValue(instruction, out var target))
+                instruction.B = pos[target] - (i + 1);
+        }
+    }
+    private static void SetFlags(Function function)
+    {
+        function.IsVarArgFlag = 0;
+        var maxA = 0;
+        foreach (var instruction in function.Instructions)
+        {
+            var opcode = instruction.OpCode;
+            var A = instruction.A;
+            if (A > maxA)
+                maxA = A;
+            if (opcode == OpCode.Closure)
+                function.Functions[instruction.B].NumUpvalues = (byte) instruction.C;
+            else if (opcode == OpCode.VarArg)
+                function.IsVarArgFlag = 2;
+        }
+        function.MaxStackSize = (byte) (maxA + 1);
+        function.Functions.ForEach(SetFlags);
+    }
+    private static Dictionary<Instruction, Instruction> ComputeJumpReferences(Function function)
+    {
+        var jumpReferences = new Dictionary<Instruction, Instruction>();
+        var instructions = function.Instructions;
+        for (var i = 0; i < instructions.Count; i++)
+        {
+            var instruction = instructions[i];
+            if (instruction.OpCode is OpCode.Jmp or OpCode.ForLoop or OpCode.ForPrep)
+                jumpReferences[instruction] = instructions[(i + instruction.B) + 1];
+        }
+        return jumpReferences;
+    }
+    private void DeobfuscateOpcodes(Function function)
+    {
+        var instructions = function.Instructions;
+        var jmpSet = new HashSet<int>();
+        for (var i = 0; i < instructions.Count; i++)
+        {
+            var instruction = instructions[i];
+            var handlers = _handlerMapping[instruction.OpNum];
+            foreach (var handler in handlers)
+            {
+                DeobfuscateOpcode(instruction, handler);
+                if (instruction.OpCode == OpCode.Jmp)
+                    jmpSet.Add(i + instruction.B + 1);
+                if (instruction.OpCode is OpCode.Return or OpCode.TailCall)
+                {
+                    SkipDeadCode(instructions, jmpSet, ref i);
+                    break;
+                }
+                if (handler != handlers.Last() && i + 1 < instructions.Count)
+                    instruction = instructions[++i];
+            }
+        }
+        function.Functions.ForEach(DeobfuscateOpcodes);
+    }
+    private static void SkipDeadCode(List<Instruction> instructions, HashSet<int> jmpSet, ref int i)
+    {
+        while (++i < instructions.Count)
+        {
+            var nextIndex = i;
+            if (jmpSet.Contains(nextIndex))
+            {
+                i--;
+                break;
+            }
+            instructions[i].IsDead = true;
+        }
+    }
+    private static void DeobfuscateOpcode(Instruction instruction, Handler handler)
+    {
+        if (OpCodes.StaticOpcodes.TryGetValue(handler.Fingerprint, out var it))
+        {
+            instruction.OpCode = it.Item1;
+            it.Item2?.Invoke(instruction);
+        }
+        else
+        {
+            Console.Error.WriteLine($"Could not identify handler: {handler.Fingerprint}");
+            Console.Error.WriteLine(PrettyPrinter.AsString(handler.Body));
+        }
+    }
+    private void CreateHandlerMapping()
+    {
+        var solvedVmTree = new TreeSolver(ctx.VmTree, "enum").Solve();
+        foreach (var entry in solvedVmTree)
+            CreateHandler(entry.Key, entry.Value);
+    }
+    private void CreateHandler(int opcode, Block body)
+    {
+        var handlers = body.Statements
+            .WindowedByDiscardedPairs((a, b) => Matching.IsPcIncrement(a) && Matching.IsInstAssign(b))
+            .Select(stats =>
+            {
+                var block = new Block
+                {
+                    Statements = [..stats]
+                }.Clone();
+                new HandlerRewriter().Rewrite(block, Order.PostOrder, symbols: true, fixedPoint: true);
+                return block;
+            })
+            .Select(block => new Handler(block, FingerprintGenerator.Generate(block)))
+            .ToList();
+        _handlerMapping[opcode] = handlers;
+    }
+}
+
+StringCollector.cs
+using MoonsecDeobfuscator.Ast;
+using MoonsecDeobfuscator.Ast.Expressions;
+using MoonsecDeobfuscator.Ast.Literals;
+using MoonsecDeobfuscator.Ast.Statements;
+namespace MoonsecDeobfuscator.Deobfuscation.Walkers;
+public class StringCollector : AstWalker
+{
+    private readonly List<(int?, string)> _strings = [];
+    public override void Visit(Call node)
+    {
+        if (node.Arguments is [NumberLiteral number, StringLiteral @string])
+            _strings.Add(((int) number.Value, @string.Value[1..^1]));
+        base.Visit(node);
+    }
+    public override void Visit(StringLiteral node)
+    {
+        var value = node.Value;
+        if (value.StartsWith("\"\\4\\8"))
+            _strings.Add((null, value[1..^1]));
+    }
+    public static List<(int?, string)> Collect(Node node)
+    {
+        var walker = new StringCollector();
+        walker.Visit(node);
+        return walker._strings;
+    }
+}
+
+FingerprintGenerator.cs
+using System.Text;
+using MoonsecDeobfuscator.Ast;
+using MoonsecDeobfuscator.Ast.Expressions;
+using MoonsecDeobfuscator.Ast.Statements;
+namespace MoonsecDeobfuscator.Deobfuscation.Walkers;
+public class FingerprintGenerator : AstWalker
+{
+    private enum Operation
+    {
+        InstRef,
+        StkRef,
+        UpvRef,
+        EnvRef,
+        VarArgRef,
+        UnpackRef,
+        InsertRef,
+        SetMetatableRef,
+        WrapProtoRef,
+        Access,
+        If,
+        ElseIf,
+        Else,
+        For,
+        Call,
+        Add,
+        Sub,
+        Mul,
+        Div,
+        Mod,
+        Pow,
+        LessThan,
+        GreaterThan,
+        LessThanOrEquals,
+        GreaterThanOrEquals,
+        Equals,
+        NotEquals,
+        Return,
+        Len,
+        PcRef,
+        TopRef,
+        Negate,
+        Concat,
+        Table,
+        Not,
+        And,
+        Or
+    }
+    private readonly List<Operation> _operations = [];
+    public override void Visit(Name node)
+    {
+        switch (node.Value)
+        {
+            case "stk":
+                _operations.Add(Operation.StkRef);
+                break;
+            case "env":
+                _operations.Add(Operation.EnvRef);
+                break;
+            case "upv":
+                _operations.Add(Operation.UpvRef);
+                break;
+            case "inst":
+                _operations.Add(Operation.InstRef);
+                break;
+            case "vararg":
+                _operations.Add(Operation.VarArgRef);
+                break;
+            case "unpack":
+                _operations.Add(Operation.UnpackRef);
+                break;
+            case "setmetatable":
+                _operations.Add(Operation.SetMetatableRef);
+                break;
+            case "pc":
+                _operations.Add(Operation.PcRef);
+                break;
+            case "top":
+                _operations.Add(Operation.TopRef);
+                break;
+            case "wrap_proto":
+                _operations.Add(Operation.WrapProtoRef);
+                break;
+        }
+    }
+    public override void Visit(MemberAccess node)
+    {
+        if (node is { Table: Name { Value: "table" }, Key.Value: "insert" })
+            _operations.Add(Operation.InsertRef);
+        else
+            _operations.Add(Operation.Access);
+        base.Visit(node);
+    }
+    public override void Visit(ElementAccess node)
+    {
+        _operations.Add(Operation.Access);
+        base.Visit(node);
+    }
+    public override void Visit(If node)
+    {
+        _operations.Add(Operation.If);
+        foreach (var _ in node.ElseIfClauses)
+            _operations.Add(Operation.ElseIf);
+        if (node.ElseBody != null)
+            _operations.Add(Operation.Else);
+        base.Visit(node);
+    }
+    public override void Visit(NumericFor node)
+    {
+        _operations.Add(Operation.For);
+        base.Visit(node);
+    }
+    public override void Visit(Call node)
+    {
+        _operations.Add(Operation.Call);
+        base.Visit(node);
+    }
+    public override void Visit(BinaryExpression node)
+    {
+        switch (node.Operator)
+        {
+            case BinaryOperator.Add:
+                _operations.Add(Operation.Add);
+                break;
+            case BinaryOperator.Sub:
+                _operations.Add(Operation.Sub);
+                break;
+            case BinaryOperator.Mul:
+                _operations.Add(Operation.Mul);
+                break;
+            case BinaryOperator.Div:
+                _operations.Add(Operation.Div);
+                break;
+            case BinaryOperator.Mod:
+                _operations.Add(Operation.Mod);
+                break;
+            case BinaryOperator.Pow:
+                _operations.Add(Operation.Pow);
+                break;
+            case BinaryOperator.LessThan:
+                _operations.Add(Operation.LessThan);
+                break;
+            case BinaryOperator.LessThanOrEquals:
+                _operations.Add(Operation.LessThanOrEquals);
+                break;
+            case BinaryOperator.GreaterThan:
+                _operations.Add(Operation.GreaterThan);
+                break;
+            case BinaryOperator.GreaterThanOrEquals:
+                _operations.Add(Operation.GreaterThanOrEquals);
+                break;
+            case BinaryOperator.Equals:
+                _operations.Add(Operation.Equals);
+                break;
+            case BinaryOperator.NotEquals:
+                _operations.Add(Operation.NotEquals);
+                break;
+            case BinaryOperator.Concat:
+                _operations.Add(Operation.Concat);
+                break;
+            case BinaryOperator.And:
+                _operations.Add(Operation.And);
+                break;
+            case BinaryOperator.Or:
+                _operations.Add(Operation.Or);
+                break;
+        }
+        base.Visit(node);
+    }
+    public override void Visit(UnaryExpression node)
+    {
+        switch (node.Operator)
+        {
+            case UnaryOperator.Length:
+                _operations.Add(Operation.Len);
+                break;
+            case UnaryOperator.Negate:
+                _operations.Add(Operation.Negate);
+                break;
+            case UnaryOperator.Not:
+                _operations.Add(Operation.Not);
+                break;
+        }
+        base.Visit(node);
+    }
+    public override void Visit(Return node)
+    {
+        _operations.Add(Operation.Return);
+        base.Visit(node);
+    }
+    public override void Visit(Table node)
+    {
+        _operations.Add(Operation.Table);
+        base.Visit(node);
+    }
+    public static string Generate(Block node)
+    {
+        var walker = new FingerprintGenerator();
+        walker.Visit(node);
+        var result = new StringBuilder();
+        foreach (var operation in walker._operations)
+            result.Append((int) operation);
+        return result.ToString();
+    }
+}
+
+Renamer.cs
+using MoonsecDeobfuscator.Ast;
+using MoonsecDeobfuscator.Ast.Expressions;
+using MoonsecDeobfuscator.Ast.Statements;
+namespace MoonsecDeobfuscator.Deobfuscation.Walkers;
+public class Renamer : AstWalker
+{
+    private readonly Dictionary<string, string> _names;
+    private readonly Stack<Scope> _scopes = [];
+    private int _counter;
+    public Renamer(Dictionary<string, string> names)
+    {
+        _names = names;
+        PushScope();
+    }
+    public Renamer() : this([])
+    {
+    }
+    private Scope PushScope()
+    {
+        var scope = new Scope();
+        _scopes.Push(scope);
+        return scope;
+    }
+    private void PopScope()
+    {
+        _scopes.Pop();
+    }
+    private void RenameAndDefine(Scope scope, Name name)
+    {
+        var newName = _names.TryGetValue(name.Value, out var n) ? n : $"{_counter++}";
+        scope.Define(name.Value, newName);
+        name.Value = newName;
+    }
+    public override void Visit(LocalFunction node)
+    {
+        RenameAndDefine(_scopes.Peek(), node.Name);
+        var scope = PushScope();
+        foreach (var name in node.Parameters.Names)
+            RenameAndDefine(scope, name);
+        Visit(node.Body);
+        PopScope();
+    }
+    public override void Visit(Function node)
+    {
+        RenameAndDefine(_scopes.Peek(), node.Name);
+        var scope = PushScope();
+        foreach (var name in node.Parameters.Names)
+            RenameAndDefine(scope, name);
+        Visit(node.Body);
+        PopScope();
+    }
+    public override void Visit(AnonymousFunction node)
+    {
+        var scope = PushScope();
+        foreach (var name in node.Parameters.Names)
+            RenameAndDefine(scope, name);
+        Visit(node.Body);
+        PopScope();
+    }
+    public override void Visit(GenericFor node)
+    {
+        var scope = PushScope();
+        foreach (var name in node.Names)
+            RenameAndDefine(scope, name);
+        Visit(node.Body);
+        PopScope();
+    }
+    public override void Visit(NumericFor node)
+    {
+        Visit(node.InitialValue);
+        Visit(node.FinalValue);
+        if (node.Step != null)
+            Visit(node.Step);
+        RenameAndDefine(PushScope(), node.IteratorName);
+        Visit(node.Body);
+        PopScope();
+    }
+    public override void Visit(Repeat node)
+    {
+        PushScope();
+        Visit(node.Body);
+        Visit(node.Condition);
+        PopScope();
+    }
+    public override void Visit(While node)
+    {
+        Visit(node.Condition);
+        PushScope();
+        Visit(node.Body);
+        PopScope();
+    }
+    public override void Visit(Do node)
+    {
+        PushScope();
+        Visit(node.Body);
+        PopScope();
+    }
+    public override void Visit(If node)
+    {
+        Visit(node.IfClause);
+        VisitList(node.ElseIfClauses);
+        var elseBody = node.ElseBody;
+        if (elseBody != null)
+        {
+            PushScope();
+            Visit(elseBody);
+            PopScope();
+        }
+    }
+    public override void Visit(If.Clause node)
+    {
+        Visit(node.Condition);
+        PushScope();
+        Visit(node.Body);
+        PopScope();
+    }
+    public override void Visit(LocalDeclare node)
+    {
+        VisitList(node.Values);
+        var scope = _scopes.Peek();
+        foreach (var name in node.Names)
+            RenameAndDefine(scope, name);
+    }
+    public override void Visit(Assign node)
+    {
+        VisitList(node.Values);
+        VisitList(node.Variables);
+    }
+    public override void Visit(Name node)
+    {
+        var value = node.Value;
+        foreach (var scope in _scopes)
+        {
+            if (!scope.IsDefined(value))
+                continue;
+            node.Value = scope.GetNewName(value);
+            break;
+        }
+    }
+    private class Scope
+    {
+        private readonly Dictionary<string, Stack<string>> _variables = [];
+        public void Define(string name, string newName)
+        {
+            if (!_variables.ContainsKey(name))
+                _variables[name] = [];
+            _variables[name].Push(newName);
+        }
+        public bool IsDefined(string name) => _variables.ContainsKey(name);
+        public string GetNewName(string name) => _variables[name].Peek();
+    }
+}
+
+Analyzer.cs
+using MoonsecDeobfuscator.Ast;
+using MoonsecDeobfuscator.Ast.Expressions;
+using MoonsecDeobfuscator.Ast.Literals;
+using MoonsecDeobfuscator.Ast.Statements;
+using MoonsecDeobfuscator.Deobfuscation.Bytecode;
+namespace MoonsecDeobfuscator.Deobfuscation.Walkers;
+public class Analyzer(Context ctx) : AstWalker
+{
+    private int _funcCounter;
+    public override void Visit(LocalFunction node)
+    {
+        switch (_funcCounter++)
+        {
+            case 8:
+                GetProtoFormat(node);
+                break;
+            case 10:
+                IdentifyWrapProto(node);
+                break;
+            case 11:
+                IdentifyWrapper(node);
+                break;
+        }
+        base.Visit(node);
+    }
+    public override void Visit(Call node)
+    {
+        if (node.Arguments is [Name, StringLiteral @string])
+            ctx.BytecodeString = @string.Value.Trim('"');
+        base.Visit(node);
+    }
+    public override void Visit(BinaryExpression node)
+    {
+        if (node is { Operator: BinaryOperator.Add, Right: Call })
+        {
+            ctx.KeyExpressions.Add(node);
+            return;
+        }
+        base.Visit(node);
+    }
+    public override void Visit(LocalDeclare node)
+    {
+        if (node is { Names: [Name name], Values: [Expression expression] })
+        {
+            var info = GetVariable(name.Value);
+            if (info is not { AssignmentCount: 0 })
+                return;
+            if (expression is NumberLiteral number)
+            {
+                switch ((int) number.Value)
+                {
+                    case 1:
+                        Identify(name.Value, "OP_ENUM");
+                        break;
+                    case 2:
+                        Identify(name.Value, "OP_A");
+                        break;
+                    case 3:
+                        Identify(name.Value, "OP_B");
+                        break;
+                    case 4:
+                        Identify(name.Value, "OP_C");
+                        break;
+                }
+            }
+            else if (expression is BinaryExpression { Left: Name { Value: "unpack" } })
+            {
+                Identify(name.Value, "unpack");
+            }
+        }
+        base.Visit(node);
+    }
+    private void GetProtoFormat(LocalFunction node)
+    {
+        foreach (var stat in node.Body.Statements)
+        {
+            if (stat is Assign)
+            {
+                ctx.ProtoFormat.Add(ProtoStep.NumParams);
+            }
+            else if (stat is NumericFor numericFor)
+            {
+                switch (numericFor.Body.Statements.Count)
+                {
+                    case 1:
+                        ctx.ProtoFormat.Add(ProtoStep.Functions);
+                        break;
+                    case 2:
+                        ctx.ProtoFormat.Add(ProtoStep.Instructions);
+                        break;
+                    case 4:
+                        GetConstantFormat(numericFor);
+                        ctx.ProtoFormat.Add(ProtoStep.Constants);
+                        break;
+                }
+            }
+        }
+    }
+    private void GetConstantFormat(NumericFor node)
+    {
+        var values = node.Body.DescendantNodes()
+            .Where(it => it is BinaryExpression { Operator: BinaryOperator.Equals })
+            .Select(it => (BinaryExpression) it)
+            .Select(it => (byte) ((NumberLiteral) it.Right).Value)
+            .ToList();
+        ctx.ConstantFormat[values[0]] = ProtoStep.BooleanConstant;
+        ctx.ConstantFormat[values[1]] = ProtoStep.NumberConstant;
+        ctx.ConstantFormat[values[2]] = ProtoStep.StringConstant;
+    }
+    private void IdentifyWrapProto(LocalFunction node)
+    {
+        var names = node.Parameters.Names;
+        Identify(node.Name.Value, "wrap_proto");
+        Identify(names[0].Value, "proto");
+        Identify(names[1].Value, "upv");
+        Identify(names[2].Value, "env");
+    }
+    private void IdentifyWrapper(LocalFunction node)
+    {
+        var names = node.Body.ChildNodes()
+            .OfType<LocalDeclare>()
+            .SelectMany(decl => decl.Names)
+            .ToList();
+        Identify(names[0].Value, "insts");
+        Identify(names[1].Value, "protos");
+        Identify(names[2].Value, "params");
+        Identify(names[4].Value, "_R");
+        Identify(names[5].Value, "pc");
+        Identify(names[6].Value, "top");
+        Identify(names[7].Value, "vararg");
+        Identify(names[9].Value, "args");
+        Identify(names[10].Value, "pcount");
+        Identify(names[11].Value, "lupv");
+        Identify(names[12].Value, "stk");
+        Identify(names[14].Value, "varargz");
+        Identify(names[15].Value, "inst");
+        Identify(names[16].Value, "enum");
+        ctx.Wrapper = node;
+        ctx.VmTree = (If) node.DescendantNodes()
+            .First(n => n is If { IfClause.Condition: BinaryExpression { Left: Name name } }
+                && name.Value == names[16].Value);
+    }
+    private void Identify(string name, string newName)
+    {
+        ctx.IdentifiedNames[name] = newName;
+    }
+}
+
+TreeSolver.cs
+using MoonsecDeobfuscator.Ast;
+using MoonsecDeobfuscator.Ast.Expressions;
+using MoonsecDeobfuscator.Ast.Literals;
+using MoonsecDeobfuscator.Ast.Statements;
+using QuikGraph;
+namespace MoonsecDeobfuscator.Deobfuscation.Utils;
+public class TreeSolver(If tree, string stateName)
+{
+    private enum EdgeType
+    {
+        Then,
+        Else
+    }
+    private class Range(int min, int max)
+    {
+        public int Min = min;
+        public int Max = max;
+    }
+    private class Vertex
+    {
+        public BinaryOperator? Operator;
+        public int? ConstantValue;
+        public Range? Range;
+        public Block? Body;
+    }
+    private readonly BidirectionalGraph<Vertex, TaggedEdge<Vertex, EdgeType>> _graph = new();
+    public Dictionary<int, Block> Solve()
+    {
+        AddBranches(tree, null, EdgeType.Then);
+        SetRanges();
+        ReduceRanges();
+        RemoveUnreachable();
+        var result = new Dictionary<int, Block>();
+        foreach (var vertex in _graph.Vertices.Where(IsTerminal))
+        {
+            var range = vertex.Range!;
+            if (range.Min != range.Max)
+                throw new Exception("Failed to reduce range!");
+            result[range.Min] = vertex.Body!;
+        }
+        return result;
+    }
+    private void RemoveUnreachable()
+    {
+        var unreachable = _graph.Vertices
+            .Where(v => IsTerminal(v) && v.Range is { Min: < 0, Max: < 0 })
+            .ToHashSet();
+        foreach (var vertex in unreachable)
+            _graph.RemoveVertex(vertex);
+    }
+    private void ReduceRanges()
+    {
+        var vertices = _graph.Vertices.ToList();
+        var root = vertices.First(v => _graph.InDegree(v) == 0);
+        var leafs = vertices.Where(IsTerminal);
+        foreach (var leaf in leafs)
+        {
+            var range = leaf.Range!;
+            for (var i = range.Min; i <= range.Max; i++)
+            {
+                if (HasValidPath(leaf, root, i))
+                {
+                    range.Min = range.Max = i;
+                    break;
+                }
+                if (i == range.Max)
+                    range.Min = range.Max = -1;
+            }
+        }
+    }
+    private bool HasValidPath(Vertex current, Vertex root, int state)
+    {
+        if (current == root)
+            return true;
+        foreach (var edge in _graph.InEdges(current))
+        {
+            var source = edge.Source;
+            if (IsValidPath(source, edge, state) && HasValidPath(source, root, state))
+                return true;
+        }
+        return false;
+    }
+    private static bool IsValidPath(Vertex vertex, TaggedEdge<Vertex, EdgeType> edge, int state)
+    {
+        var constant = (int) vertex.ConstantValue!;
+        var valid = vertex.Operator! switch
+        {
+            BinaryOperator.Equals => state == constant,
+            BinaryOperator.NotEquals => state != constant,
+            BinaryOperator.LessThanOrEquals => state <= constant,
+            BinaryOperator.GreaterThanOrEquals => state >= constant,
+            BinaryOperator.LessThan => state < constant,
+            BinaryOperator.GreaterThan => state > constant,
+            _ => throw new Exception("Invalid operator in IsValidPath!")
+        };
+        return edge.Tag == EdgeType.Then == valid;
+    }
+    private void SetRanges()
+    {
+        foreach (var node in _graph.Vertices)
+        {
+            if (IsTerminal(node))
+                continue;
+            var edges = _graph.OutEdges(node).ToList();
+            if (edges.Count != 2)
+                throw new Exception($"Expected 2 edges but got {edges.Count}");
+            var thenEdge = edges.First(edge => edge.Tag == EdgeType.Then);
+            var elseEdge = edges.First(edge => edge.Tag == EdgeType.Else);
+            var ranges = ComputeRanges(node);
+            var thenTarget = thenEdge.Target;
+            var elseTarget = elseEdge.Target;
+            if (IsTerminal(thenTarget))
+                thenTarget.Range = ranges.Then;
+            if (IsTerminal(elseTarget))
+                elseTarget.Range = ranges.Else;
+        }
+    }
+    private static (Range Then, Range Else) ComputeRanges(Vertex v)
+    {
+        var c = (int) v.ConstantValue!;
+        return v.Operator! switch
+        {
+            BinaryOperator.Equals => (new Range(c, c), new Range(Math.Max(c - 1, 0), c + 1)),
+            BinaryOperator.NotEquals => (new Range(Math.Max(c - 1, 0), c + 1), new Range(c, c)),
+            BinaryOperator.LessThan => (new Range(Math.Max(c - 1, 0), Math.Max(c - 1, 0)), new Range(c, c)),
+            BinaryOperator.GreaterThan => (new Range(c + 1, c + 1), new Range(c, c)),
+            BinaryOperator.LessThanOrEquals => (new Range(c, c), new Range(c + 1, c + 1)),
+            BinaryOperator.GreaterThanOrEquals => (new Range(c, c), new Range(Math.Max(c - 1, 0), Math.Max(c - 1, 0))),
+            _ => throw new Exception("Invalid operator in ComputeRanges!")
+        };
+    }
+    private void AddBranches(If branch, Vertex? source, EdgeType edgeType)
+    {
+        var condition = (BinaryExpression) branch.IfClause.Condition;
+        var node = new Vertex
+        {
+            Operator = condition.Operator,
+            ConstantValue = (int) ((NumberLiteral) condition.Right).Value
+        };
+        _graph.AddVertex(node);
+        if (source != null)
+            _graph.AddEdge(new TaggedEdge<Vertex, EdgeType>(source, node, edgeType));
+        AddBranch(branch.IfClause.Body, node, EdgeType.Then);
+        AddBranch(branch.ElseBody!, node, EdgeType.Else);
+    }
+    private void AddBranch(Block body, Vertex source, EdgeType edgeType)
+    {
+        if (TreeContinues(body))
+        {
+            AddBranches((If) body.Statements[0], source, edgeType);
+        }
+        else
+        {
+            var leaf = new Vertex
+            {
+                Body = body,
+            };
+            _graph.AddVertex(leaf);
+            _graph.AddEdge(new TaggedEdge<Vertex, EdgeType>(source, leaf, edgeType));
+        }
+    }
+    private bool IsTerminal(Vertex vertex) => _graph.OutDegree(vertex) == 0;
+    private bool TreeContinues(Block node) =>
+        node.Statements is [If { IfClause.Condition: BinaryExpression { Left: Name name } }] && name.Value == stateName;
+}
+
+Matching.cs
+using MoonsecDeobfuscator.Ast.Expressions;
+using MoonsecDeobfuscator.Ast.Literals;
+using MoonsecDeobfuscator.Ast.Statements;
+namespace MoonsecDeobfuscator.Deobfuscation.Utils;
+public static class Matching
+{
+    public static bool IsEnumComparison(Expression node) =>
+        node is BinaryExpression { Left: Name { Value: "enum" } };
+    public static bool IsInstAssign(Statement node) => node is Assign
+    {
+        Variables: [Name { Value: "inst" }],
+        Values: [ElementAccess { Table: Name { Value: "insts" } }]
+    };
+    public static bool IsPcIncrement(Statement node) => node is Assign
+    {
+        Variables: [Name { Value: "pc" }],
+        Values:
+        [
+            BinaryExpression
+            {
+                Operator: BinaryOperator.Add,
+                Left: Name { Value: "pc" } or NumberLiteral,
+                Right: Name { Value: "pc" } or NumberLiteral
+            }
+        ]
+    };
+}
+
+StringDecoding.cs
+using System.Text;
+namespace MoonsecDeobfuscator.Deobfuscation.Utils;
+public static class StringDecoding
+{
+    public static byte[] DecodeEscape(string data)
+    {
+        var parts = data.Split('\\').Skip(1).ToArray();
+        var bytes = new byte[parts.Length];
+        for (var i = 0; i < bytes.Length; i++)
+            bytes[i] = byte.Parse(parts[i]);
+        return bytes;
+    }
+    public static byte[] Decode(string data, int key)
+    {
+        using var decoded = new MemoryStream((data.Length - 16) / 2);
+        var chars = new Dictionary<char, int>();
+        for (var i = 0; i < 16; i++)
+            chars[data[i]] = i;
+        var len = data.Length;
+        var rkey = key;
+        for (var i = 16; i < len; i += 2)
+        {
+            var c1 = data[i];
+            var c2 = i + 1 < len ? data[i + 1] : '\0';
+            var i1 = chars.ContainsKey(c1) ? chars[c1] : 0;
+            var i2 = chars.ContainsKey(c2) ? chars[c2] : 0;
+            decoded.WriteByte((byte) ((i1 * 16 + i2 + rkey) % 256));
+            rkey += key;
+        }
+        return decoded.ToArray();
+    }
+    public static Dictionary<string, string[]> DecodeConstants(byte[] data)
+    {
+        var constants = new Dictionary<string, string[]>();
+        using var stream = new MemoryStream(data);
+        using var reader = new BinaryReader(stream);
+        while (true)
+        {
+            var control = reader.ReadByte();
+            if (control == 5)
+                break;
+            if (control == 1)
+                control++;
+            var size = reader.ReadByte();
+            var first = Encoding.UTF8.GetString(reader.ReadBytes(size));
+            string[]? value = null;
+            switch (control)
+            {
+                case 0:
+                    var strSize = reader.ReadByte();
+                    var second = Encoding.UTF8.GetString(reader.ReadBytes(strSize));
+                    value = [first, second];
+                    break;
+                case 2:
+                case 4:
+                case 6:
+                    value = [first];
+                    break;
+            }
+            var key = Encoding.UTF8.GetString(reader.ReadBytes(8));
+            constants[key] = value!;
+        }
+        return constants;
+    }
+    public static string DecodeConstant(int key, byte[] bytes)
+    {
+        if (!(bytes.Length > 1 && bytes[0] > 0x7F))
+            return Encoding.UTF8.GetString(bytes);
+        var newBytes = new byte[bytes.Length - 1];
+        for (var i = 1; i < bytes.Length; i++)
+            newBytes[i - 1] = (byte) ((bytes[i] + key) % 256);
+        return Encoding.UTF8.GetString(newBytes);
+    }
+}
+
+Extensions.cs
+namespace MoonsecDeobfuscator.Deobfuscation.Utils;
+public static class Extensions
+{
+    public static IEnumerable<List<T>> WindowedByDiscardedPairs<T>(this IEnumerable<T> source, Func<T, T, bool> predicate)
+    {
+        using var e = source.GetEnumerator();
+        if (!e.MoveNext())
+            yield break;
+        var window = new List<T> { e.Current };
+        var previous = e.Current;
+        while (e.MoveNext())
+        {
+            var current = e.Current;
+            if (predicate(previous, current))
+            {
+                yield return window.Count > 1 ? [..window[..^1]] : [];
+                window.Clear();
+                previous = default!;
+                continue;
+            }
+            window.Add(current);
+            previous = current;
+        }
+        if (window.Count > 0)
+            yield return [..window];
+    }
+}
+
+HandlerRewriter.cs
+using MoonsecDeobfuscator.Ast;
+using MoonsecDeobfuscator.Ast.Expressions;
+using MoonsecDeobfuscator.Ast.Statements;
+namespace MoonsecDeobfuscator.Deobfuscation.Rewriters;
+public class HandlerRewriter : AstRewriter
+{
+    public override Node Visit(Call node)
+    {
+        var args = node.Arguments;
+        if (node.Function is Name { Value: "stk" } && args is [Name name1, Name name2])
+        {
+            var newArg1 = ReplaceWithElementAccess(name1);
+            var newArg2 = ReplaceWithElementAccess(name2);
+            if (name1 != newArg1 || name2 != newArg2)
+                return new Call(node.Function, [newArg1, newArg2]);
+        }
+        return node;
+    }
+    public override Node Visit(ElementAccess node)
+    {
+        var newTable = ReplaceWithName(node.Table);
+        var newKey = ReplaceWithName(node.Key);
+        if (node.Table != newTable || node.Key != newKey)
+            return new ElementAccess(newTable, newKey);
+        newKey = ReplaceWithElementAccess(node.Key);
+        if (node.Key != newKey)
+            return new ElementAccess(newTable, newKey);
+        return node;
+    }
+    public override Node Visit(Block node)
+    {
+        var unused = node.Statements
+            .Where(stat => stat is LocalDeclare decl && ShouldRemoveDeclaration(decl))
+            .ToHashSet();
+        if (unused.Count > 0)
+        {
+            node.Statements.RemoveAll(stat => unused.Contains(stat));
+            return new Block(node.Statements);
+        }
+        return node;
+    }
+    public override Node Visit(Assign node)
+    {
+        if (ShouldLocalizeAssignment(node))
+        {
+            var names = new NodeList<Name>(node.Variables.Select(name => (Name) name));
+            return new LocalDeclare(names, node.Values);
+        }
+        if (node is { Variables: [ElementAccess], Values: [Name name] })
+        {
+            var replacement = ReplaceWithElementAccess(name);
+            if (replacement != name)
+                return new Assign(node.Variables, [replacement]);
+        }
+        if (node is { Variables: [Name], Values: [Name name1] })
+        {
+            var newValue = ReplaceWithBinaryExpression(name1);
+            if (name1 != newValue)
+                return new Assign(node.Variables, [newValue]);
+        }
+        return node;
+    }
+    public override Node Visit(BinaryExpression node)
+    {
+        var newLeft = ReplaceWithElementAccess(node.Left);
+        var newRight = ReplaceWithElementAccess(node.Right);
+        if (node.Left != newLeft || node.Right != newRight)
+            return new BinaryExpression(node.Operator, newLeft, newRight);
+        newLeft = ReplaceWithName(node.Left);
+        newRight = ReplaceWithName(node.Right);
+        if (node.Left != newLeft || node.Right != newRight)
+            return new BinaryExpression(node.Operator, newLeft, newRight);
+        return node;
+    }
+    private bool ShouldRemoveDeclaration(LocalDeclare node)
+    {
+        if (node.Values.Count == 0)
+            return true;
+        foreach (var name in node.Names)
+        {
+            var info = GetVariable(name.Value);
+            if (info is { ReadCount: > 0 })
+                return false;
+        }
+        return true;
+    }
+    private bool ShouldLocalizeAssignment(Assign node)
+    {
+        foreach (var variable in node.Variables)
+        {
+            if (variable is not Name name)
+                return false;
+            var value = name.Value;
+            if (!value.StartsWith('_'))
+                return false;
+            if (GetVariable(value)!.DeclarationLocation != node)
+                return false;
+        }
+        return true;
+    }
+    private Expression ReplaceWithName(Expression node)
+    {
+        if (node is not Name name || !name.Value.StartsWith('_'))
+            return node;
+        return GetVariable(name.Value) is { Value: Name } info
+            ? info.Value.Clone()
+            : node;
+    }
+    private Expression ReplaceWithElementAccess(Expression node)
+    {
+        if (node is not Name name || !name.Value.StartsWith('_'))
+            return node;
+        return GetVariable(name.Value) is { Value: ElementAccess { Table: Name, Key: Name }, ReadCount: 1 } info
+            ? info.Value.Clone()
+            : node;
+    }
+    private Expression ReplaceWithBinaryExpression(Expression node)
+    {
+        if (node is not Name name || !name.Value.StartsWith('_'))
+            return node;
+        return GetVariable(name.Value) is { Value: BinaryExpression, ReadCount: 1, AssignmentCount: 0 } info
+            ? info.Value.Clone()
+            : node;
+    }
+}
+
+ControlFlowSolver.cs
+using MoonsecDeobfuscator.Ast;
+using MoonsecDeobfuscator.Ast.Expressions;
+using MoonsecDeobfuscator.Ast.Literals;
+using MoonsecDeobfuscator.Ast.Statements;
+using MoonsecDeobfuscator.Deobfuscation.Utils;
+namespace MoonsecDeobfuscator.Deobfuscation.Rewriters;
+public class ControlFlowSolver : AstRewriter
+{
+    public override Node Visit(Repeat node) =>
+        node is { Condition: BooleanLiteral { Value: true } } ? CreateReplacement(node.Body) : node;
+    public override Node Visit(NumericFor node)
+    {
+        var match = node is
+        {
+            Body.Statements: [If { IfClause.Body.Statements: [.., Break or Do] }, ..] or [.., Break or Do]
+        };
+        return match ? CreateReplacement(node.Body) : node;
+    }
+    public override Node Visit(If node) =>
+        node.IfClause.Body.Statements is [If, .., Label] ? CreateReplacement(node.IfClause.Body) : node;
+    public override Node Visit(Block node)
+    {
+        RemoveStateMachines(node);
+        RemoveUnreachable(node);
+        return node;
+    }
+    private static void RemoveUnreachable(Block node)
+    {
+        var statements = node.Statements;
+        var idx = statements.FindIndex(stat => stat is Do or Return or Break);
+        if (idx != -1 && idx + 1 < statements.Count)
+            statements.RemoveRange(idx + 1, statements.Count - idx - 1);
+    }
+    private static void RemoveStateMachines(Block node)
+    {
+        var stats = node.Statements;
+        var stateMachines = stats.Where(IsStateMachine).ToList();
+        if (stateMachines.Count == 0)
+            return;
+        foreach (var stateMachine in stateMachines)
+        {
+            var idx = stats.IndexOf(stateMachine);
+            var stateName = GetStateName(stateMachine);
+            var tree = GetTree(stateMachine);
+            var solved = new TreeSolver(tree, stateName).Solve()
+                .OrderBy(it => it.Key)
+                .SelectMany(it => it.Value.Statements);
+            stats.RemoveAt(idx);
+            stats.InsertRange(idx, solved);
+        }
+    }
+    private static If CreateReplacement(Block node)
+    {
+        var innerIf = (If) node.Statements[0];
+        var ifBody = new Block();
+        var elseBody = new Block();
+        ifBody.Statements.AddRange(innerIf.IfClause.Body.Statements
+            .TakeWhile(stat => stat is not (Break or Label or Goto)));
+        elseBody.Statements.AddRange(node.Statements
+            .Skip(1)
+            .TakeWhile(stat => stat is not (Break or Label or Goto)));
+        var clause = new If.Clause(innerIf.IfClause.Condition, ifBody);
+        return new If(clause, [], elseBody);
+    }
+    private static bool IsStateMachine(Statement node)
+    {
+        if (node is While { Condition: BinaryExpression { Right: NumberLiteral { Value: -1 } } })
+            return true;
+        return node is NumericFor
+        {
+            InitialValue: NumberLiteral,
+            FinalValue: NumberLiteral,
+            Body.Statements: [If]
+        };
+    }
+    private static string GetStateName(Statement node)
+    {
+        return node is While w
+            ? ((Name) ((BinaryExpression) w.Condition).Left).Value
+            : ((NumericFor) node).IteratorName.Value;
+    }
+    private static If GetTree(Statement node) =>
+        (If) (node is While w ? w.Body.Statements[0] : ((NumericFor) node).Body.Statements[0]);
+}
+
+ConstantReplacer.cs
+using MoonsecDeobfuscator.Ast;
+using MoonsecDeobfuscator.Ast.Expressions;
+using MoonsecDeobfuscator.Ast.Literals;
+namespace MoonsecDeobfuscator.Deobfuscation.Rewriters;
+public class ConstantReplacer(Dictionary<string, string[]> constants) : AstRewriter
+{
+    public override Node Visit(MemberAccess node) =>
+        constants.TryGetValue(node.Key.Value, out var values) ? CreateReplacement(values) : node;
+    private static Expression CreateReplacement(string[] values)
+    {
+        if (int.TryParse(values[0], out var result))
+            return new NumberLiteral(result);
+        Expression name = new Name(values[0]);
+        return values
+            .Skip(1)
+            .Aggregate(name, (acc, str) => new MemberAccess(acc, new Name(str)));
+    }
+}
+
+ConstantFolder.cs
+using MoonsecDeobfuscator.Ast;
+using MoonsecDeobfuscator.Ast.Expressions;
+using MoonsecDeobfuscator.Ast.Literals;
+namespace MoonsecDeobfuscator.Deobfuscation.Rewriters;
+public class ConstantFolder : AstRewriter
+{
+    private static Expression FoldUnaryExpression(UnaryExpression node)
+    {
+        if (CanFoldTableLen(node))
+            return FoldTableLen(node);
+        if (CanFoldNegation(node))
+            return FoldNegation(node);
+        return node;
+    }
+    private static NumberLiteral FoldTableLen(UnaryExpression node) => new(((Table) node.Operand).Entries.Count);
+    private static bool CanFoldTableLen(UnaryExpression node)
+    {
+        return node is { Operator: UnaryOperator.Length, Operand: Table table }
+            && table.Entries.All(entry => entry.Key == null && entry.Value is Literal and not Nil);
+    }
+    private static NumberLiteral FoldNegation(UnaryExpression node) => new(-((NumberLiteral) node.Operand).Value);
+    private static bool CanFoldNegation(UnaryExpression node) =>
+        node is { Operator: UnaryOperator.Negate, Operand: NumberLiteral };
+    private static BinaryExpression NormalizeComparison(BinaryExpression node)
+    {
+        if (node is not { Left: NumberLiteral, Right: not NumberLiteral })
+            return node;
+        switch (node.Operator)
+        {
+            case BinaryOperator.Equals:
+            case BinaryOperator.NotEquals:
+                (node.Left, node.Right) = (node.Right, node.Left);
+                break;
+            case BinaryOperator.LessThan:
+                node.Operator = BinaryOperator.GreaterThan;
+                (node.Left, node.Right) = (node.Right, node.Left);
+                break;
+            case BinaryOperator.GreaterThan:
+                node.Operator = BinaryOperator.LessThan;
+                (node.Left, node.Right) = (node.Right, node.Left);
+                break;
+            case BinaryOperator.LessThanOrEquals:
+                node.Operator = BinaryOperator.GreaterThanOrEquals;
+                (node.Left, node.Right) = (node.Right, node.Left);
+                break;
+            case BinaryOperator.GreaterThanOrEquals:
+                node.Operator = BinaryOperator.LessThanOrEquals;
+                (node.Left, node.Right) = (node.Right, node.Left);
+                break;
+        }
+        return node;
+    }
+    public override Node Visit(BinaryExpression node) => NormalizeComparison(node);
+    public override Node Visit(UnaryExpression node) => FoldUnaryExpression(node);
+}
+
+OpType.cs
+namespace MoonsecDeobfuscator.Bytecode.Models;
+public enum OpType
+{
+    AB,
+    ABx,
+    ABC,
+    sBx,
+    AC,
+    AsBx,
+    A,
+    None
+}
+
+OpCode.cs
+namespace MoonsecDeobfuscator.Bytecode.Models;
+public enum OpCode
+{
+    Move,
+    LoadK,
+    LoadBool,
+    LoadNil,
+    GetUpval,
+    GetGlobal,
+    GetTable,
+    SetGlobal,
+    SetUpval,
+    SetTable,
+    NewTable,
+    Self,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
+    Pow,
+    Unm,
+    Not,
+    Len,
+    Concat,
+    Jmp,
+    Eq,
+    Lt,
+    Le,
+    Test,
+    TestSet,
+    Call,
+    TailCall,
+    Return,
+    ForLoop,
+    ForPrep,
+    TForLoop,
+    SetList,
+    Close,
+    Closure,
+    VarArg,
+    Unknown
+}
+
+Instruction.cs
+namespace MoonsecDeobfuscator.Bytecode.Models;
+public class Instruction
+{
+    public int A, B, C, OpNum, PC;
+    public bool IsKA, IsKB, IsKC, IsDead;
+    public Function Function = null!;
+    public OpCode OpCode = OpCode.Unknown;
+    public override string ToString()
+    {
+        if (OpCode != OpCode.Unknown)
+            return $"{OpCode,12}\t| {A,4} | {B,4} | {C,4} |";
+        if (IsDead)
+            return $"{"DEAD",12}\t| {"-",4} | {"-",4} | {"-",4} |";
+        return $"{OpNum,12}\t| {A,4} | {B,4} | {C,4} |";
+    }
+    public OpType GetOpType()
+    {
+        switch (OpCode)
+        {
+            case OpCode.Move:
+            case OpCode.LoadNil:
+            case OpCode.GetUpval:
+            case OpCode.SetUpval:
+            case OpCode.Unm:
+            case OpCode.Not:
+            case OpCode.Len:
+            case OpCode.Return:
+            case OpCode.VarArg:
+                return OpType.AB;
+            case OpCode.LoadK:
+            case OpCode.GetGlobal:
+            case OpCode.SetGlobal:
+            case OpCode.Closure:
+                return OpType.ABx;
+            case OpCode.LoadBool:
+            case OpCode.GetTable:
+            case OpCode.SetTable:
+            case OpCode.Add:
+            case OpCode.Sub:
+            case OpCode.Mul:
+            case OpCode.Div:
+            case OpCode.Mod:
+            case OpCode.Pow:
+            case OpCode.Concat:
+            case OpCode.Call:
+            case OpCode.TailCall:
+            case OpCode.Self:
+            case OpCode.Eq:
+            case OpCode.Lt:
+            case OpCode.Le:
+            case OpCode.TestSet:
+            case OpCode.NewTable:
+            case OpCode.SetList:
+                return OpType.ABC;
+            case OpCode.Jmp:
+                return OpType.sBx;
+            case OpCode.Test:
+            case OpCode.TForLoop:
+                return OpType.AC;
+            case OpCode.ForPrep:
+            case OpCode.ForLoop:
+                return OpType.AsBx;
+            case OpCode.Close:
+                return OpType.A;
+        }
+        throw new Exception("Invalid opcode in GetOpType");
+    }
+}
+
+Function.cs
+namespace MoonsecDeobfuscator.Bytecode.Models;
+public class Function
+{
+    public List<Instruction> Instructions = null!;
+    public List<Constant> Constants = null!;
+    public List<Function> Functions = null!;
+    public byte MaxStackSize, NumParams, NumUpvalues, IsVarArgFlag;
+    public readonly string Name = $"func_{Guid.NewGuid().ToString("N")[..8]}";
+}
+
+Constant.cs
+namespace MoonsecDeobfuscator.Bytecode.Models;
+public abstract class Constant;
+public class StringConstant(string value) : Constant
+{
+    public readonly string Value = value;
+    public override string ToString() => $"\"{Value}\"";
+}
+public class NumberConstant(double value) : Constant
+{
+    public readonly double Value = value;
+    public override string ToString() => Value.ToString();
+}
+public class BooleanConstant(bool value) : Constant
+{
+    public readonly bool Value = value;
+    public override string ToString() => Value.ToString().ToLower();
+}
+public class NilConstant : Constant
+{
+    public override string ToString() => "nil";
+}
+
+Serializer.cs
+using System.Text;
+using MoonsecDeobfuscator.Bytecode.Models;
+namespace MoonsecDeobfuscator.Deobfuscation.Bytecode;
+public class Serializer(Stream stream) : BinaryWriter(stream)
+{
+    private void WriteString(string data)
+    {
+        var bytes = Encoding.UTF8.GetBytes(data);
+        Write((ulong) (bytes.Length + 1));
+        Write(bytes);
+        Write((byte) 0);
+    }
+    private void WriteFunction(Function function)
+    {
+        WriteString("");
+        Write(0);
+        Write(0);
+        Write(function.NumUpvalues);
+        Write(function.NumParams);
+        Write(function.IsVarArgFlag);
+        Write(function.MaxStackSize);
+        WriteInstructions(function.Instructions);
+        WriteConstants(function.Constants);
+        WriteFunctions(function.Functions);
+        Write(0);
+        Write(0);
+        Write(0);
+    }
+    private void WriteFunctions(List<Function> functions)
+    {
+        Write(functions.Count);
+        foreach (var function in functions)
+            WriteFunction(function);
+    }
+    private void WriteConstants(List<Constant> constants)
+    {
+        Write(constants.Count);
+        foreach (var constant in constants)
+        {
+            switch (constant)
+            {
+                case StringConstant sc:
+                    Write((byte) 4);
+                    WriteString(sc.Value);
+                    break;
+                case NumberConstant nc:
+                    Write((byte) 3);
+                    Write(nc.Value);
+                    break;
+                case BooleanConstant bc:
+                    Write((byte) 1);
+                    Write((byte) (bc.Value ? 1 : 0));
+                    break;
+                default:
+                    Write((byte) 0);
+                    break;
+            }
+        }
+    }
+    private void WriteInstructions(List<Instruction> instructions)
+    {
+        Write(instructions.Count);
+        foreach (var instruction in instructions)
+        {
+            var data = 0u;
+            data |= (uint) instruction.OpCode;
+            switch (instruction.GetOpType())
+            {
+                case OpType.A:
+                    data |= Mask(instruction.A, 8) << 6;
+                    break;
+                case OpType.AB:
+                    data |= Mask(instruction.A, 8) << 6;
+                    data |= Mask(instruction.B, 9) << 23;
+                    break;
+                case OpType.AC:
+                    data |= Mask(instruction.A, 8) << 6;
+                    data |= Mask(instruction.C, 9) << 14;
+                    break;
+                case OpType.ABC:
+                    data |= Mask(instruction.A, 8) << 6;
+                    data |= Mask(instruction.B, 9) << 23;
+                    data |= Mask(instruction.C, 9) << 14;
+                    break;
+                case OpType.ABx:
+                    data |= Mask(instruction.A, 8) << 6;
+                    data |= Mask(instruction.B, 18) << 14;
+                    break;
+                case OpType.AsBx:
+                    data |= Mask(instruction.A, 8) << 6;
+                    data |= Mask(instruction.B + 131_071, 18) << 14;
+                    break;
+                case OpType.sBx:
+                    data |= Mask(instruction.B + 131_071, 18) << 14;
+                    break;
+            }
+            Write(data);
+        }
+    }
+    private void WriteHeader()
+    {
+        Write(
+        [
+            0x1B, 0x4C, 0x75, 0x61,
+            0x51,
+            0,
+            1,
+            4,
+            8,
+            4,
+            8,
+            0
+        ]);
+    }
+    public void Serialize(Function function)
+    {
+        WriteHeader();
+        WriteFunction(function);
+    }
+    private static uint Mask(int value, int bits) => (uint) value & ((1u << bits) - 1);
+}
+
+Deserializer.cs
+using MoonsecDeobfuscator.Bytecode.Models;
+using MoonsecDeobfuscator.Deobfuscation.Utils;
+namespace MoonsecDeobfuscator.Deobfuscation.Bytecode;
+public enum ProtoStep
+{
+    Instructions,
+    Constants,
+    Functions,
+    NumParams,
+    StringConstant,
+    NumberConstant,
+    BooleanConstant
+}
+public class Deserializer(byte[] bytes, Context ctx) : BinaryReader(new MemoryStream(bytes))
+{
+    private List<Instruction> ReadInstructions(Function function)
+    {
+        var size = ReadInt32();
+        var instructions = new List<Instruction>(size);
+        for (var i = 0; i < size; i++)
+        {
+            var descriptor = ReadByte();
+            if (GetBits(descriptor, 1, 1) != 0)
+                continue;
+            var type = GetBits(descriptor, 2, 3);
+            var mask = GetBits(descriptor, 4, 6);
+            var instruction = new Instruction
+            {
+                OpNum = ReadInt16(),
+                A = ReadInt16(),
+                PC = i,
+                Function = function
+            };
+            switch (type)
+            {
+                case 0:
+                    instruction.B = ReadInt16();
+                    instruction.C = ReadInt16();
+                    break;
+                case 1:
+                    instruction.B = ReadInt32();
+                    break;
+                case 2:
+                    instruction.B = ReadInt32() - (1 << 16);
+                    break;
+                case 3:
+                    instruction.B = ReadInt32() - (1 << 16);
+                    instruction.C = ReadInt16();
+                    break;
+            }
+            instruction.IsKA = GetBits(mask, 1, 1) == 1;
+            instruction.IsKB = GetBits(mask, 2, 2) == 1;
+            instruction.IsKC = GetBits(mask, 3, 3) == 1;
+            instructions.Add(instruction);
+        }
+        return instructions;
+    }
+    private List<Function> ReadPrototypes()
+    {
+        var size = ReadInt32();
+        var prototypes = new List<Function>(size);
+        for (var i = 0; i < size; i++)
+            prototypes.Add(ReadFunction());
+        return prototypes;
+    }
+    private List<Constant> ReadConstants()
+    {
+        var size = ReadInt32();
+        var constants = new List<Constant>(size);
+        for (var i = 0; i < size; i++)
+        {
+            var typeFlag = ReadByte();
+            if (!ctx.ConstantFormat.TryGetValue(typeFlag, out var type))
+            {
+                constants.Add(new NilConstant());
+                continue;
+            }
+            switch (type)
+            {
+                case ProtoStep.BooleanConstant:
+                    constants.Add(new BooleanConstant(ReadBoolean()));
+                    break;
+                case ProtoStep.NumberConstant:
+                    constants.Add(new NumberConstant(ReadDouble()));
+                    break;
+                case ProtoStep.StringConstant:
+                    var str = StringDecoding.DecodeConstant(ctx.ConstantKey, ReadBytes(ReadInt32()));
+                    constants.Add(new StringConstant(str));
+                    break;
+            }
+        }
+        return constants;
+    }
+    public Function ReadFunction()
+    {
+        var function = new Function();
+        foreach (var step in ctx.ProtoFormat)
+        {
+            switch (step)
+            {
+                case ProtoStep.Constants:
+                    function.Constants = ReadConstants();
+                    break;
+                case ProtoStep.Instructions:
+                    function.Instructions = ReadInstructions(function);
+                    break;
+                case ProtoStep.NumParams:
+                    function.NumParams = ReadByte();
+                    break;
+                case ProtoStep.Functions:
+                    function.Functions = ReadPrototypes();
+                    break;
+            }
+        }
+        return function;
+    }
+    private static int GetBits(int source, int start, int end) =>
+        (source >> (start - 1)) & ((1 << (end - start + 1)) - 1);
+}
+
+BotMain.cs
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+public class BotMain
+{
+    private DiscordSocketClient _client;
+    private CommandService _commands;
+    public async Task MainAsync()
+    {
+        _client = new DiscordSocketClient();
+        _commands = new CommandService();
+        _client.Log += Log;
+        _client.Ready += Ready;
+        _client.MessageReceived += MessageReceived;
+        await _commands.AddModuleAsync<CommandModule>(null);
+        await _client.LoginAsync(TokenType.Bot, "MTQ2MTM1Mjc0NzY0NjQ1NTk4MA.GlaNeT.WlAmGgBu976MCMZFvGLFeBpwRd9ktGuoGZHa3Q");
+        await _client.StartAsync()
+        await Task.Delay(-1);
+    }
+    private Task Log(LogMessage msg)
+    {
+        Console.WriteLine(msg.ToString());
+        return Task.CompletedTask;
+    }
+    private Task Ready()
+    {
+        Console.WriteLine("Bot connected!");
+        return Task.CompletedTask;
+    }
+    private async Task MessageReceived(SocketMessage message)
+    {
+        if (!(message is SocketUserMessage userMessage) || userMessage.Author.IsBot)
+            return;
+        int argPos = 0;
+        if (!userMessage.HasStringPrefix(".", ref argPos))
+            return;
+        var context = new SocketCommandContext(_client, userMessage);
+        await _commands.ExecuteAsync(context, argPos, null);
+    }
+}
+public class CommandModule : ModuleBase<SocketCommandContext>
+{
+    [Command("deobf")]
+    public async Task DeobfCommand()
+    {
+        if (Context.Message.Attachments.Count == 0)
+        {
+            await ReplyAsync("Please attach a Lua file.");
+            return;
+        }
+        var attachment = Context.Message.Attachments.First();
+        if (!attachment.Filename.EndsWith(".lua"))
+        {
+            await ReplyAsync("File must be a Lua file.");
+            return;
+        }
+        await ReplyAsync("Deobfuscating... This may take a moment.");
+        var fileContent = await DownloadFile(attachment.Url);
+        var result = RunDeobfuscator(fileContent, "dis");
+        if (result == null)
+        {
+            await ReplyAsync("Deobfuscation failed - no output produced.");
+        }
+        else if (result.StartsWith("Error:"))
+        {
+            await ReplyAsync($"Deobfuscation failed:\n```{result}```");
+        }
+        else
+        {
+            if (result.Length <= 2000)
+            {
+                await ReplyAsync($"```lua\n{result}\n```");
+            }
+            else
+            {
+                using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(result));
+                await Context.Channel.SendFileAsync(stream, "deobfuscated.lua");
+            }
+        }
+    }
+    private async Task<string> DownloadFile(string url)
+    {
+        using var httpClient = new System.Net.Http.HttpClient();
+        return await httpClient.GetStringAsync(url);
+    }
+    private string RunDeobfuscator(string inputContent, string mode)
+    {
+        var tempInput = Path.GetTempFileName();
+        var tempOutput = tempInput + "_deobf.lua";
+        File.WriteAllText(tempInput, inputContent);
+        try
+        {
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = $"run -- -{mode} -i \"{tempInput}\" -o \"{tempOutput}\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var process = System.Diagnostics.Process.Start(startInfo);
+            process.WaitForExit();
+            if (File.Exists(tempOutput))
+            {
+                var result = File.ReadAllText(tempOutput);
+                File.Delete(tempOutput);
+                return result;
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            return $"Error: {ex.Message}";
+        }
+        finally
+        {
+            if (File.Exists(tempInput))
+                File.Delete(tempInput);
+        }
+    }
+}
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        new BotMain().MainAsync().GetAwaiter().GetResult();
+    }
+}
