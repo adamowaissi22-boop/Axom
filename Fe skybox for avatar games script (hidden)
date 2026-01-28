@@ -83,6 +83,197 @@ ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 local currentAnimation = nil
 local isEnabled = false
 
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+player.CharacterAdded:Connect(function(newCharacter)
+    character = newCharacter
+    humanoid = character:WaitForChild("Humanoid")
+end)
+
+local AnimationSettings = {
+    StopOnMovement = true,
+    FadeInDuration = 0.1,
+    FadeOutDuration = 0.1,
+    AnimationWeight = 1,
+    PlaybackSpeed = 1,
+    DisableCollisions = true,
+    StartPosition = 0
+}
+
+local ActiveAnimationTrack
+local LastCharacterPosition = character.PrimaryPart and character.PrimaryPart.Position or Vector3.new()
+
+local originalCollisionStates = {}
+local collisionState = AnimationSettings.DisableCollisions
+
+local function ParseAnimationID(userInput)
+    local numericID = tonumber(userInput)
+    if numericID then return numericID end
+    
+    local extractionPatterns = {
+        "rbxassetid://(%d+)",
+        "catalog/(%d+)",
+        "library/(%d+)",
+        "asset.*id=(%d+)"
+    }
+    
+    for _, pattern in ipairs(extractionPatterns) do
+        local extractedNumber = string.match(userInput, pattern)
+        if extractedNumber then return tonumber(extractedNumber) end
+    end
+    
+    return nil
+end
+
+local function InitializeAnimation(assetIdentifier)
+    if ActiveAnimationTrack then 
+        ActiveAnimationTrack:Stop(0) 
+        ActiveAnimationTrack = nil
+    end
+
+    local animationAssetID
+    local loadSuccess, loadedObjects = pcall(function()
+        return game:GetObjects("rbxassetid://" .. tostring(assetIdentifier))
+    end)
+
+    if loadSuccess and loadedObjects and #loadedObjects > 0 then
+        local firstAsset = loadedObjects[1]
+        if firstAsset:IsA("Animation") then
+            animationAssetID = firstAsset.AnimationId
+        else
+            animationAssetID = "rbxassetid://" .. tostring(assetIdentifier)
+        end
+    else
+        animationAssetID = "rbxassetid://" .. tostring(assetIdentifier)
+    end
+
+    local animationInstance = Instance.new("Animation")
+    animationInstance.AnimationId = animationAssetID
+    
+    local animationTrack = humanoid:LoadAnimation(animationInstance)
+    animationTrack.Priority = Enum.AnimationPriority.Action4
+
+    local appliedWeight = AnimationSettings.AnimationWeight
+    if appliedWeight == 0 then appliedWeight = 0.001 end
+
+    animationTrack:Play(AnimationSettings.FadeInDuration, appliedWeight, AnimationSettings.PlaybackSpeed)
+    
+    if animationTrack.Length > 0 then
+        animationTrack.TimePosition = math.clamp(AnimationSettings.StartPosition, 0, 1) * animationTrack.Length
+    end
+    
+    ActiveAnimationTrack = animationTrack
+    return animationTrack
+end
+
+local function TerminateAnimation()
+    if ActiveAnimationTrack then
+        ActiveAnimationTrack:Stop(AnimationSettings.FadeOutDuration)
+        ActiveAnimationTrack = nil
+    end
+end
+
+local function StoreCollisionData()
+    for _, part in ipairs(character:GetDescendants()) do
+        if part:IsA("BasePart") and part ~= character.PrimaryPart then
+            originalCollisionStates[part] = part.CanCollide
+        end
+    end
+end
+
+local function ToggleCharacterCollisions()
+    if not AnimationSettings.DisableCollisions then
+        for part, canCollide in pairs(originalCollisionStates) do
+            if part and part.Parent then
+                part.CanCollide = canCollide
+            end
+        end
+        originalCollisionStates = {}
+    else
+        for _, part in ipairs(character:GetDescendants()) do
+            if part:IsA("BasePart") and part ~= character.PrimaryPart then
+                part.CanCollide = false
+            end
+        end
+    end
+    collisionState = AnimationSettings.DisableCollisions
+end
+
+StoreCollisionData()
+
+local collisionConnection = RunService.Stepped:Connect(function()
+    if character and character.Parent then
+        if collisionState ~= AnimationSettings.DisableCollisions then
+            ToggleCharacterCollisions()
+        elseif AnimationSettings.DisableCollisions then
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") and part ~= character.PrimaryPart then
+                    part.CanCollide = false
+                end
+            end
+        end
+    else
+        collisionConnection:Disconnect()
+    end
+end)
+
+player.CharacterAdded:Connect(function(newCharacter)
+    for part, canCollide in pairs(originalCollisionStates) do
+        if part and part.Parent then
+            part.CanCollide = canCollide
+        end
+    end
+    originalCollisionStates = {}
+    
+    character = newCharacter
+    humanoid = character:WaitForChild("Humanoid")
+    LastCharacterPosition = character.PrimaryPart and character.PrimaryPart.Position or Vector3.new()
+    
+    StoreCollisionData()
+    
+    if collisionConnection then
+        collisionConnection:Disconnect()
+    end
+    
+    collisionConnection = RunService.Stepped:Connect(function()
+        if character and character.Parent then
+            if collisionState ~= AnimationSettings.DisableCollisions then
+                ToggleCharacterCollisions()
+            elseif AnimationSettings.DisableCollisions then
+                for _, part in ipairs(character:GetDescendants()) do
+                    if part:IsA("BasePart") and part ~= character.PrimaryPart then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        else
+            collisionConnection:Disconnect()
+        end
+    end)
+end)
+
+RunService.RenderStepped:Connect(function()
+    if character.PrimaryPart then
+        if AnimationSettings.StopOnMovement and ActiveAnimationTrack and ActiveAnimationTrack.IsPlaying then
+            local movementDistance = (character.PrimaryPart.Position - LastCharacterPosition).Magnitude
+            local isJumping = humanoid:GetState() == Enum.HumanoidStateType.Jumping
+            
+            if movementDistance > 0.1 or isJumping then
+                ActiveAnimationTrack:Stop(AnimationSettings.FadeOutDuration)
+                ActiveAnimationTrack = nil
+            end
+        end
+        LastCharacterPosition = character.PrimaryPart.Position
+    end
+end)
+
 CloseButton.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
@@ -101,32 +292,20 @@ ToggleButton.MouseButton1Click:Connect(function()
             }
             game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("updateCharacter"):InvokeServer(unpack(args))
             
-            local character = game.Players.LocalPlayer.Character
-            if character and character:FindFirstChild("Humanoid") then
-                local humanoid = character.Humanoid
-                if currentAnimation then
-                    currentAnimation:Stop()
-                end
-                local animation = Instance.new("Animation")
-                animation.AnimationId = "rbxassetid://93224413172183"
-                currentAnimation = humanoid:LoadAnimation(animation)
-                currentAnimation:Play()
+            wait(0.5)
+            local animationID = ParseAnimationID("93224413172183")
+            if animationID then
+                ActiveAnimationTrack = InitializeAnimation(animationID)
             end
         elseif game.PlaceId == 4924922222 or game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name:find("Brookhaven") then
             game:GetService("ReplicatedStorage").Remotes.ChangeCharacterBody:InvokeServer({
                 [1] = 100839513065432,
             })
             
-            local character = game.Players.LocalPlayer.Character
-            if character and character:FindFirstChild("Humanoid") then
-                local humanoid = character.Humanoid
-                if currentAnimation then
-                    currentAnimation:Stop()
-                end
-                local animation = Instance.new("Animation")
-                animation.AnimationId = "rbxassetid://93224413172183"
-                currentAnimation = humanoid:LoadAnimation(animation)
-                currentAnimation:Play()
+            wait(0.5)
+            local animationID = ParseAnimationID("93224413172183")
+            if animationID then
+                ActiveAnimationTrack = InitializeAnimation(animationID)
             end
         else
             local args = {
@@ -137,16 +316,10 @@ ToggleButton.MouseButton1Click:Connect(function()
             }
             game:GetService("ReplicatedStorage"):WaitForChild("BloxbizRemotes"):WaitForChild("CatalogOnApplyToRealHumanoid"):FireServer(unpack(args))
             
-            local character = game.Players.LocalPlayer.Character
-            if character and character:FindFirstChild("Humanoid") then
-                local humanoid = character.Humanoid
-                if currentAnimation then
-                    currentAnimation:Stop()
-                end
-                local animation = Instance.new("Animation")
-                animation.AnimationId = "rbxassetid://93224413172183"
-                currentAnimation = humanoid:LoadAnimation(animation)
-                currentAnimation:Play()
+            wait(0.5)
+            local animationID = ParseAnimationID("93224413172183")
+            if animationID then
+                ActiveAnimationTrack = InitializeAnimation(animationID)
             end
         end
     else
@@ -159,14 +332,12 @@ ToggleButton.MouseButton1Click:Connect(function()
             }
             game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("updateCharacter"):InvokeServer(unpack(args))
             
-            if currentAnimation then
-                currentAnimation:Stop()
-                currentAnimation = nil
+            if ActiveAnimationTrack then
+                TerminateAnimation()
             end
         elseif game.PlaceId == 4924922222 or game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name:find("Brookhaven") then
-            if currentAnimation then
-                currentAnimation:Stop()
-                currentAnimation = nil
+            if ActiveAnimationTrack then
+                TerminateAnimation()
             end
         else
             local args = {
@@ -178,9 +349,8 @@ ToggleButton.MouseButton1Click:Connect(function()
             game:GetService("ReplicatedStorage"):WaitForChild("BloxbizRemotes"):WaitForChild("CatalogOnApplyToRealHumanoid"):FireServer(unpack(args))
             game:GetService("ReplicatedStorage"):WaitForChild("BloxbizRemotes"):WaitForChild("CatalogOnResetOutfit"):FireServer()
             
-            if currentAnimation then
-                currentAnimation:Stop()
-                currentAnimation = nil
+            if ActiveAnimationTrack then
+                TerminateAnimation()
             end
         end
     end
