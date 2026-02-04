@@ -96,7 +96,7 @@ function QuantumX:CreateWindow(args)
     DragToggle.BackgroundColor3 = CurrentTheme.Accent
     DragToggle.BackgroundTransparency = 0.2
     DragToggle.AutoButtonColor = false
-    DragToggle.Image = "rbxassetid://7072718219"
+    DragToggle.Image = "rbxassetid://97917575066385"
     DragToggle.ImageColor3 = Color3.fromRGB(255, 255, 255)
     DragToggle.Parent = ScreenGui
     
@@ -271,27 +271,25 @@ function QuantumX:CreateWindow(args)
         end
     end)
 
+    local function ToggleWindow()
+        WindowVisible = not WindowVisible
+        MainWindow.Visible = WindowVisible
+        if WindowVisible then
+            DragToggle.Image = "rbxassetid://97917575066385"
+        else
+            DragToggle.Image = "rbxassetid://97917575066385"
+        end
+    end
+
     DragToggle.MouseButton1Click:Connect(function()
         if not buttonDragging then
-            WindowVisible = not WindowVisible
-            MainWindow.Visible = WindowVisible
-            if WindowVisible then
-                DragToggle.Image = "rbxassetid://97917575066385"
-            else
-                DragToggle.Image = "rbxassetid://97917575066385"
-            end
+            ToggleWindow()
         end
     end)
 
     DragToggle.TouchTap:Connect(function()
         if not buttonDragging then
-            WindowVisible = not WindowVisible
-            MainWindow.Visible = WindowVisible
-            if WindowVisible then
-                DragToggle.Image = "rbxassetid://97917575066385"
-            else
-                DragToggle.Image = "rbxassetid://97917575066385"
-            end
+            ToggleWindow()
         end
     end)
 
@@ -483,7 +481,18 @@ function QuantumX:CreateWindow(args)
             
             function ToggleFunctions:Set(state)
                 if toggleState ~= state then
-                    UpdateToggle()
+                    toggleState = state
+                    TweenService:Create(ToggleButton, TweenInfo.new(0.2), {
+                        BackgroundColor3 = toggleState and CurrentTheme.ToggleOn or CurrentTheme.ToggleOff
+                    }):Play()
+                    
+                    TweenService:Create(ToggleCircle, TweenInfo.new(0.2), {
+                        Position = toggleState and UDim2.new(1, -22, 0.5, -9.5) or UDim2.new(0, 3, 0.5, -9.5)
+                    }):Play()
+                    
+                    if config.Callback then
+                        config.Callback(toggleState)
+                    end
                 end
             end
             
@@ -915,13 +924,7 @@ function QuantumX:CreateWindow(args)
     end
     
     function WindowFunctions:ToggleVisibility()
-        WindowVisible = not WindowVisible
-        MainWindow.Visible = WindowVisible
-        if WindowVisible then
-            DragToggle.Image = "rbxassetid://7072718219"
-        else
-            DragToggle.Image = "rbxassetid://7072721360"
-        end
+        ToggleWindow()
     end
     
     function WindowFunctions:Destroy()
