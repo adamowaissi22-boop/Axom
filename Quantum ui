@@ -276,9 +276,9 @@ function QuantumX:CreateWindow(args)
             WindowVisible = not WindowVisible
             MainWindow.Visible = WindowVisible
             if WindowVisible then
-                DragToggle.Image = "rbxassetid://7072718219"
+                DragToggle.Image = "rbxassetid://97917575066385"
             else
-                DragToggle.Image = "rbxassetid://7072721360"
+                DragToggle.Image = "rbxassetid://97917575066385"
             end
         end
     end)
@@ -288,9 +288,9 @@ function QuantumX:CreateWindow(args)
             WindowVisible = not WindowVisible
             MainWindow.Visible = WindowVisible
             if WindowVisible then
-                DragToggle.Image = "rbxassetid://7072718219"
+                DragToggle.Image = "rbxassetid://97917575066385"
             else
-                DragToggle.Image = "rbxassetid://7072721360"
+                DragToggle.Image = "rbxassetid://97917575066385"
             end
         end
     end)
