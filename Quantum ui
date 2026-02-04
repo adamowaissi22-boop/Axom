@@ -2,7 +2,7 @@ local QuantumX = {}
 
 function QuantumX:CreateWindow(args)
     local screenGuiName = args.ScreenGui or "QuantumX"
-    local windowTitle = args.Title or "Quantum X"
+    local windowTitle = args.Title or "Quantum UI"
     
     local Players = game:GetService("Players")
     local UserInputService = game:GetService("UserInputService")
@@ -138,6 +138,18 @@ function QuantumX:CreateWindow(args)
     TitleText.Font = Enum.Font.GothamBold
     TitleText.TextXAlignment = Enum.TextXAlignment.Left
     TitleText.Parent = TitleBar
+
+    local CreditsText = Instance.new("TextLabel")
+    CreditsText.Name = "CreditsText"
+    CreditsText.Size = UDim2.new(0.3, 0, 1, 0)
+    CreditsText.Position = UDim2.new(0.7, 0, 0, 0)
+    CreditsText.BackgroundTransparency = 1
+    CreditsText.Text = "Made by Axom - Owner : LoneByte"
+    CreditsText.TextColor3 = CurrentTheme.TextSecondary
+    CreditsText.TextSize = 10
+    CreditsText.Font = Enum.Font.Gotham
+    CreditsText.TextXAlignment = Enum.TextXAlignment.Right
+    CreditsText.Parent = TitleBar
 
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "CloseButton"
@@ -312,6 +324,7 @@ function QuantumX:CreateWindow(args)
         TitleBar.BackgroundColor3 = CurrentTheme.Secondary
         Sidebar.BackgroundColor3 = CurrentTheme.Secondary
         TitleText.TextColor3 = CurrentTheme.Accent
+        CreditsText.TextColor3 = CurrentTheme.TextSecondary
         DragToggle.BackgroundColor3 = CurrentTheme.Accent
         dragStroke.Color = CurrentTheme.Accent
         
