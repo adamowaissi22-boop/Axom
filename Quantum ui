@@ -9,7 +9,6 @@ function QuantumX:CreateWindow(args)
     local TweenService = game:GetService("TweenService")
     local RunService = game:GetService("RunService")
     local LocalPlayer = Players.LocalPlayer
-    local Mouse = LocalPlayer:GetMouse()
 
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = screenGuiName
@@ -70,7 +69,6 @@ function QuantumX:CreateWindow(args)
     local CurrentTheme = Themes.Dark
     local WindowVisible = true
     local Elements = {}
-    local Sections = {}
 
     local function CreateRoundedFrame(parent, size, position)
         local frame = Instance.new("Frame")
@@ -91,25 +89,25 @@ function QuantumX:CreateWindow(args)
         return frame
     end
 
-    local DragButton = Instance.new("ImageButton")
-    DragButton.Name = "DragToggle"
-    DragButton.Size = UDim2.new(0, 40, 0, 40)
-    DragButton.Position = UDim2.new(0.5, -20, 0.05, 0)
-    DragButton.BackgroundColor3 = CurrentTheme.Accent
-    DragButton.BackgroundTransparency = 0.3
-    DragButton.AutoButtonColor = false
-    DragButton.Image = "rbxassetid://7072718219"
-    DragButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
-    DragButton.Parent = ScreenGui
+    local DragToggle = Instance.new("ImageButton")
+    DragToggle.Name = "DragToggle"
+    DragToggle.Size = UDim2.new(0, 45, 0, 45)
+    DragToggle.Position = UDim2.new(0, 20, 0.5, -22.5)
+    DragToggle.BackgroundColor3 = CurrentTheme.Accent
+    DragToggle.BackgroundTransparency = 0.2
+    DragToggle.AutoButtonColor = false
+    DragToggle.Image = "rbxassetid://7072718219"
+    DragToggle.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    DragToggle.Parent = ScreenGui
     
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(1, 0)
-    corner.Parent = DragButton
+    local dragCorner = Instance.new("UICorner")
+    dragCorner.CornerRadius = UDim.new(1, 0)
+    dragCorner.Parent = DragToggle
     
     local dragStroke = Instance.new("UIStroke")
     dragStroke.Color = CurrentTheme.Accent
     dragStroke.Thickness = 2
-    dragStroke.Parent = DragButton
+    dragStroke.Parent = DragToggle
 
     local MainWindow = CreateRoundedFrame(ScreenGui, UDim2.new(0, 450, 0, 500), UDim2.new(0.5, -225, 0.5, -250))
     MainWindow.Name = "MainWindow"
@@ -197,63 +195,101 @@ function QuantumX:CreateWindow(args)
     local TabButtons = {}
     local ActiveTab = nil
 
-    local dragging = false
-    local dragInput
-    local dragStart
-    local startPos
+    local windowDragging = false
+    local windowDragInput
+    local windowDragStart
+    local windowStartPos
 
-    local function UpdatePosition(input)
-        local delta = input.Position - dragStart
-        MainWindow.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    local buttonDragging = false
+    local buttonDragInput
+    local buttonDragStart
+    local buttonStartPos
+
+    local function UpdateWindowPosition(input)
+        local delta = input.Position - windowDragStart
+        MainWindow.Position = UDim2.new(windowStartPos.X.Scale, windowStartPos.X.Offset + delta.X, windowStartPos.Y.Scale, windowStartPos.Y.Offset + delta.Y)
+    end
+
+    local function UpdateButtonPosition(input)
+        local delta = input.Position - buttonDragStart
+        DragToggle.Position = UDim2.new(buttonStartPos.X.Scale, buttonStartPos.X.Offset + delta.X, buttonStartPos.Y.Scale, buttonStartPos.Y.Offset + delta.Y)
     end
 
     MainWindow.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = MainWindow.Position
+        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and not buttonDragging then
+            windowDragging = true
+            windowDragStart = input.Position
+            windowStartPos = MainWindow.Position
             
-            input.Changed:Connect(function()
+            local connection
+            connection = input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
+                    windowDragging = false
+                    connection:Disconnect()
                 end
             end)
         end
     end)
 
     MainWindow.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
+        if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and windowDragging then
+            windowDragInput = input
+        end
+    end)
+
+    DragToggle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            buttonDragging = true
+            buttonDragStart = input.Position
+            buttonStartPos = DragToggle.Position
+            
+            local connection
+            connection = input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    buttonDragging = false
+                    connection:Disconnect()
+                end
+            end)
+        end
+    end)
+
+    DragToggle.InputChanged:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and buttonDragging then
+            buttonDragInput = input
+        end
+    end)
+
+    DragToggle.MouseButton1Click:Connect(function()
+        if not buttonDragging then
+            WindowVisible = not WindowVisible
+            MainWindow.Visible = WindowVisible
+            if WindowVisible then
+                DragToggle.Image = "rbxassetid://7072718219"
+            else
+                DragToggle.Image = "rbxassetid://7072721360"
+            end
+        end
+    end)
+
+    DragToggle.TouchTap:Connect(function()
+        if not buttonDragging then
+            WindowVisible = not WindowVisible
+            MainWindow.Visible = WindowVisible
+            if WindowVisible then
+                DragToggle.Image = "rbxassetid://7072718219"
+            else
+                DragToggle.Image = "rbxassetid://7072721360"
+            end
         end
     end)
 
     UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input == dragInput) then
-            UpdatePosition(input)
+        if windowDragging and (input == windowDragInput) then
+            UpdateWindowPosition(input)
         end
-    end)
-
-    DragButton.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = MainWindow.Position
-        end
-    end)
-
-    DragButton.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-
-    DragButton.MouseButton1Click:Connect(function()
-        WindowVisible = not WindowVisible
-        MainWindow.Visible = WindowVisible
-        if WindowVisible then
-            DragButton.Image = "rbxassetid://7072718219"
-        else
-            DragButton.Image = "rbxassetid://7072721360"
+        
+        if buttonDragging and (input == buttonDragInput) then
+            UpdateButtonPosition(input)
         end
     end)
 
@@ -276,7 +312,7 @@ function QuantumX:CreateWindow(args)
         TitleBar.BackgroundColor3 = CurrentTheme.Secondary
         Sidebar.BackgroundColor3 = CurrentTheme.Secondary
         TitleText.TextColor3 = CurrentTheme.Accent
-        DragButton.BackgroundColor3 = CurrentTheme.Accent
+        DragToggle.BackgroundColor3 = CurrentTheme.Accent
         dragStroke.Color = CurrentTheme.Accent
         
         for _, element in pairs(Elements) do
@@ -869,9 +905,9 @@ function QuantumX:CreateWindow(args)
         WindowVisible = not WindowVisible
         MainWindow.Visible = WindowVisible
         if WindowVisible then
-            DragButton.Image = "rbxassetid://7072718219"
+            DragToggle.Image = "rbxassetid://7072718219"
         else
-            DragButton.Image = "rbxassetid://7072721360"
+            DragToggle.Image = "rbxassetid://7072721360"
         end
     end
     
