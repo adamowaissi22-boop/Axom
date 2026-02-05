@@ -7,6 +7,7 @@ local HttpService = game:GetService("HttpService")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local TextService = game:GetService("TextService")
+local StarterGui = game:GetService("StarterGui")
 
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
@@ -35,8 +36,12 @@ local currentColor = Color3.fromRGB(0, 170, 255)
 local flyActive = false
 local freecamActive = false
 
+if not player.Character then
+    player.CharacterAdded:Wait()
+end
+
 local function notify(title, text)
-    game.StarterGui:SetCore("SendNotification", {
+    StarterGui:SetCore("SendNotification", {
         Title = title,
         Text = text,
         Duration = 3
@@ -432,7 +437,7 @@ TitleText.Size = UDim2.new(1, -130, 1, 0)
 TitleText.Position = UDim2.new(0, 15, 0, 0)
 TitleText.BackgroundTransparency = 1
 TitleText.Text = "Axomic CMD"
-TitleText.TextColor3 = Color3.new(1, 1, 1)
+TitleText.TextColor3 = currentColor
 TitleText.Font = Enum.Font.GothamBlack
 TitleText.TextSize = 22
 TitleText.TextXAlignment = Enum.TextXAlignment.Left
