@@ -1,5 +1,5 @@
-
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
 local rainbowText = Instance.new("TextLabel")
@@ -19,17 +19,17 @@ task.spawn(function()
     rainbowText:Destroy()
 end)
 
-local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-ScreenGui.Name = "TeleportClickGUI"
+local screenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+screenGui.Name = "screenGui"
 
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 260, 0, 170)
+Main.Size = UDim2.new(0, 260, 0, 270)
 Main.Position = UDim2.new(0.4, 0, 0.35, 0)
 Main.BackgroundColor3 = Color3.fromHSV(math.random(), 1, 1)
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
-Main.Parent = ScreenGui
+Main.Parent = screenGui
 
 local Header = Instance.new("Frame")
 Header.Size = UDim2.new(1, 0, 0, 30)
@@ -59,12 +59,12 @@ CloseBtn.BorderSizePixel = 0
 CloseBtn.Parent = Header
 
 CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
+    screenGui:Destroy()
 end)
 
 local TeleportBtn = Instance.new("TextButton")
 TeleportBtn.Size = UDim2.new(0.8, 0, 0, 40)
-TeleportBtn.Position = UDim2.new(0.1, 0, 0.45, 0)
+TeleportBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
 TeleportBtn.Text = "Teleport by click tool"
 TeleportBtn.BackgroundColor3 = Color3.fromHSV(math.random(), 1, 1)
 TeleportBtn.TextColor3 = Color3.new(1, 1, 1)
@@ -74,13 +74,33 @@ TeleportBtn.Parent = Main
 
 local DropBtn = Instance.new("TextButton")
 DropBtn.Size = UDim2.new(0.8, 0, 0, 40)
-DropBtn.Position = UDim2.new(0.1, 0, 0.72, 0)
+DropBtn.Position = UDim2.new(0.1, 0, 0.36, 0)
 DropBtn.Text = "Drop tool"
 DropBtn.BackgroundColor3 = Color3.fromHSV(math.random(), 1, 1)
 DropBtn.TextColor3 = Color3.new(1, 1, 1)
 DropBtn.Font = Enum.Font.GothamBold
 DropBtn.TextScaled = true
 DropBtn.Parent = Main
+
+local TweenTpBtn = Instance.new("TextButton")
+TweenTpBtn.Size = UDim2.new(0.8, 0, 0, 40)
+TweenTpBtn.Position = UDim2.new(0.1, 0, 0.52, 0)
+TweenTpBtn.Text = "Tween TpTool"
+TweenTpBtn.BackgroundColor3 = Color3.fromHSV(math.random(), 1, 1)
+TweenTpBtn.TextColor3 = Color3.new(1, 1, 1)
+TweenTpBtn.Font = Enum.Font.GothamBold
+TweenTpBtn.TextScaled = true
+TweenTpBtn.Parent = Main
+
+local DropTweenBtn = Instance.new("TextButton")
+DropTweenBtn.Size = UDim2.new(0.8, 0, 0, 40)
+DropTweenBtn.Position = UDim2.new(0.1, 0, 0.68, 0)
+DropTweenBtn.Text = "Drop Tween Tool"
+DropTweenBtn.BackgroundColor3 = Color3.fromHSV(math.random(), 1, 1)
+DropTweenBtn.TextColor3 = Color3.new(1, 1, 1)
+DropTweenBtn.Font = Enum.Font.GothamBold
+DropTweenBtn.TextScaled = true
+DropTweenBtn.Parent = Main
 
 TeleportBtn.MouseButton1Click:Connect(function()
     if LocalPlayer.Backpack:FindFirstChild("ClickTeleportTool") then return end
@@ -107,6 +127,49 @@ DropBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+local function tweenTeleport(targetPosition)
+    local character = LocalPlayer.Character
+    if not character then return end
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+    
+    local tweenInfo = TweenInfo.new(
+        0.5,
+        Enum.EasingStyle.Quad,
+        Enum.EasingDirection.Out,
+        0,
+        false,
+        0
+    )
+    
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(targetPosition)})
+    tween:Play()
+    tween.Completed:Wait()
+end
+
+TweenTpBtn.MouseButton1Click:Connect(function()
+    if LocalPlayer.Backpack:FindFirstChild("Tween TpTool by Axom") then return end
+
+    local tool = Instance.new("Tool")
+    tool.Name = "Tween TpTool by Axom"
+    tool.ToolTip = "Axomic Tween TpTool"
+    tool.RequiresHandle = false
+    tool.Parent = LocalPlayer.Backpack
+
+    tool.Activated:Connect(function()
+        local mouse = LocalPlayer:GetMouse()
+        local targetPos = mouse.Hit.Position
+        tweenTeleport(targetPos + Vector3.new(0, 3, 0))
+    end)
+end)
+
+DropTweenBtn.MouseButton1Click:Connect(function()
+    local tool = LocalPlayer.Backpack:FindFirstChild("Tween TpTool by Axom")
+    if tool then
+        tool:Destroy()
+    end
+end)
+
 task.spawn(function()
     while true do
         local color = Color3.fromHSV(tick() % 5 / 5, 1, 1)
@@ -114,6 +177,8 @@ task.spawn(function()
         Title.TextColor3 = color
         TeleportBtn.BackgroundColor3 = color
         DropBtn.BackgroundColor3 = color
+        TweenTpBtn.BackgroundColor3 = color
+        DropTweenBtn.BackgroundColor3 = color
         wait(0.1)
     end
 end)
