@@ -1,0 +1,501 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "DeltaExecutor"
+screenGui.IgnoreGuiInset = true
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = game:GetService("CoreGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 250, 0, 320)
+mainFrame.Position = UDim2.new(0.5, -125, 0.5, -160)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Parent = screenGui
+
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 25)
+titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+titleBar.Parent = mainFrame
+
+local titleText = Instance.new("TextLabel")
+titleText.Size = UDim2.new(1, -55, 1, 0)
+titleText.Position = UDim2.new(0, 8, 0, 0)
+titleText.BackgroundTransparency = 1
+titleText.Text = "Axomic | Btools Admin"
+titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleText.Font = Enum.Font.GothamBold
+titleText.TextSize = 12
+titleText.TextXAlignment = Enum.TextXAlignment.Left
+titleText.Parent = titleBar
+
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 25, 0, 25)
+closeButton.Position = UDim2.new(1, -25, 0, 0)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+closeButton.BorderSizePixel = 0
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = 12
+closeButton.Parent = titleBar
+
+local commandBoxFrame = Instance.new("Frame")
+commandBoxFrame.Size = UDim2.new(1, -10, 0, 30)
+commandBoxFrame.Position = UDim2.new(0, 5, 0, 30)
+commandBoxFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+commandBoxFrame.BorderSizePixel = 0
+commandBoxFrame.Parent = mainFrame
+
+local commandTextBox = Instance.new("TextBox")
+commandTextBox.Size = UDim2.new(1, -60, 1, -4)
+commandTextBox.Position = UDim2.new(0, 2, 0, 2)
+commandTextBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+commandTextBox.BorderSizePixel = 0
+commandTextBox.Text = ""
+commandTextBox.PlaceholderText = "jail username"
+commandTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+commandTextBox.Font = Enum.Font.Gotham
+commandTextBox.TextSize = 12
+commandTextBox.TextXAlignment = Enum.TextXAlignment.Left
+commandTextBox.Parent = commandBoxFrame
+
+local executeButton = Instance.new("TextButton")
+executeButton.Size = UDim2.new(0, 50, 1, -4)
+executeButton.Position = UDim2.new(1, -52, 0, 2)
+executeButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+executeButton.BorderSizePixel = 0
+executeButton.Text = "Execute"
+executeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+executeButton.Font = Enum.Font.GothamBold
+executeButton.TextSize = 10
+executeButton.Parent = commandBoxFrame
+
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(1, -10, 1, -70)
+scrollFrame.Position = UDim2.new(0, 5, 0, 65)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.BorderSizePixel = 0
+scrollFrame.ScrollBarThickness = 4
+scrollFrame.Parent = mainFrame
+
+local uiListLayout = Instance.new("UIListLayout")
+uiListLayout.Padding = UDim.new(0, 3)
+uiListLayout.Parent = scrollFrame
+
+local commands = {
+    "jail <username>",
+    "bring <username>",
+    "void <username>",
+    "kill <username>",
+    "goto <username>",
+    "unjail <username>",
+    "loopjail <username>",
+    "unloopjail <username>",
+    "lagserver",
+    "unlagserver"
+}
+
+local btools = LocalPlayer:WaitForChild("Backpack"):WaitForChild("Building Tools"):WaitForChild("SyncAPI"):WaitForChild("ServerEndpoint")
+
+local function createPart(cframe, parent)
+    local args = {
+        "CreatePart",
+        "Normal",
+        cframe,
+        parent
+    }
+    btools:InvokeServer(unpack(args))
+end
+
+local function resizePart(part, cframe, size)
+    local args = {
+        "SyncResize",
+        {
+            {
+                Part = part,
+                CFrame = cframe,
+                Size = size
+            }
+        }
+    }
+    btools:InvokeServer(unpack(args))
+end
+
+local function paintPart(part, color)
+    local args = {
+        "SyncColor",
+        {
+            {
+                Part = part,
+                UnionColoring = true,
+                Color = color
+            }
+        }
+    }
+    btools:InvokeServer(unpack(args))
+end
+
+local function movePart(parts)
+    local args = {
+        "SyncMove",
+        parts
+    }
+    btools:InvokeServer(unpack(args))
+end
+
+local function rotatePart(part, cframe)
+    local args = {
+        "SyncRotate",
+        {
+            {
+                Part = part,
+                CFrame = cframe
+            }
+        }
+    }
+    btools:InvokeServer(unpack(args))
+end
+
+local function setTransparency(part, transparency)
+    local args = {
+        "SyncMaterial",
+        {
+            {
+                Part = part,
+                Transparency = transparency
+            }
+        }
+    }
+    btools:InvokeServer(unpack(args))
+end
+
+local function setName(part, name)
+    local args = {
+        "SetName",
+        {
+            part
+        },
+        name
+    }
+    btools:InvokeServer(unpack(args))
+end
+
+local function removeParts()
+    local args = {
+        "Remove",
+        {
+            Instance.new("Part", nil)
+        }
+    }
+    btools:InvokeServer(unpack(args))
+end
+
+local jails = {}
+local loopJails = {}
+
+local function isPlayerInJail(playerName, playerPos)
+    if not jails[playerName] then return false end
+    
+    for _, part in pairs(jails[playerName]) do
+        if part and part.Parent then
+            if (playerPos - part.Position).Magnitude < 15 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function executeCommand(cmdText)
+    local args = {}
+    for arg in string.gmatch(cmdText, "%S+") do
+        table.insert(args, arg)
+    end
+    
+    if #args == 0 then return end
+    
+    local cmd = args[1]:lower()
+    local targetName = args[2]
+    local targetPlayer = targetName and Players:FindFirstChild(targetName)
+    
+    if cmd == "jail" and targetPlayer and targetPlayer.Character then
+        local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local pos = hrp.Position
+            local jailSize = 8
+            local wallThickness = 2
+            
+            if jails[targetName] then
+                removeParts()
+                wait(0.1)
+            end
+            
+            local jailParts = {}
+            
+            for i = 1, 5 do
+                createPart(CFrame.new(pos.X, pos.Y + 100, pos.Z), workspace)
+                wait(0.05)
+            end
+            
+            wait(0.3)
+            
+            local parts = workspace:GetChildren()
+            local partIndex = 1
+            
+            for i = #parts, 1, -1 do
+                if parts[i].Name == "Part" and partIndex <= 5 then
+                    local part = parts[i]
+                    
+                    if partIndex == 1 then
+                        movePart({{Part = part, CFrame = CFrame.new(pos.X, pos.Y + 5, pos.Z)}})
+                        resizePart(part, CFrame.new(pos.X, pos.Y + 5, pos.Z), Vector3.new(jailSize, 1, jailSize))
+                        paintPart(part, Color3.new(0, 0, 0))
+                        setTransparency(part, 0.6)
+                        setName(part, "JailRoof")
+                    elseif partIndex == 2 then
+                        movePart({{Part = part, CFrame = CFrame.new(pos.X + jailSize/2, pos.Y, pos.Z)}})
+                        resizePart(part, CFrame.new(pos.X + jailSize/2, pos.Y, pos.Z), Vector3.new(1, jailSize, jailSize))
+                        paintPart(part, Color3.new(0.5, 0.5, 0.5))
+                        setTransparency(part, 0.6)
+                        setName(part, "JailWall")
+                    elseif partIndex == 3 then
+                        movePart({{Part = part, CFrame = CFrame.new(pos.X - jailSize/2, pos.Y, pos.Z)}})
+                        resizePart(part, CFrame.new(pos.X - jailSize/2, pos.Y, pos.Z), Vector3.new(1, jailSize, jailSize))
+                        paintPart(part, Color3.new(0.5, 0.5, 0.5))
+                        setTransparency(part, 0.6)
+                        setName(part, "JailWall")
+                    elseif partIndex == 4 then
+                        movePart({{Part = part, CFrame = CFrame.new(pos.X, pos.Y, pos.Z + jailSize/2)}})
+                        resizePart(part, CFrame.new(pos.X, pos.Y, pos.Z + jailSize/2), Vector3.new(jailSize, jailSize, 1))
+                        paintPart(part, Color3.new(0.5, 0.5, 0.5))
+                        setTransparency(part, 0.6)
+                        setName(part, "JailWall")
+                    elseif partIndex == 5 then
+                        movePart({{Part = part, CFrame = CFrame.new(pos.X, pos.Y, pos.Z - jailSize/2)}})
+                        resizePart(part, CFrame.new(pos.X, pos.Y, pos.Z - jailSize/2), Vector3.new(jailSize, jailSize, 1))
+                        paintPart(part, Color3.new(0.5, 0.5, 0.5))
+                        setTransparency(part, 0.6)
+                        setName(part, "JailWall")
+                    end
+                    
+                    table.insert(jailParts, part)
+                    partIndex = partIndex + 1
+                end
+            end
+            
+            jails[targetName] = jailParts
+        end
+    elseif cmd == "bring" then
+        local p = {}
+        local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        
+        if targetPlayer and targetPlayer.Character and myHrp then
+            for _, o in pairs(targetPlayer.Character:GetChildren()) do
+                if o:IsA("BasePart") then 
+                    table.insert(p, {["Part"] = o, ["CFrame"] = myHrp.CFrame})
+                end
+            end
+            movePart(p)
+        else
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= LocalPlayer and v.Character and (not targetName or v.Name:lower():find(targetName:lower())) then
+                    for _, o in pairs(v.Character:GetChildren()) do
+                        if o:IsA("BasePart") then 
+                            table.insert(p, {["Part"] = o, ["CFrame"] = myHrp.CFrame})
+                        end
+                    end
+                end
+            end
+            movePart(p)
+        end
+    elseif cmd == "void" and targetPlayer and targetPlayer.Character then
+        createPart(CFrame.new(), workspace)
+        local part = workspace:WaitForChild("Part")
+        if part then
+            local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                resizePart(part, CFrame.new(hrp.Position), Vector3.new(50, 50, 50))
+                paintPart(part, Color3.new(0, 0, 0))
+                setTransparency(part, 0.5)
+                
+                local startTime = tick()
+                local connection
+                connection = RunService.Heartbeat:Connect(function()
+                    if tick() - startTime > 3 then
+                        connection:Disconnect()
+                        removeParts()
+                        return
+                    end
+                    
+                    if hrp then
+                        movePart({{Part = part, CFrame = CFrame.new(hrp.Position)}})
+                    end
+                end)
+                
+                wait(0.5)
+                local p = {}
+                for _, o in pairs(targetPlayer.Character:GetChildren()) do
+                    if o:IsA("BasePart") then 
+                        table.insert(p, {["Part"] = o, ["CFrame"] = CFrame.new(0, -1000, 0)})
+                    end
+                end
+                movePart(p)
+            end
+        end
+    elseif cmd == "kill" then
+        local p = {}
+        if targetPlayer and targetPlayer.Character then
+            for _, o in pairs(targetPlayer.Character:GetChildren()) do
+                if o:IsA("BasePart") then 
+                    table.insert(p, {["Part"] = o, ["CFrame"] = CFrame.new(0, -1000, 0)})
+                end
+            end
+        else
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= LocalPlayer and v.Character then
+                    for _, o in pairs(v.Character:GetChildren()) do
+                        if o:IsA("BasePart") then 
+                            table.insert(p, {["Part"] = o, ["CFrame"] = CFrame.new(0, -1000, 0)})
+                        end
+                    end
+                end
+            end
+        end
+        movePart(p)
+    elseif cmd == "goto" and targetPlayer and targetPlayer.Character then
+        local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local targetHrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if myHrp and targetHrp then
+            myHrp.CFrame = targetHrp.CFrame
+        end
+    elseif cmd == "unjail" then
+        if targetName then
+            jails[targetName] = nil
+        else
+            jails = {}
+        end
+        removeParts()
+    elseif cmd == "loopjail" and targetPlayer then
+        loopJails[targetName] = true
+        
+        spawn(function()
+            local lastCheck = tick()
+            while loopJails[targetName] and targetPlayer and targetPlayer.Parent do
+                if targetPlayer.Character then
+                    local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp and tick() - lastCheck > 1 then
+                        if not isPlayerInJail(targetName, hrp.Position) then
+                            executeCommand("jail " .. targetName)
+                        end
+                        lastCheck = tick()
+                    end
+                end
+                wait(0.5)
+            end
+        end)
+    elseif cmd == "unloopjail" then
+        if targetName then
+            loopJails[targetName] = false
+        else
+            loopJails = {}
+        end
+    elseif cmd == "lagserver" then
+        spawn(function()
+            while true do
+                for i = 1, 30 do
+                    createPart(CFrame.new(math.random(-500,500), math.random(-500,500), math.random(-500,500)), workspace)
+                end
+                wait(0.1)
+                
+                local parts = workspace:GetChildren()
+                for i = #parts, 1, -1 do
+                    if parts[i].Name == "Part" then
+                        resizePart(parts[i], parts[i].CFrame, Vector3.new(100, 100, 100))
+                        setName(parts[i], "LagPart")
+                    end
+                end
+            end
+        end)
+    elseif cmd == "unlagserver" then
+        for i = 1, 30 do
+            removeParts()
+            wait(0.1)
+        end
+    end
+end
+
+for i, cmdText in ipairs(commands) do
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, 0, 0, 28)
+    button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    button.BorderSizePixel = 0
+    button.Text = cmdText
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 10
+    button.Parent = scrollFrame
+    
+    button.MouseButton1Click:Connect(function()
+        commandTextBox.Text = cmdText
+        executeCommand(cmdText)
+    end)
+end
+
+executeButton.MouseButton1Click:Connect(function()
+    executeCommand(commandTextBox.Text)
+end)
+
+commandTextBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        executeCommand(commandTextBox.Text)
+    end
+end)
+
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+local dragging = false
+local dragInput, dragStart, startPos
+
+local function updateInput(input)
+    local delta = input.Position - dragStart
+    mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end
+
+titleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input == dragInput) then
+        updateInput(input)
+    end
+end)
+
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        mainFrame.Visible = not mainFrame.Visible
+    end
+end)
