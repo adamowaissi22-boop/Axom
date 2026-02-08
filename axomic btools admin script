@@ -1,108 +1,50 @@
+local Apoto = loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom-Scripts-/main/Apoto%20Library%20Gui"))()
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "DeltaExecutor"
-screenGui.IgnoreGuiInset = true
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.Parent = game:GetService("CoreGui")
+local window = Apoto:CreateWindow({
+    Name = "Axomic - Btools Admin",
+    Icon = "rbxassetid://3926307971",
+    AccentColor3 = Color3.fromRGB(0, 120, 215)
+})
 
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 250, 0, 320)
-mainFrame.Position = UDim2.new(0.5, -125, 0.5, -160)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-mainFrame.BorderSizePixel = 0
-mainFrame.Active = true
-mainFrame.Parent = screenGui
+local MainTab = window:CreateTab({
+    Name = "Main",
+    Icon = "rbxassetid://3926307971"
+})
 
-local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 25)
-titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-titleBar.Parent = mainFrame
+local CommandsTab = window:CreateTab({
+    Name = "Commands",
+    Icon = "rbxassetid://3926305904"
+})
 
-local titleText = Instance.new("TextLabel")
-titleText.Size = UDim2.new(1, -55, 1, 0)
-titleText.Position = UDim2.new(0, 8, 0, 0)
-titleText.BackgroundTransparency = 1
-titleText.Text = "Axomic | Btools Admin"
-titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 12
-titleText.TextXAlignment = Enum.TextXAlignment.Left
-titleText.Parent = titleBar
+local jails = {}
+local loopJails = {}
+local invisibleEnabled = false
+local visibleParts = {}
+local punishEnabled = false
+local punishPlayers = {}
 
-local closeButton = Instance.new("TextButton")
-closeButton.Size = UDim2.new(0, 25, 0, 25)
-closeButton.Position = UDim2.new(1, -25, 0, 0)
-closeButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-closeButton.BorderSizePixel = 0
-closeButton.Text = "X"
-closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeButton.Font = Enum.Font.GothamBold
-closeButton.TextSize = 12
-closeButton.Parent = titleBar
-
-local commandBoxFrame = Instance.new("Frame")
-commandBoxFrame.Size = UDim2.new(1, -10, 0, 30)
-commandBoxFrame.Position = UDim2.new(0, 5, 0, 30)
-commandBoxFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-commandBoxFrame.BorderSizePixel = 0
-commandBoxFrame.Parent = mainFrame
-
-local commandTextBox = Instance.new("TextBox")
-commandTextBox.Size = UDim2.new(1, -60, 1, -4)
-commandTextBox.Position = UDim2.new(0, 2, 0, 2)
-commandTextBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-commandTextBox.BorderSizePixel = 0
-commandTextBox.Text = ""
-commandTextBox.PlaceholderText = "jail username"
-commandTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-commandTextBox.Font = Enum.Font.Gotham
-commandTextBox.TextSize = 12
-commandTextBox.TextXAlignment = Enum.TextXAlignment.Left
-commandTextBox.Parent = commandBoxFrame
-
-local executeButton = Instance.new("TextButton")
-executeButton.Size = UDim2.new(0, 50, 1, -4)
-executeButton.Position = UDim2.new(1, -52, 0, 2)
-executeButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-executeButton.BorderSizePixel = 0
-executeButton.Text = "Execute"
-executeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-executeButton.Font = Enum.Font.GothamBold
-executeButton.TextSize = 10
-executeButton.Parent = commandBoxFrame
-
-local scrollFrame = Instance.new("ScrollingFrame")
-scrollFrame.Size = UDim2.new(1, -10, 1, -70)
-scrollFrame.Position = UDim2.new(0, 5, 0, 65)
-scrollFrame.BackgroundTransparency = 1
-scrollFrame.BorderSizePixel = 0
-scrollFrame.ScrollBarThickness = 4
-scrollFrame.Parent = mainFrame
-
-local uiListLayout = Instance.new("UIListLayout")
-uiListLayout.Padding = UDim.new(0, 3)
-uiListLayout.Parent = scrollFrame
-
-local commands = {
-    "jail <username>",
-    "bring <username>",
-    "void <username>",
-    "kill <username>",
-    "goto <username>",
-    "unjail <username>",
-    "loopjail <username>",
-    "unloopjail <username>",
-    "lagserver",
-    "unlagserver"
-}
-
-local btools = LocalPlayer:WaitForChild("Backpack"):WaitForChild("Building Tools"):WaitForChild("SyncAPI"):WaitForChild("ServerEndpoint")
+local function getBtoolsAPI()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Building Tools") then
+        return char:WaitForChild("Building Tools"):WaitForChild("SyncAPI"):WaitForChild("ServerEndpoint")
+    end
+    
+    local backpack = LocalPlayer:WaitForChild("Backpack")
+    if backpack:FindFirstChild("Building Tools") then
+        return backpack:WaitForChild("Building Tools"):WaitForChild("SyncAPI"):WaitForChild("ServerEndpoint")
+    end
+    
+    return nil
+end
 
 local function createPart(cframe, parent)
+    local btools = getBtoolsAPI()
+    if not btools then return end
+    
     local args = {
         "CreatePart",
         "Normal",
@@ -113,6 +55,9 @@ local function createPart(cframe, parent)
 end
 
 local function resizePart(part, cframe, size)
+    local btools = getBtoolsAPI()
+    if not btools then return end
+    
     local args = {
         "SyncResize",
         {
@@ -127,6 +72,9 @@ local function resizePart(part, cframe, size)
 end
 
 local function paintPart(part, color)
+    local btools = getBtoolsAPI()
+    if not btools then return end
+    
     local args = {
         "SyncColor",
         {
@@ -141,6 +89,9 @@ local function paintPart(part, color)
 end
 
 local function movePart(parts)
+    local btools = getBtoolsAPI()
+    if not btools then return end
+    
     local args = {
         "SyncMove",
         parts
@@ -148,33 +99,21 @@ local function movePart(parts)
     btools:InvokeServer(unpack(args))
 end
 
-local function rotatePart(part, cframe)
-    local args = {
-        "SyncRotate",
-        {
-            {
-                Part = part,
-                CFrame = cframe
-            }
-        }
-    }
-    btools:InvokeServer(unpack(args))
-end
-
-local function setTransparency(part, transparency)
+local function setTransparency(parts, transparency)
+    local btools = getBtoolsAPI()
+    if not btools then return end
+    
     local args = {
         "SyncMaterial",
-        {
-            {
-                Part = part,
-                Transparency = transparency
-            }
-        }
+        parts
     }
     btools:InvokeServer(unpack(args))
 end
 
 local function setName(part, name)
+    local btools = getBtoolsAPI()
+    if not btools then return end
+    
     local args = {
         "SetName",
         {
@@ -186,6 +125,9 @@ local function setName(part, name)
 end
 
 local function removeParts()
+    local btools = getBtoolsAPI()
+    if not btools then return end
+    
     local args = {
         "Remove",
         {
@@ -194,9 +136,6 @@ local function removeParts()
     }
     btools:InvokeServer(unpack(args))
 end
-
-local jails = {}
-local loopJails = {}
 
 local function isPlayerInJail(playerName, playerPos)
     if not jails[playerName] then return false end
@@ -209,6 +148,18 @@ local function isPlayerInJail(playerName, playerPos)
         end
     end
     return false
+end
+
+local function getPlayerParts(player)
+    local parts = {}
+    if player and player.Character then
+        for _, part in pairs(player.Character:GetChildren()) do
+            if part:IsA("BasePart") then
+                table.insert(parts, part)
+            end
+        end
+    end
+    return parts
 end
 
 local function executeCommand(cmdText)
@@ -228,7 +179,6 @@ local function executeCommand(cmdText)
         if hrp then
             local pos = hrp.Position
             local jailSize = 8
-            local wallThickness = 2
             
             if jails[targetName] then
                 removeParts()
@@ -255,31 +205,31 @@ local function executeCommand(cmdText)
                         movePart({{Part = part, CFrame = CFrame.new(pos.X, pos.Y + 5, pos.Z)}})
                         resizePart(part, CFrame.new(pos.X, pos.Y + 5, pos.Z), Vector3.new(jailSize, 1, jailSize))
                         paintPart(part, Color3.new(0, 0, 0))
-                        setTransparency(part, 0.6)
+                        setTransparency({{Part = part, Transparency = 0.6}})
                         setName(part, "JailRoof")
                     elseif partIndex == 2 then
                         movePart({{Part = part, CFrame = CFrame.new(pos.X + jailSize/2, pos.Y, pos.Z)}})
                         resizePart(part, CFrame.new(pos.X + jailSize/2, pos.Y, pos.Z), Vector3.new(1, jailSize, jailSize))
                         paintPart(part, Color3.new(0.5, 0.5, 0.5))
-                        setTransparency(part, 0.6)
+                        setTransparency({{Part = part, Transparency = 0.6}})
                         setName(part, "JailWall")
                     elseif partIndex == 3 then
                         movePart({{Part = part, CFrame = CFrame.new(pos.X - jailSize/2, pos.Y, pos.Z)}})
                         resizePart(part, CFrame.new(pos.X - jailSize/2, pos.Y, pos.Z), Vector3.new(1, jailSize, jailSize))
                         paintPart(part, Color3.new(0.5, 0.5, 0.5))
-                        setTransparency(part, 0.6)
+                        setTransparency({{Part = part, Transparency = 0.6}})
                         setName(part, "JailWall")
                     elseif partIndex == 4 then
                         movePart({{Part = part, CFrame = CFrame.new(pos.X, pos.Y, pos.Z + jailSize/2)}})
                         resizePart(part, CFrame.new(pos.X, pos.Y, pos.Z + jailSize/2), Vector3.new(jailSize, jailSize, 1))
                         paintPart(part, Color3.new(0.5, 0.5, 0.5))
-                        setTransparency(part, 0.6)
+                        setTransparency({{Part = part, Transparency = 0.6}})
                         setName(part, "JailWall")
                     elseif partIndex == 5 then
                         movePart({{Part = part, CFrame = CFrame.new(pos.X, pos.Y, pos.Z - jailSize/2)}})
                         resizePart(part, CFrame.new(pos.X, pos.Y, pos.Z - jailSize/2), Vector3.new(jailSize, jailSize, 1))
                         paintPart(part, Color3.new(0.5, 0.5, 0.5))
-                        setTransparency(part, 0.6)
+                        setTransparency({{Part = part, Transparency = 0.6}})
                         setName(part, "JailWall")
                     end
                     
@@ -321,7 +271,7 @@ local function executeCommand(cmdText)
             if hrp then
                 resizePart(part, CFrame.new(hrp.Position), Vector3.new(50, 50, 50))
                 paintPart(part, Color3.new(0, 0, 0))
-                setTransparency(part, 0.5)
+                setTransparency({{Part = part, Transparency = 0.5}})
                 
                 local startTime = tick()
                 local connection
@@ -384,18 +334,16 @@ local function executeCommand(cmdText)
         loopJails[targetName] = true
         
         spawn(function()
-            local lastCheck = tick()
             while loopJails[targetName] and targetPlayer and targetPlayer.Parent do
                 if targetPlayer.Character then
                     local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-                    if hrp and tick() - lastCheck > 1 then
+                    if hrp then
                         if not isPlayerInJail(targetName, hrp.Position) then
                             executeCommand("jail " .. targetName)
                         end
-                        lastCheck = tick()
                     end
                 end
-                wait(0.5)
+                wait(0.1)
             end
         end)
     elseif cmd == "unloopjail" then
@@ -429,73 +377,508 @@ local function executeCommand(cmdText)
     end
 end
 
-for i, cmdText in ipairs(commands) do
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, 0, 0, 28)
-    button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    button.BorderSizePixel = 0
-    button.Text = cmdText
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.Font = Enum.Font.Gotham
-    button.TextSize = 10
-    button.Parent = scrollFrame
-    
-    button.MouseButton1Click:Connect(function()
-        commandTextBox.Text = cmdText
-        executeCommand(cmdText)
-    end)
-end
+MainTab:CreateText({
+    Text = "Axomic - Btools Admin v1.0",
+    TextSize = 18,
+    TextColor = Color3.fromRGB(255, 255, 255)
+})
 
-executeButton.MouseButton1Click:Connect(function()
-    executeCommand(commandTextBox.Text)
-end)
-
-commandTextBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then
-        executeCommand(commandTextBox.Text)
+local targetTextBox = MainTab:CreateBox({
+    Text = "Target Username",
+    Placeholder = "Enter username...",
+    Default = "",
+    Callback = function(text)
+        window:CreateNotification({
+            Title = "Target Set",
+            Description = "Target set to: " .. text,
+            Duration = 3
+        })
     end
-end)
+})
 
-closeButton.MouseButton1Click:Connect(function()
-    screenGui:Destroy()
-end)
+MainTab:CreatePlayerSelector({
+    Text = "Select Target Player",
+    Callback = function(selectedPlayer)
+        if selectedPlayer then
+            targetTextBox:Set(selectedPlayer.Name)
+            window:CreateNotification({
+                Title = "Player Selected",
+                Description = "Selected: " .. selectedPlayer.Name,
+                Duration = 3
+            })
+        end
+    end
+})
 
-local dragging = false
-local dragInput, dragStart, startPos
-
-local function updateInput(input)
-    local delta = input.Position - dragStart
-    mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
-
-titleBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = mainFrame.Position
+MainTab:CreateButton({
+    Text = "R63",
+    Callback = function()
+        local function getToolEndpoint()
+            local tool = LocalPlayer.Backpack:FindFirstChild("Building Tools") or LocalPlayer.Character:FindFirstChild("Building Tools")
+            return tool and tool:WaitForChild("SyncAPI"):WaitForChild("ServerEndpoint")
+        end
         
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
+        local partsList = {}
+        local whiteColor = Color3.fromRGB(255, 255, 255)
+        local pinkColor = Color3.fromRGB(255, 50, 120)
+        
+        local layout = {
+            {name = "Chest_R", pos = Vector3.new(0.75, 0.25, -1.0), size = {2.1, 2.1, 2.1}, color = whiteColor, shape = "Ball", weight = 1},
+            {name = "Chest_L", pos = Vector3.new(-0.75, 0.25, -1.0), size = {2.1, 2.1, 2.1}, color = whiteColor, shape = "Ball", weight = 1},
+            {name = "Nip_R", pos = Vector3.new(0.75, 0.25, -2.0), size = {0.5, 0.5, 0.5}, color = whiteColor, shape = "Ball", weight = 1.2},
+            {name = "Nip_L", pos = Vector3.new(-0.75, 0.25, -2.0), size = {0.5, 0.5, 0.5}, color = whiteColor, shape = "Ball", weight = 1.2},
+            {name = "Back_R", pos = Vector3.new(0.9, -1.3, 0.8), size = {2.9, 2.9, 2.9}, color = whiteColor, shape = "Ball", weight = 0.5},
+            {name = "Back_L", pos = Vector3.new(-0.9, -1.3, 0.8), size = {2.9, 2.9, 2.9}, color = whiteColor, shape = "Ball", weight = 0.5},
+            {name = "Hose", pos = Vector3.new(0, -1.1, -1.5), size = {0.6, 0.6, 5.2}, color = whiteColor, shape = "Normal", weight = 2},
+            {name = "Tip", pos = Vector3.new(0, -1.1, -4.4), size = {0.85, 0.85, 0.85}, color = pinkColor, shape = "Ball", weight = 2.5}
+        }
+        
+        local function serverDelete()
+            local endpoint = getToolEndpoint()
+            if not endpoint or #partsList == 0 then return end
+            local parts = {}
+            for _, v in ipairs(partsList) do if v.part then table.insert(parts, v.part) end end
+            pcall(function() endpoint:InvokeServer("Remove", parts) end)
+            partsList = {}
+        end
+        
+        local function spawnBody()
+            local endpoint = getToolEndpoint()
+            if not endpoint then return end
+            local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            serverDelete()
+            for _, data in ipairs(layout) do
+                local targetCF = root.CFrame * CFrame.new(data.pos)
+                local newPart = endpoint:InvokeServer("CreatePart", data.shape, targetCF, workspace)
+                if newPart then
+                    table.insert(partsList, {part = newPart, offset = data.pos, weight = data.weight})
+                    task.spawn(function()
+                        endpoint:InvokeServer("SyncColor", {{Part = newPart, Color = data.color}})
+                        endpoint:InvokeServer("SyncResize", {{Part = newPart, CFrame = targetCF, Size = Vector3.new(data.size[1], data.size[2], data.size[3])}})
+                        endpoint:InvokeServer("SyncCollision", {{Part = newPart, CanCollide = false}})
+                        endpoint:InvokeServer("SyncAnchor", {{Part = newPart, Anchored = true}})
+                    end)
+                end
+            end
+        end
+        
+        local tool = Instance.new("Tool", LocalPlayer.Backpack)
+        tool.Name = "R63 - Axom"
+        tool.RequiresHandle = false
+        tool.Equipped:Connect(spawnBody)
+        tool.Unequipped:Connect(serverDelete)
+        
+        RunService.Heartbeat:Connect(function()
+            local endpoint = getToolEndpoint()
+            local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            
+            if endpoint and root and hum and #partsList > 0 then
+                local syncData = {}
+                local t = tick()
+                local isMoving = hum.MoveDirection.Magnitude > 0.1
+                
+                for _, item in ipairs(partsList) do
+                    if item.part and item.part.Parent then
+                        local multiplier = item.weight or 1
+                        local xOffset, yOffset, zOffset = 0, 0, 0
+                        
+                        if isMoving then
+                            yOffset = math.sin(t * 14) * (0.15 * multiplier)
+                            xOffset = math.cos(t * 7) * (0.08 * multiplier)
+                            zOffset = math.sin(t * 10) * (0.05 * multiplier)
+                        else
+                            yOffset = math.sin(t * 3) * (0.05 * multiplier)
+                        end
+                        
+                        local finalPos = item.offset + Vector3.new(xOffset, yOffset, zOffset)
+                        table.insert(syncData, {Part = item.part, CFrame = root.CFrame * CFrame.new(finalPos)})
+                    end
+                end
+                endpoint:InvokeServer("SyncMove", syncData)
             end
         end)
+        
+        window:CreateNotification({
+            Title = "R63 Activated",
+            Description = "Tool added to backpack",
+            Duration = 5
+        })
     end
+})
+
+MainTab:CreateButton({
+    Text = "LegLess",
+    Callback = function()
+        local btools = getBtoolsAPI()
+        if not btools then return end
+        
+        if LocalPlayer.Character then
+            local parts = {}
+            for _, part in pairs(LocalPlayer.Character:GetChildren()) do
+                if part:IsA("BasePart") and (part.Name:find("Leg") or part.Name:find("Foot")) then
+                    table.insert(parts, part)
+                end
+            end
+            
+            if #parts > 0 then
+                local args = {
+                    "Remove",
+                    parts
+                }
+                btools:InvokeServer(unpack(args))
+            end
+        end
+    end
+})
+
+local invisibleToggle = MainTab:CreateToggle({
+    Text = "Invisible",
+    Default = false,
+    Callback = function(enabled)
+        local btools = getBtoolsAPI()
+        if not btools then return end
+        
+        invisibleEnabled = enabled
+        
+        if LocalPlayer.Character then
+            if enabled then
+                local partsList = {}
+                for _, part in pairs(LocalPlayer.Character:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        table.insert(partsList, {
+                            Part = part,
+                            Transparency = 1
+                        })
+                        visibleParts[part] = part.Transparency
+                    end
+                end
+                
+                local args = {
+                    "SyncMaterial",
+                    partsList
+                }
+                btools:InvokeServer(unpack(args))
+            else
+                for part, transparency in pairs(visibleParts) do
+                    if part and part.Parent then
+                        local args = {
+                            "SyncMaterial",
+                            {
+                                {
+                                    Part = part,
+                                    Transparency = transparency
+                                }
+                            }
+                        }
+                        btools:InvokeServer(unpack(args))
+                    end
+                end
+                visibleParts = {}
+            end
+        end
+    end
+})
+
+CommandsTab:CreateLabel({
+    Text = "Available Commands",
+    TextSize = 20,
+    TextColor = Color3.fromRGB(255, 255, 255)
+})
+
+CommandsTab:CreateButton({
+    Text = "Bring All",
+    Callback = function()
+        local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if myHrp then
+            local p = {}
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= LocalPlayer and v.Character then
+                    for _, o in pairs(v.Character:GetChildren()) do
+                        if o:IsA("BasePart") then 
+                            table.insert(p, {["Part"] = o, ["CFrame"] = myHrp.CFrame})
+                        end
+                    end
+                end
+            end
+            movePart(p)
+        end
+    end
+})
+
+CommandsTab:CreateButton({
+    Text = "Kill All",
+    Callback = function()
+        local p = {}
+        for _, v in pairs(Players:GetPlayers()) do
+            if v ~= LocalPlayer and v.Character then
+                for _, o in pairs(v.Character:GetChildren()) do
+                    if o:IsA("BasePart") then 
+                        table.insert(p, {["Part"] = o, ["CFrame"] = CFrame.new(0, -1000, 0)})
+                    end
+                end
+            end
+        end
+        movePart(p)
+    end
+})
+
+CommandsTab:CreateButton({
+    Text = "Void All",
+    Callback = function()
+        createPart(CFrame.new(), workspace)
+        local part = workspace:WaitForChild("Part")
+        if part then
+            resizePart(part, CFrame.new(), Vector3.new(200, 200, 200))
+            paintPart(part, Color3.new(0, 0, 0))
+            setTransparency({{Part = part, Transparency = 0.5}})
+            
+            local startTime = tick()
+            local connection
+            connection = RunService.Heartbeat:Connect(function()
+                if tick() - startTime > 3 then
+                    connection:Disconnect()
+                    removeParts()
+                    return
+                end
+                
+                for _, v in pairs(Players:GetPlayers()) do
+                    if v ~= LocalPlayer and v.Character then
+                        local hrp = v.Character:FindFirstChild("HumanoidRootPart")
+                        if hrp then
+                            movePart({{Part = part, CFrame = CFrame.new(hrp.Position)}})
+                            
+                            wait(0.1)
+                            
+                            local p = {}
+                            for _, o in pairs(v.Character:GetChildren()) do
+                                if o:IsA("BasePart") then 
+                                    table.insert(p, {["Part"] = o, ["CFrame"] = CFrame.new(0, -1000, 0)})
+                                end
+                            end
+                            movePart(p)
+                        end
+                    end
+                end
+            end)
+        end
+    end
+})
+
+CommandsTab:CreateButton({
+    Text = "Jail All",
+    Callback = function()
+        for _, v in pairs(Players:GetPlayers()) do
+            if v ~= LocalPlayer then
+                executeCommand("jail " .. v.Name)
+                wait(0.2)
+            end
+        end
+    end
+})
+
+local commands = {
+    {"jail <username>", function() executeCommand("jail " .. targetTextBox:Get()) end},
+    {"bring <username>", function() executeCommand("bring " .. targetTextBox:Get()) end},
+    {"void <username>", function() executeCommand("void " .. targetTextBox:Get()) end},
+    {"kill <username>", function() executeCommand("kill " .. targetTextBox:Get()) end},
+    {"goto <username>", function() executeCommand("goto " .. targetTextBox:Get()) end},
+    {"unjail <username>", function() executeCommand("unjail " .. targetTextBox:Get()) end},
+    {"loopjail <username>", function() executeCommand("loopjail " .. targetTextBox:Get()) end},
+    {"unloopjail <username>", function() executeCommand("unloopjail " .. targetTextBox:Get()) end},
+    {"lagserver", function() executeCommand("lagserver") end},
+    {"unlagserver", function() executeCommand("unlagserver") end}
+}
+
+for i, cmdData in ipairs(commands) do
+    CommandsTab:CreateButton({
+        Text = cmdData[1],
+        Callback = cmdData[2]
+    })
 end
 
-titleBar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
+CommandsTab:CreateButton({
+    Text = "Creeper",
+    Callback = function()
+        local btools = getBtoolsAPI()
+        if not btools then return end
+        
+        local args = {
+            "Remove",
+            {
+                Instance.new("MeshPart", nil)
+            }
+        }
+        btools:InvokeServer(unpack(args))
+        
+        wait(0.1)
+        
+        if LocalPlayer.Character then
+            local parts = {}
+            local leftHand = LocalPlayer.Character:FindFirstChild("LeftHand")
+            local rightHand = LocalPlayer.Character:FindFirstChild("RightHand")
+            local leftArm = LocalPlayer.Character:FindFirstChild("LeftLowerArm") or LocalPlayer.Character:FindFirstChild("Left Arm")
+            local rightArm = LocalPlayer.Character:FindFirstChild("RightLowerArm") or LocalPlayer.Character:FindFirstChild("Right Arm")
+            local leftUpperArm = LocalPlayer.Character:FindFirstChild("LeftUpperArm")
+            local rightUpperArm = LocalPlayer.Character:FindFirstChild("RightUpperArm")
+            
+            if leftHand then table.insert(parts, leftHand) end
+            if rightHand then table.insert(parts, rightHand) end
+            if leftArm then table.insert(parts, leftArm) end
+            if rightArm then table.insert(parts, rightArm) end
+            if leftUpperArm then table.insert(parts, leftUpperArm) end
+            if rightUpperArm then table.insert(parts, rightUpperArm) end
+            
+            if #parts > 0 then
+                local args2 = {
+                    "Remove",
+                    parts
+                }
+                btools:InvokeServer(unpack(args2))
+            end
+        end
     end
-end)
+})
 
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input == dragInput) then
-        updateInput(input)
+CommandsTab:CreateToggle({
+    Text = "Punish",
+    Default = false,
+    Callback = function(enabled)
+        punishEnabled = enabled
+        local targetName = targetTextBox:Get()
+        local targetPlayer = targetName and Players:FindFirstChild(targetName)
+        
+        if enabled and targetPlayer then
+            punishPlayers[targetName] = true
+            
+            spawn(function()
+                while punishPlayers[targetName] and targetPlayer and targetPlayer.Parent do
+                    if targetPlayer.Character then
+                        local btools = getBtoolsAPI()
+                        if btools then
+                            local parts = {}
+                            for _, part in pairs(targetPlayer.Character:GetChildren()) do
+                                if part:IsA("BasePart") then
+                                    table.insert(parts, part)
+                                end
+                            end
+                            
+                            if #parts > 0 then
+                                local args = {
+                                    "Remove",
+                                    parts
+                                }
+                                btools:InvokeServer(unpack(args))
+                            end
+                        end
+                    end
+                    wait(1)
+                end
+            end)
+        else
+            punishPlayers[targetName] = false
+        end
     end
-end)
+})
+
+CommandsTab:CreateToggle({
+    Text = "Invisible",
+    Default = false,
+    Callback = function(enabled)
+        local btools = getBtoolsAPI()
+        if not btools then return end
+        
+        invisibleEnabled = enabled
+        
+        if LocalPlayer.Character then
+            if enabled then
+                local partsList = {}
+                for _, part in pairs(LocalPlayer.Character:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        table.insert(partsList, {
+                            Part = part,
+                            Transparency = 1
+                        })
+                        visibleParts[part] = part.Transparency
+                    end
+                end
+                
+                local args = {
+                    "SyncMaterial",
+                    partsList
+                }
+                btools:InvokeServer(unpack(args))
+            else
+                for part, transparency in pairs(visibleParts) do
+                    if part and part.Parent then
+                        local args = {
+                            "SyncMaterial",
+                            {
+                                {
+                                    Part = part,
+                                    Transparency = transparency
+                                }
+                            }
+                        }
+                        btools:InvokeServer(unpack(args))
+                    end
+                end
+                visibleParts = {}
+            end
+        end
+    end
+})
+
+CommandsTab:CreateButton({
+    Text = "LegLess",
+    Callback = function()
+        local btools = getBtoolsAPI()
+        if not btools then return end
+        
+        if LocalPlayer.Character then
+            local parts = {}
+            for _, part in pairs(LocalPlayer.Character:GetChildren()) do
+                if part:IsA("BasePart") and (part.Name:find("Leg") or part.Name:find("Foot")) then
+                    table.insert(parts, part)
+                end
+            end
+            
+            if #parts > 0 then
+                local args = {
+                    "Remove",
+                    parts
+                }
+                btools:InvokeServer(unpack(args))
+            end
+        end
+    end
+})
+
+local toggleKeybind = MainTab:CreateBind({
+    Text = "Toggle UI Keybind",
+    Default = Enum.KeyCode.RightShift,
+    Hold = false,
+    CallBack = function()
+        window:CreateNotification({
+            Title = "UI Toggled",
+            Description = "Press RightShift to show/hide UI",
+            Duration = 3
+        })
+    end
+})
 
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.RightControl then
-        mainFrame.Visible = not mainFrame.Visible
+        window:CreateNotification({
+            Title = "Axomic - Btools Admin",
+            Description = "UI is now visible",
+            Duration = 2
+        })
     end
 end)
+
+window:CreateNotification({
+    Title = "Axomic - Btools Admin Loaded",
+    Description = "Made with Apoto UI Library",
+    Duration = 5
+})
