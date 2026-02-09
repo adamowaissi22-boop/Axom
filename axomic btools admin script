@@ -26,6 +26,7 @@ local invisibleEnabled = false
 local visibleParts = {}
 local punishEnabled = false
 local punishPlayers = {}
+local freezeEnabled = false
 
 local function getBtoolsAPI()
     local char = LocalPlayer.Character
@@ -133,6 +134,17 @@ local function removeParts()
         {
             Instance.new("Part", nil)
         }
+    }
+    btools:InvokeServer(unpack(args))
+end
+
+local function setAnchor(parts, anchored)
+    local btools = getBtoolsAPI()
+    if not btools then return end
+    
+    local args = {
+        "SyncAnchor",
+        parts
     }
     btools:InvokeServer(unpack(args))
 end
@@ -700,42 +712,42 @@ end
 CommandsTab:CreateButton({
     Text = "Creeper",
     Callback = function()
+        local targetName = targetTextBox:Get()
+        local targetPlayer = targetName and Players:FindFirstChild(targetName)
+        
+        if not targetPlayer or not targetPlayer.Character then
+            window:CreateNotification({
+                Title = "Error",
+                Description = "Select a target player first",
+                Duration = 3
+            })
+            return
+        end
+        
         local btools = getBtoolsAPI()
         if not btools then return end
         
-        local args = {
-            "Remove",
-            {
-                Instance.new("MeshPart", nil)
+        local parts = {}
+        local leftHand = targetPlayer.Character:FindFirstChild("LeftHand")
+        local rightHand = targetPlayer.Character:FindFirstChild("RightHand")
+        local leftArm = targetPlayer.Character:FindFirstChild("LeftLowerArm") or targetPlayer.Character:FindFirstChild("Left Arm")
+        local rightArm = targetPlayer.Character:FindFirstChild("RightLowerArm") or targetPlayer.Character:FindFirstChild("Right Arm")
+        local leftUpperArm = targetPlayer.Character:FindFirstChild("LeftUpperArm")
+        local rightUpperArm = targetPlayer.Character:FindFirstChild("RightUpperArm")
+        
+        if leftHand then table.insert(parts, leftHand) end
+        if rightHand then table.insert(parts, rightHand) end
+        if leftArm then table.insert(parts, leftArm) end
+        if rightArm then table.insert(parts, rightArm) end
+        if leftUpperArm then table.insert(parts, leftUpperArm) end
+        if rightUpperArm then table.insert(parts, rightUpperArm) end
+        
+        if #parts > 0 then
+            local args = {
+                "Remove",
+                parts
             }
-        }
-        btools:InvokeServer(unpack(args))
-        
-        wait(0.1)
-        
-        if LocalPlayer.Character then
-            local parts = {}
-            local leftHand = LocalPlayer.Character:FindFirstChild("LeftHand")
-            local rightHand = LocalPlayer.Character:FindFirstChild("RightHand")
-            local leftArm = LocalPlayer.Character:FindFirstChild("LeftLowerArm") or LocalPlayer.Character:FindFirstChild("Left Arm")
-            local rightArm = LocalPlayer.Character:FindFirstChild("RightLowerArm") or LocalPlayer.Character:FindFirstChild("Right Arm")
-            local leftUpperArm = LocalPlayer.Character:FindFirstChild("LeftUpperArm")
-            local rightUpperArm = LocalPlayer.Character:FindFirstChild("RightUpperArm")
-            
-            if leftHand then table.insert(parts, leftHand) end
-            if rightHand then table.insert(parts, rightHand) end
-            if leftArm then table.insert(parts, leftArm) end
-            if rightArm then table.insert(parts, rightArm) end
-            if leftUpperArm then table.insert(parts, leftUpperArm) end
-            if rightUpperArm then table.insert(parts, rightUpperArm) end
-            
-            if #parts > 0 then
-                local args2 = {
-                    "Remove",
-                    parts
-                }
-                btools:InvokeServer(unpack(args2))
-            end
+            btools:InvokeServer(unpack(args))
         end
     end
 })
@@ -777,6 +789,66 @@ CommandsTab:CreateToggle({
             end)
         else
             punishPlayers[targetName] = false
+        end
+    end
+})
+
+CommandsTab:CreateToggle({
+    Text = "Freeze",
+    Default = false,
+    Callback = function(enabled)
+        freezeEnabled = enabled
+        local targetName = targetTextBox:Get()
+        local targetPlayer = targetName and Players:FindFirstChild(targetName)
+        
+        if not targetPlayer or not targetPlayer.Character then
+            window:CreateNotification({
+                Title = "Error",
+                Description = "Select a target player first",
+                Duration = 3
+            })
+            return
+        end
+        
+        local btools = getBtoolsAPI()
+        if not btools then return end
+        
+        if enabled then
+            local partsList = {}
+            for _, part in pairs(targetPlayer.Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    table.insert(partsList, {
+                        Part = part,
+                        Anchored = true
+                    })
+                end
+            end
+            
+            if #partsList > 0 then
+                local args = {
+                    "SyncAnchor",
+                    partsList
+                }
+                btools:InvokeServer(unpack(args))
+            end
+        else
+            local partsList = {}
+            for _, part in pairs(targetPlayer.Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    table.insert(partsList, {
+                        Part = part,
+                        Anchored = false
+                    })
+                end
+            end
+            
+            if #partsList > 0 then
+                local args = {
+                    "SyncAnchor",
+                    partsList
+                }
+                btools:InvokeServer(unpack(args))
+            end
         end
     end
 })
@@ -832,24 +904,34 @@ CommandsTab:CreateToggle({
 CommandsTab:CreateButton({
     Text = "LegLess",
     Callback = function()
+        local targetName = targetTextBox:Get()
+        local targetPlayer = targetName and Players:FindFirstChild(targetName)
+        
+        if not targetPlayer or not targetPlayer.Character then
+            window:CreateNotification({
+                Title = "Error",
+                Description = "Select a target player first",
+                Duration = 3
+            })
+            return
+        end
+        
         local btools = getBtoolsAPI()
         if not btools then return end
         
-        if LocalPlayer.Character then
-            local parts = {}
-            for _, part in pairs(LocalPlayer.Character:GetChildren()) do
-                if part:IsA("BasePart") and (part.Name:find("Leg") or part.Name:find("Foot")) then
-                    table.insert(parts, part)
-                end
+        local parts = {}
+        for _, part in pairs(targetPlayer.Character:GetChildren()) do
+            if part:IsA("BasePart") and (part.Name:find("Leg") or part.Name:find("Foot")) then
+                table.insert(parts, part)
             end
-            
-            if #parts > 0 then
-                local args = {
-                    "Remove",
-                    parts
-                }
-                btools:InvokeServer(unpack(args))
-            end
+        end
+        
+        if #parts > 0 then
+            local args = {
+                "Remove",
+                parts
+            }
+            btools:InvokeServer(unpack(args))
         end
     end
 })
