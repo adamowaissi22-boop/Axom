@@ -544,6 +544,215 @@ MainTab:CreateButton({
     end
 })
 
+MainTab:CreateButton({
+    Text = "Skybox",
+    Callback = function()
+        local function getToolEndpoint()
+            local tool = LocalPlayer.Backpack:FindFirstChild("Building Tools") or LocalPlayer.Character:FindFirstChild("Building Tools")
+            return tool and tool:WaitForChild("SyncAPI"):WaitForChild("ServerEndpoint")
+        end
+        
+        local remote = getToolEndpoint()
+        if not remote then return end
+        
+        local function _(args)
+            remote:InvokeServer(unpack(args))
+        end
+        
+        local function SetName(part, stringg)
+            local args = {
+                [1] = "SetName",
+                [2] = {
+                    [1] = part
+                },
+                [3] = stringg
+            }
+            _(args)
+        end
+        
+        local function SetAnchor(boolean,part)
+            local args = {
+                [1] = "SyncAnchor",
+                [2] = {
+                    [1] = {
+                        ["Part"] = part,
+                        ["Anchored"] = boolean
+                    }
+                }
+            }
+            _(args)
+        end
+        
+        local function CreatePart(cf,parent)
+            local args = {
+                [1] = "CreatePart",
+                [2] = "Normal",
+                [3] = cf,
+                [4] = parent
+            }
+            _(args)
+        end
+        
+        local function AddMesh(part)
+            local args = {
+                [1] = "CreateMeshes",
+                [2] = {
+                    [1] = {
+                        ["Part"] = part
+                    }
+                }
+            }
+            _(args)
+        end
+        
+        local function SetMesh(part,meshid)
+            local args = {
+                [1] = "SyncMesh",
+                [2] = {
+                    [1] = {
+                        ["Part"] = part,
+                        ["MeshId"] = "rbxassetid://"..meshid
+                    }
+                }
+            }
+            _(args)
+        end
+        
+        local function SetTexture(part, texid)
+            local args = {
+                [1] = "SyncMesh",
+                [2] = {
+                    [1] = {
+                        ["Part"] = part,
+                        ["TextureId"] = "rbxassetid://"..texid
+                    }
+                }
+            }
+            _(args)
+        end
+        
+        local function MeshResize(part,size)
+            local args = {
+                [1] = "SyncMesh",
+                [2] = {
+                    [1] = {
+                        ["Part"] = part,
+                        ["Scale"] = size
+                    }
+                }
+            }
+            _(args)
+        end
+        
+        local function SetLocked(part,boolean)
+            local args = {
+                [1] = "SetLocked",
+                [2] = {
+                    [1] = part
+                },
+                [3] = boolean
+            }
+            _(args)
+        end
+        
+        local char = LocalPlayer.Character
+        if not char then return end
+        
+        local root = char:WaitForChild("HumanoidRootPart")
+        local pos = root.CFrame + Vector3.new(0, 6, 0)
+        CreatePart(pos, workspace)
+        task.wait(0.2)
+        
+        local skyPart
+        for _, v in workspace:GetChildren() do
+            if v:IsA("BasePart") and (v.Position - pos.Position).magnitude < 1 then
+                skyPart = v
+                break
+            end
+        end
+        
+        if skyPart then
+            SetName(skyPart, "Sky")
+            AddMesh(skyPart)
+            SetMesh(skyPart, "111891702759441")
+            SetTexture(skyPart, "99429165130278")
+            MeshResize(skyPart, Vector3.new(1000, 1000, 1000))
+            SetLocked(skyPart, true)
+            SetAnchor(true, skyPart)
+        end
+        
+        window:CreateNotification({
+            Title = "Skybox Created",
+            Description = "Skybox added above your head",
+            Duration = 3
+        })
+    end
+})
+
+MainTab:CreateButton({
+    Text = "Decal Spam",
+    Callback = function()
+        local function getToolEndpoint()
+            local tool = LocalPlayer.Backpack:FindFirstChild("Building Tools") or LocalPlayer.Character:FindFirstChild("Building Tools")
+            return tool and tool:WaitForChild("SyncAPI"):WaitForChild("ServerEndpoint")
+        end
+        
+        local remote = getToolEndpoint()
+        if not remote then return end
+        
+        local function _(args)
+            remote:InvokeServer(unpack(args))
+        end
+        
+        local function SpawnDecal(part,side)
+            local args = {
+                [1] = "CreateTextures",
+                [2] = {
+                    [1] = {
+                        ["Part"] = part,
+                        ["Face"] = side,
+                        ["TextureType"] = "Decal"
+                    }
+                }
+            }
+            _(args)
+        end
+        
+        local function AddDecal(part,asset,side)
+            local args = {
+                [1] = "SyncTexture",
+                [2] = {
+                    [1] = {
+                        ["Part"] = part,
+                        ["Face"] = side,
+                        ["TextureType"] = "Decal",
+                        ["Texture"] = "rbxassetid://".. asset
+                    }
+                }
+            }
+            _(args)
+        end
+        
+        local faces = {Enum.NormalId.Front, Enum.NormalId.Back, Enum.NormalId.Left, Enum.NormalId.Right, Enum.NormalId.Top, Enum.NormalId.Bottom}
+        local asset = "99429165130278"
+        
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                for _, face in ipairs(faces) do
+                    SpawnDecal(v, face)
+                    AddDecal(v, asset, face)
+                end
+            end
+        end
+        
+        window:CreateNotification({
+            Title = "Decal Spam",
+            Description = "Added decals to all parts in workspace",
+            Duration = 3
+        })
+    end
+})
+
 local invisibleToggle = MainTab:CreateToggle({
     Text = "Invisible",
     Default = false,
@@ -937,7 +1146,7 @@ CommandsTab:CreateButton({
 })
 
 local toggleKeybind = MainTab:CreateBind({
-    Text = "Toggle UI Keybind",
+    Text = "UI Keybind",
     Default = Enum.KeyCode.RightShift,
     Hold = false,
     CallBack = function()
