@@ -1,345 +1,14 @@
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
+local player = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ProximityPromptService = game:GetService("ProximityPromptService")
-local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
+local PPS = game:GetService("ProximityPromptService")
 
-local gui = Instance.new("ScreenGui")
-gui.Name = "screengui"
-gui.ResetOnSpawn = false
-gui.Parent = player:WaitForChild("PlayerGui")
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.DisplayOrder = 999
-gui.IgnoreGuiInset = true
-
-local main = Instance.new("Frame")
-main.Name = "Main"
-main.Parent = gui
-main.Size = UDim2.new(0, 380, 0, 500)
-main.Position = UDim2.new(0.5, -190, 0.5, -250)
-main.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-main.BorderSizePixel = 0
-main.Active = true
-main.Draggable = false
-main.ClipsDescendants = true
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
-corner.Parent = main
-
-local stroke = Instance.new("UIStroke")
-stroke.Thickness = 2
-stroke.Color = Color3.fromRGB(100, 100, 255)
-stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-stroke.Parent = main
-
-local gradient = Instance.new("UIGradient")
-gradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 40)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 15))
-})
-gradient.Rotation = 90
-gradient.Parent = main
-
-local topbar = Instance.new("Frame")
-topbar.Name = "TopBar"
-topbar.Parent = main
-topbar.Size = UDim2.new(1, 0, 0, 45)
-topbar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-topbar.BorderSizePixel = 0
-
-local topcorner = Instance.new("UICorner")
-topcorner.CornerRadius = UDim.new(0, 12)
-topcorner.Parent = topbar
-
-local topstroke = Instance.new("UIStroke")
-topstroke.Thickness = 1
-topstroke.Color = Color3.fromRGB(100, 100, 255)
-topstroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-topstroke.Parent = topbar
-
-local title = Instance.new("TextLabel")
-title.Name = "Title"
-title.Parent = topbar
-title.Size = UDim2.new(1, -80, 1, 0)
-title.Position = UDim2.new(0, 15, 0, 0)
-title.BackgroundTransparency = 1
-title.Text = "Axomic - ETFB"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 20
-title.TextXAlignment = Enum.TextXAlignment.Left
-
-local close = Instance.new("ImageButton")
-close.Name = "Close"
-close.Parent = topbar
-close.Size = UDim2.new(0, 30, 0, 30)
-close.Position = UDim2.new(1, -40, 0.5, -15)
-close.BackgroundTransparency = 1
-close.Image = "rbxassetid://10709789042"
-close.ImageColor3 = Color3.fromRGB(255, 80, 80)
-
-local minimize = Instance.new("ImageButton")
-minimize.Name = "Minimize"
-minimize.Parent = topbar
-minimize.Size = UDim2.new(0, 30, 0, 30)
-minimize.Position = UDim2.new(1, -75, 0.5, -15)
-minimize.BackgroundTransparency = 1
-minimize.Image = "rbxassetid://10709784743"
-minimize.ImageColor3 = Color3.fromRGB(255, 255, 255)
-
-local content = Instance.new("ScrollingFrame")
-content.Name = "Content"
-content.Parent = main
-content.Size = UDim2.new(1, -20, 1, -65)
-content.Position = UDim2.new(0, 10, 0, 55)
-content.BackgroundTransparency = 1
-content.BorderSizePixel = 0
-content.ScrollBarThickness = 4
-content.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
-content.CanvasSize = UDim2.new(0, 0, 0, 0)
-
-local layout = Instance.new("UIListLayout")
-layout.Parent = content
-layout.SortOrder = Enum.SortOrder.LayoutOrder
-layout.Padding = UDim.new(0, 8)
-
-local padding = Instance.new("UIPadding")
-padding.Parent = content
-padding.PaddingLeft = UDim.new(0, 5)
-padding.PaddingRight = UDim.new(0, 5)
-padding.PaddingTop = UDim.new(0, 5)
-padding.PaddingBottom = UDim.new(0, 5)
-
-local function makeButton(text, color)
-    local btn = Instance.new("TextButton")
-    btn.Name = "Button"
-    btn.Parent = content
-    btn.Size = UDim2.new(1, 0, 0, 40)
-    btn.BackgroundColor3 = color or Color3.fromRGB(40, 40, 50)
-    btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 16
-    btn.AutoButtonColor = false
-    
-    local btncorner = Instance.new("UICorner")
-    btncorner.CornerRadius = UDim.new(0, 8)
-    btncorner.Parent = btn
-    
-    local btnstroke = Instance.new("UIStroke")
-    btnstroke.Thickness = 1.5
-    btnstroke.Color = Color3.fromRGB(100, 100, 255)
-    btnstroke.Transparency = 0.5
-    btnstroke.Parent = btn
-    
-    local btngradient = Instance.new("UIGradient")
-    btngradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, color or Color3.fromRGB(40, 40, 50)),
-        ColorSequenceKeypoint.new(1, (color or Color3.fromRGB(40, 40, 50)):Lerp(Color3.fromRGB(0, 0, 0), 0.2))
-    })
-    btngradient.Rotation = 90
-    btngradient.Parent = btn
-    
-    btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = (color or Color3.fromRGB(40, 40, 50)):Lerp(Color3.fromRGB(255, 255, 255), 0.1)}):Play()
-        TweenService:Create(btnstroke, TweenInfo.new(0.2), {Transparency = 0}):Play()
-    end)
-    
-    btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = color or Color3.fromRGB(40, 40, 50)}):Play()
-        TweenService:Create(btnstroke, TweenInfo.new(0.2), {Transparency = 0.5}):Play()
-    end)
-    
-    btn.MouseButton1Click:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(100, 100, 255)}):Play()
-        TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = color or Color3.fromRGB(40, 40, 50)}):Play()
-    end)
-    
-    return btn
-end
-
-local function makeToggle(text)
-    local frame = Instance.new("Frame")
-    frame.Name = "Toggle"
-    frame.Parent = content
-    frame.Size = UDim2.new(1, 0, 0, 40)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
-    frame.BorderSizePixel = 0
-    
-    local framecorner = Instance.new("UICorner")
-    framecorner.CornerRadius = UDim.new(0, 8)
-    framecorner.Parent = frame
-    
-    local framestroke = Instance.new("UIStroke")
-    framestroke.Thickness = 1
-    framestroke.Color = Color3.fromRGB(100, 100, 255)
-    framestroke.Transparency = 0.7
-    framestroke.Parent = frame
-    
-    local label = Instance.new("TextLabel")
-    label.Parent = frame
-    label.Size = UDim2.new(0.7, -10, 1, 0)
-    label.Position = UDim2.new(0, 10, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 15
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local togglebtn = Instance.new("ImageButton")
-    togglebtn.Name = "ToggleButton"
-    togglebtn.Parent = frame
-    togglebtn.Size = UDim2.new(0, 30, 0, 30)
-    togglebtn.Position = UDim2.new(1, -40, 0.5, -15)
-    togglebtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    togglebtn.Image = "rbxassetid://10709789042"
-    togglebtn.ImageTransparency = 1
-    
-    local togglecorner = Instance.new("UICorner")
-    togglecorner.CornerRadius = UDim.new(1, 0)
-    togglecorner.Parent = togglebtn
-    
-    local togglestroke = Instance.new("UIStroke")
-    togglestroke.Thickness = 2
-    togglestroke.Color = Color3.fromRGB(100, 100, 255)
-    togglestroke.Transparency = 0.5
-    togglestroke.Parent = togglebtn
-    
-    local state = false
-    
-    togglebtn.MouseButton1Click:Connect(function()
-        state = not state
-        if state then
-            TweenService:Create(togglebtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(100, 100, 255)}):Play()
-            TweenService:Create(togglestroke, TweenInfo.new(0.2), {Transparency = 0}):Play()
-        else
-            TweenService:Create(togglebtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 50)}):Play()
-            TweenService:Create(togglestroke, TweenInfo.new(0.2), {Transparency = 0.5}):Play()
-        end
-    end)
-    
-    return frame, togglebtn
-end
-
-local function makeInput(text)
-    local frame = Instance.new("Frame")
-    frame.Name = "Input"
-    frame.Parent = content
-    frame.Size = UDim2.new(1, 0, 0, 70)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
-    frame.BorderSizePixel = 0
-    
-    local framecorner = Instance.new("UICorner")
-    framecorner.CornerRadius = UDim.new(0, 8)
-    framecorner.Parent = frame
-    
-    local framestroke = Instance.new("UIStroke")
-    framestroke.Thickness = 1
-    framestroke.Color = Color3.fromRGB(100, 100, 255)
-    framestroke.Transparency = 0.7
-    framestroke.Parent = frame
-    
-    local label = Instance.new("TextLabel")
-    label.Parent = frame
-    label.Size = UDim2.new(1, -20, 0, 25)
-    label.Position = UDim2.new(0, 10, 0, 5)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 15
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local input = Instance.new("TextBox")
-    input.Parent = frame
-    input.Size = UDim2.new(1, -20, 0, 30)
-    input.Position = UDim2.new(0, 10, 0, 35)
-    input.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
-    input.TextColor3 = Color3.fromRGB(255, 255, 255)
-    input.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-    input.Font = Enum.Font.Gotham
-    input.TextSize = 14
-    input.ClearTextOnFocus = false
-    
-    local inputcorner = Instance.new("UICorner")
-    inputcorner.CornerRadius = UDim.new(0, 6)
-    inputcorner.Parent = input
-    
-    local inputstroke = Instance.new("UIStroke")
-    inputstroke.Thickness = 1
-    inputstroke.Color = Color3.fromRGB(100, 100, 255)
-    inputstroke.Transparency = 0.5
-    inputstroke.Parent = input
-    
-    input.Focused:Connect(function()
-        TweenService:Create(inputstroke, TweenInfo.new(0.2), {Transparency = 0}):Play()
-    end)
-    
-    input.FocusLost:Connect(function()
-        TweenService:Create(inputstroke, TweenInfo.new(0.2), {Transparency = 0.5}):Play()
-    end)
-    
-    return frame, input
-end
-
-local dragging = false
-local dragInput
-local dragStart
-local startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
-
-topbar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = main.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-topbar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-UIS.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        update(input)
-    end
-end)
-
-close.MouseButton1Click:Connect(function()
-    gui:Destroy()
-end)
-
-local minimized = false
-minimize.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    if minimized then
-        TweenService:Create(main, TweenInfo.new(0.3), {Size = UDim2.new(0, 380, 0, 45)}):Play()
-        content.Visible = false
-        minimize.Image = "rbxassetid://10709785590"
-    else
-        TweenService:Create(main, TweenInfo.new(0.3), {Size = UDim2.new(0, 380, 0, 500)}):Play()
-        content.Visible = true
-        minimize.Image = "rbxassetid://10709784743"
-    end
-end)
+local Axion = loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/Axion%20Ui%20Library"))()
 
 local removedVIP = {}
 local removedWalls = {}
@@ -347,21 +16,131 @@ local wallsDeleted = false
 local InstantPrompt = false
 local cache = {}
 local AutoCollect = false
-local AutoRebirth = false
-local AutoSellTool = false
-local SellDelay = 1
-local AutoUpgradeSpeed1 = false
-local AutoUpgradeSpeed10 = false
-local autoBase = false
-local InfiniteJump = false
+local SlotList = {}
+for i = 1, 20 do
+    table.insert(SlotList, tostring(i))
+end
+
 local isGodmode = false
-local geniusSpeed = 70
-local instantTakeEnabled = false
 local ghostClone, connection, noclipConn, deathConn = nil, nil, nil, nil
 local lastPromptUpdate = 0
+local geniusSpeed = 70
+local instantTakeEnabled = false
+local InfiniteJump = false
+local AutoRebirth = false
+local AutoUpgradeSpeed1 = false
+local AutoUpgradeSpeed10 = false
+local AutoSellTool = false
+local SellDelay = 1
+local autoBase = false
 local Enabled = false
 local Backup = {}
 local Connection
+
+local Window = Axion:CreateWindow({
+    Name = "Axomic - Escape Tsunami For Brainrot",
+    Subtitle = "by Axom",
+    Version = "v1.0",
+    Theme = "Cyberpunk",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "AxomicETFB",
+        FileName = "config"
+    },
+    ToggleKey = Enum.KeyCode.RightShift,
+    AnimationSpeed = 0.25,
+    RippleEnabled = true,
+    CornerRadius = 12,
+    ElementCornerRadius = 8
+})
+
+local MainTab = Window:CreateTab({
+    Name = "Main",
+    Icon = "⚙️"
+})
+
+local CreditsTab = Window:CreateTab({
+    Name = "Credits",
+    Icon = "ℹ️"
+})
+
+local function cleanup()
+    isGodmode = false
+    if connection then connection:Disconnect() connection = nil end
+    if noclipConn then noclipConn:Disconnect() noclipConn = nil end
+    if deathConn then deathConn:Disconnect() deathConn = nil end
+    local char = player.Character
+    if char then
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if root and ghostClone then root.CFrame = ghostClone.HumanoidRootPart.CFrame end
+        if char:FindFirstChild("Humanoid") then 
+            char.Humanoid.PlatformStand = false 
+            camera.CameraSubject = char.Humanoid 
+        end
+    end
+    if ghostClone then ghostClone:Destroy() ghostClone = nil end
+end
+
+local function enableGodmode()
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    cleanup()
+    isGodmode = true
+    char.Archivable = true
+    ghostClone = char:Clone()
+    ghostClone.Name = "GhostDecoy"
+    ghostClone.Parent = workspace
+    char.Archivable = false
+    for _, v in pairs(ghostClone:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Transparency = (v.Name:lower():find("root") or v.Name:lower():find("collision")) and 0.5 or 0
+            v.CanCollide = true
+        elseif v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 0 end
+    end
+    if char:FindFirstChild("Animate") then char.Animate:Clone().Parent = ghostClone end
+    char.Humanoid.PlatformStand = true
+    camera.CameraSubject = ghostClone.Humanoid
+    noclipConn = RunService.Stepped:Connect(function()
+        if char then
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then v.CanCollide = false end
+            end
+        end
+    end)
+    connection = RunService.Heartbeat:Connect(function()
+        if ghostClone and char and char:FindFirstChild("HumanoidRootPart") then
+            local moveDir = char.Humanoid.MoveDirection
+            ghostClone.Humanoid:Move(moveDir, false)
+            ghostClone.Humanoid.Jump = char.Humanoid.Jump
+            if moveDir.Magnitude > 0 then
+                local targetRot = CFrame.lookAt(ghostClone.HumanoidRootPart.Position, ghostClone.HumanoidRootPart.Position + moveDir)
+                ghostClone.HumanoidRootPart.CFrame = ghostClone.HumanoidRootPart.CFrame:Lerp(targetRot, 0.25)
+            end
+            if tick() - lastPromptUpdate > 0.5 then
+                for _, p in pairs(workspace:GetDescendants()) do
+                    if p:IsA("ProximityPrompt") then
+                        p.MaxActivationDistance = 25
+                        p.RequiresLineOfSight = false
+                    end
+                end
+                lastPromptUpdate = tick()
+            end
+            char.HumanoidRootPart.CFrame = ghostClone.HumanoidRootPart.CFrame * CFrame.new(0, -15, 0)
+            char.HumanoidRootPart.Velocity = Vector3.zero
+        else cleanup() end
+    end)
+    deathConn = char.Humanoid.Died:Connect(cleanup)
+end
+
+player.CharacterAdded:Connect(function()
+    if isGodmode then task.wait(0.5) enableGodmode() end
+end)
+
+PPS.PromptButtonHoldBegan:Connect(function(p)
+    if instantTakeEnabled then
+        fireproximityprompt(p)
+    end
+end)
 
 local function removeVIP()
     table.clear(removedVIP)
@@ -584,84 +363,6 @@ local function disableVIP()
     end
 end
 
-local function cleanup()
-    isGodmode = false
-    if connection then connection:Disconnect() connection = nil end
-    if noclipConn then noclipConn:Disconnect() noclipConn = nil end
-    if deathConn then deathConn:Disconnect() deathConn = nil end
-    local char = player.Character
-    if char then
-        local root = char:FindFirstChild("HumanoidRootPart")
-        if root and ghostClone then root.CFrame = ghostClone.HumanoidRootPart.CFrame end
-        if char:FindFirstChild("Humanoid") then 
-            char.Humanoid.PlatformStand = false 
-            camera.CameraSubject = char.Humanoid 
-        end
-    end
-    if ghostClone then ghostClone:Destroy() ghostClone = nil end
-end
-
-local function enableGodmode()
-    local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    cleanup()
-    isGodmode = true
-    char.Archivable = true
-    ghostClone = char:Clone()
-    ghostClone.Name = "GhostDecoy"
-    ghostClone.Parent = workspace
-    char.Archivable = false
-    for _, v in pairs(ghostClone:GetDescendants()) do
-        if v:IsA("BasePart") then
-            v.Transparency = (v.Name:lower():find("root") or v.Name:lower():find("collision")) and 0.5 or 0
-            v.CanCollide = true
-        elseif v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 0 end
-    end
-    if char:FindFirstChild("Animate") then char.Animate:Clone().Parent = ghostClone end
-    char.Humanoid.PlatformStand = true
-    camera.CameraSubject = ghostClone.Humanoid
-    noclipConn = RunService.Stepped:Connect(function()
-        if char then
-            for _, v in pairs(char:GetDescendants()) do
-                if v:IsA("BasePart") then v.CanCollide = false end
-            end
-        end
-    end)
-    connection = RunService.Heartbeat:Connect(function()
-        if ghostClone and char and char:FindFirstChild("HumanoidRootPart") then
-            local moveDir = char.Humanoid.MoveDirection
-            ghostClone.Humanoid:Move(moveDir, false)
-            ghostClone.Humanoid.Jump = char.Humanoid.Jump
-            if moveDir.Magnitude > 0 then
-                local targetRot = CFrame.lookAt(ghostClone.HumanoidRootPart.Position, ghostClone.HumanoidRootPart.Position + moveDir)
-                ghostClone.HumanoidRootPart.CFrame = ghostClone.HumanoidRootPart.CFrame:Lerp(targetRot, 0.25)
-            end
-            if tick() - lastPromptUpdate > 0.5 then
-                for _, p in pairs(workspace:GetDescendants()) do
-                    if p:IsA("ProximityPrompt") then
-                        p.MaxActivationDistance = 25
-                        p.RequiresLineOfSight = false
-                    end
-                end
-                lastPromptUpdate = tick()
-            end
-            char.HumanoidRootPart.CFrame = ghostClone.HumanoidRootPart.CFrame * CFrame.new(0, -15, 0)
-            char.HumanoidRootPart.Velocity = Vector3.zero
-        else cleanup() end
-    end)
-    deathConn = char.Humanoid.Died:Connect(cleanup)
-end
-
-player.CharacterAdded:Connect(function()
-    if isGodmode then task.wait(0.5) enableGodmode() end
-end)
-
-PPS.PromptButtonHoldBegan:Connect(function(p)
-    if instantTakeEnabled then
-        fireproximityprompt(p)
-    end
-end)
-
 local function teleportTween(targetPos, customDuration, customOffsetY)
     local char = player.Character or player.CharacterAdded:Wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
@@ -691,181 +392,340 @@ local gapsData = {
     ["Gap 12"] = { pos = Vector3.new(4023, -3, 0), duration = 10, offsetY = -20 }
 }
 
-makeButton("Remove VIP", Color3.fromRGB(200, 50, 50)).MouseButton1Click:Connect(removeVIP)
-makeButton("Bring Back VIP", Color3.fromRGB(50, 150, 200)).MouseButton1Click:Connect(bringBackVIP)
+local MainSection = MainTab:CreateSection({
+    Name = "Main Features",
+    Icon = "⚡"
+})
 
-local deleteBtn = makeButton("Delete All Walls", Color3.fromRGB(200, 50, 50))
-deleteBtn.MouseButton1Click:Connect(function()
-    if wallsDeleted then
-        undoWalls()
-        deleteBtn.Text = "Delete All Walls"
-        deleteBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    else
-        deleteWalls()
-        deleteBtn.Text = "Undo Walls"
-        deleteBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 100)
+MainSection:CreateButton({
+    Name = "Remove VIP",
+    Callback = removeVIP
+})
+
+MainSection:CreateButton({
+    Name = "Bring Back VIP",
+    Callback = bringBackVIP
+})
+
+local deleteWallsBtn = MainSection:CreateButton({
+    Name = "Delete All Walls",
+    Callback = function()
+        if wallsDeleted then
+            undoWalls()
+            deleteWallsBtn:SetText("Delete All Walls")
+        else
+            deleteWalls()
+            deleteWallsBtn:SetText("Undo Walls")
+        end
     end
-end)
+})
 
-makeButton("Fly", Color3.fromRGB(150, 100, 255)).MouseButton1Click:Connect(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/Fly%20Script"))()
-end)
-
-local infiniteJumpFrame, infiniteJumpToggle = makeToggle("Infinite Jump")
-infiniteJumpToggle.MouseButton1Click:Connect(function()
-    InfiniteJump = not InfiniteJump
-end)
-
-local infiniteZoomFrame, infiniteZoomToggle = makeToggle("Infinite Zoom")
-infiniteZoomToggle.MouseButton1Click:Connect(function(state)
-    if infiniteZoomToggle.BackgroundColor3 == Color3.fromRGB(100, 100, 255) then
-        player.CameraMaxZoomDistance = math.huge
-        player.CameraMinZoomDistance = 0.5
-    else
-        player.CameraMaxZoomDistance = Z[1] or 128
-        player.CameraMinZoomDistance = Z[2] or 0.5
+MainSection:CreateButton({
+    Name = "Fly",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/Fly%20Script"))()
     end
-end)
+})
 
-local instantInteractFrame, instantInteractToggle = makeToggle("Instant Interact")
-instantInteractToggle.MouseButton1Click:Connect(function(state)
-    InstantPrompt = not InstantPrompt
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("ProximityPrompt") then
-            if InstantPrompt then
-                if not cache[v] then cache[v] = v.HoldDuration end
-                v.HoldDuration = 0
-                v.RequiresLineOfSight = false
-            else
-                if cache[v] then v.HoldDuration = cache[v] end
+local PlayerSection = MainTab:CreateSection({
+    Name = "Player",
+    Icon = "👤"
+})
+
+local infiniteJumpToggle = PlayerSection:CreateToggle({
+    Name = "Infinite Jump",
+    Flag = "InfiniteJump",
+    CurrentValue = false,
+    Callback = function(value)
+        InfiniteJump = value
+    end
+})
+
+local infiniteZoomToggle = PlayerSection:CreateToggle({
+    Name = "Infinite Zoom",
+    Flag = "InfiniteZoom",
+    CurrentValue = false,
+    Callback = function(value)
+        if value then
+            player.CameraMaxZoomDistance = math.huge
+            player.CameraMinZoomDistance = 0.5
+        else
+            player.CameraMaxZoomDistance = Z[1] or 128
+            player.CameraMinZoomDistance = Z[2] or 0.5
+        end
+    end
+})
+
+local instantInteractToggle = PlayerSection:CreateToggle({
+    Name = "Instant Interact",
+    Flag = "InstantInteract",
+    CurrentValue = false,
+    Callback = function(value)
+        InstantPrompt = value
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("ProximityPrompt") then
+                if value then
+                    if not cache[v] then cache[v] = v.HoldDuration end
+                    v.HoldDuration = 0
+                    v.RequiresLineOfSight = false
+                else
+                    if cache[v] then v.HoldDuration = cache[v] end
+                end
             end
         end
     end
-end)
+})
 
-local autoCollectFrame, autoCollectToggle = makeToggle("Auto Collect Cash")
-autoCollectToggle.MouseButton1Click:Connect(function()
-    AutoCollect = not AutoCollect
-end)
-
-local autoRebirthFrame, autoRebirthToggle = makeToggle("Auto Rebirth")
-autoRebirthToggle.MouseButton1Click:Connect(function()
-    AutoRebirth = not AutoRebirth
-end)
-
-local delayFrame, delayInput = makeInput("Sell Tool Delay")
-delayInput.Text = "1"
-delayInput.FocusLost:Connect(function()
-    local num = tonumber(delayInput.Text)
-    if num then
-        SellDelay = num
-    else
-        delayInput.Text = tostring(SellDelay)
+local instantTakeToggle = PlayerSection:CreateToggle({
+    Name = "Instant Take",
+    Flag = "InstantTake",
+    CurrentValue = false,
+    Callback = function(value)
+        instantTakeEnabled = value
     end
-end)
+})
 
-local autoSellFrame, autoSellToggle = makeToggle("Auto Sell Tool")
-autoSellToggle.MouseButton1Click:Connect(function()
-    AutoSellTool = not AutoSellTool
-end)
-
-makeButton("Sell All Inventory", Color3.fromRGB(100, 200, 100)).MouseButton1Click:Connect(function()
-    pcall(function()
-        ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("SellAll"):InvokeServer()
-    end)
-end)
-
-makeButton("Unlock Vip And Vip+", Color3.fromRGB(150, 100, 255)).MouseButton1Click:Connect(function()
-    Enabled = not Enabled
-    if Enabled then
-        enableVIP()
-    else
-        disableVIP()
+local godModeToggle = PlayerSection:CreateToggle({
+    Name = "God Mode",
+    Flag = "GodMode",
+    CurrentValue = false,
+    Callback = function(value)
+        if value then
+            enableGodmode()
+        else
+            cleanup()
+        end
     end
-end)
+})
+
+local speedInput = PlayerSection:CreateInput({
+    Name = "Change Speed",
+    Flag = "SpeedValue",
+    CurrentValue = tostring(geniusSpeed),
+    PlaceholderText = "Enter speed",
+    Callback = function(value)
+        local num = tonumber(value)
+        if num then
+            geniusSpeed = num
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                player:SetAttribute("CurrentSpeed", geniusSpeed)
+            end
+            Window:Notify({
+                Title = "Speed Updated",
+                Content = "Speed set to " .. num,
+                Duration = 2,
+                Type = "Success"
+            })
+        else
+            Window:Notify({
+                Title = "Error",
+                Content = "Invalid speed value",
+                Duration = 2,
+                Type = "Error"
+            })
+        end
+    end
+})
+
+PlayerSection:CreateButton({
+    Name = "Apply Speed",
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player:SetAttribute("CurrentSpeed", geniusSpeed)
+            Window:Notify({
+                Title = "Speed Applied",
+                Content = "Speed set to " .. geniusSpeed,
+                Duration = 2,
+                Type = "Success"
+            })
+        end
+    end
+})
+
+local FarmSection = MainTab:CreateSection({
+    Name = "Farming",
+    Icon = "💰"
+})
+
+local autoCollectToggle = FarmSection:CreateToggle({
+    Name = "Auto Collect Cash",
+    Flag = "AutoCollect",
+    CurrentValue = false,
+    Callback = function(value)
+        AutoCollect = value
+    end
+})
+
+local autoRebirthToggle = FarmSection:CreateToggle({
+    Name = "Auto Rebirth",
+    Flag = "AutoRebirth",
+    CurrentValue = false,
+    Callback = function(value)
+        AutoRebirth = value
+    end
+})
+
+local delayInput = FarmSection:CreateInput({
+    Name = "Sell Tool Delay",
+    Flag = "SellDelay",
+    CurrentValue = "1",
+    PlaceholderText = "Seconds",
+    Callback = function(value)
+        local num = tonumber(value)
+        if num then
+            SellDelay = num
+        end
+    end
+})
+
+local autoSellToggle = FarmSection:CreateToggle({
+    Name = "Auto Sell Tool",
+    Flag = "AutoSell",
+    CurrentValue = false,
+    Callback = function(value)
+        AutoSellTool = value
+    end
+})
+
+FarmSection:CreateButton({
+    Name = "Sell All Inventory",
+    Callback = function()
+        pcall(function()
+            ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("SellAll"):InvokeServer()
+        end)
+        Window:Notify({
+            Title = "Success",
+            Content = "Successfully Sold All Inventory",
+            Duration = 2,
+            Type = "Success"
+        })
+    end
+})
+
+local UpgradeSection = MainTab:CreateSection({
+    Name = "Upgrades",
+    Icon = "⬆️"
+})
+
+local autoSpeed1Toggle = UpgradeSection:CreateToggle({
+    Name = "Auto Upgrade Speed +1",
+    Flag = "AutoSpeed1",
+    CurrentValue = false,
+    Callback = function(value)
+        AutoUpgradeSpeed1 = value
+    end
+})
+
+local autoSpeed10Toggle = UpgradeSection:CreateToggle({
+    Name = "Auto Upgrade Speed +10",
+    Flag = "AutoSpeed10",
+    CurrentValue = false,
+    Callback = function(value)
+        AutoUpgradeSpeed10 = value
+    end
+})
+
+UpgradeSection:CreateButton({
+    Name = "Upgrade Speed +1",
+    Callback = function()
+        pcall(function()
+            UpgradeSpeedRemote:InvokeServer(1)
+        end)
+    end
+})
+
+UpgradeSection:CreateButton({
+    Name = "Upgrade Speed +10",
+    Callback = function()
+        pcall(function()
+            UpgradeSpeedRemote:InvokeServer(10)
+        end)
+    end
+})
+
+UpgradeSection:CreateButton({
+    Name = "Upgrade Carry",
+    Callback = function()
+        pcall(function()
+            ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("UpgradeCarry"):InvokeServer()
+        end)
+    end
+})
+
+local autoBaseToggle = UpgradeSection:CreateToggle({
+    Name = "Auto Upgrade Base",
+    Flag = "AutoBase",
+    CurrentValue = false,
+    Callback = function(value)
+        autoBase = value
+    end
+})
+
+local VipSection = MainTab:CreateSection({
+    Name = "VIP",
+    Icon = "👑"
+})
+
+local vipButton = VipSection:CreateButton({
+    Name = "Unlock Vip And Vip+",
+    Callback = function()
+        Enabled = not Enabled
+        if Enabled then
+            enableVIP()
+            vipButton:SetText("Disable Vip Unlock")
+        else
+            disableVIP()
+            vipButton:SetText("Unlock Vip And Vip+")
+        end
+    end
+})
+
+local GapsSection = MainTab:CreateSection({
+    Name = "Gaps Teleport",
+    Icon = "📍"
+})
 
 for i = 1, 12 do
     local gapName = "Gap " .. i
-    makeButton("Teleport to " .. gapName, Color3.fromRGB(100, 150, 255)).MouseButton1Click:Connect(function()
-        local data = gapsData[gapName]
-        if data then
-            teleportTween(data.pos, data.duration, data.offsetY)
+    GapsSection:CreateButton({
+        Name = "Teleport to " .. gapName,
+        Callback = function()
+            local data = gapsData[gapName]
+            if data then
+                teleportTween(data.pos, data.duration, data.offsetY)
+                Window:Notify({
+                    Title = "Teleport",
+                    Content = "Teleporting to " .. gapName,
+                    Duration = 2
+                })
+            end
         end
-    end)
+    })
 end
 
-local autoSpeed1Frame, autoSpeed1Toggle = makeToggle("Auto Upgrade Speed +1")
-autoSpeed1Toggle.MouseButton1Click:Connect(function()
-    AutoUpgradeSpeed1 = not AutoUpgradeSpeed1
-end)
+local CreditsSection = CreditsTab:CreateSection({
+    Name = "About",
+    Icon = "ℹ️"
+})
 
-local autoSpeed10Frame, autoSpeed10Toggle = makeToggle("Auto Upgrade Speed +10")
-autoSpeed10Toggle.MouseButton1Click:Connect(function()
-    AutoUpgradeSpeed10 = not AutoUpgradeSpeed10
-end)
+CreditsSection:CreateLabel("This script is made by Axom")
 
-makeButton("Upgrade Speed +1", Color3.fromRGB(100, 150, 255)).MouseButton1Click:Connect(function()
-    pcall(function()
-        UpgradeSpeedRemote:InvokeServer(1)
-    end)
-end)
-
-makeButton("Upgrade Speed +10", Color3.fromRGB(100, 150, 255)).MouseButton1Click:Connect(function()
-    pcall(function()
-        UpgradeSpeedRemote:InvokeServer(10)
-    end)
-end)
-
-makeButton("Upgrade Carry", Color3.fromRGB(100, 150, 255)).MouseButton1Click:Connect(function()
-    pcall(function()
-        ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("UpgradeCarry"):InvokeServer()
-    end)
-end)
-
-local autoBaseFrame, autoBaseToggle = makeToggle("Auto Upgrade Base")
-autoBaseToggle.MouseButton1Click:Connect(function()
-    autoBase = not autoBase
-end)
-
-local godModeFrame, godModeToggle = makeToggle("God Mode")
-godModeToggle.MouseButton1Click:Connect(function()
-    if godModeToggle.BackgroundColor3 == Color3.fromRGB(100, 100, 255) then
-        enableGodmode()
-    else
-        cleanup()
+CreditsSection:CreateButton({
+    Name = "Discord",
+    Callback = function()
+        setclipboard("https://discord.gg/FgR3MXqZy9")
+        Window:Notify({
+            Title = "Discord Link",
+            Content = "Discord link copied to clipboard!",
+            Duration = 2,
+            Type = "Success"
+        })
     end
-end)
+})
 
-local speedFrame, speedInput = makeInput("Change Speed")
-speedInput.Text = tostring(geniusSpeed)
-speedInput.FocusLost:Connect(function()
-    local num = tonumber(speedInput.Text)
-    if num then
-        geniusSpeed = num
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player:SetAttribute("CurrentSpeed", geniusSpeed)
-        end
-    else
-        speedInput.Text = tostring(geniusSpeed)
-    end
-end)
-
-local instantTakeFrame, instantTakeToggle = makeToggle("Instant Take")
-instantTakeToggle.MouseButton1Click:Connect(function()
-    instantTakeEnabled = not instantTakeEnabled
-end)
-
-makeButton("Apply Speed", Color3.fromRGB(100, 200, 100)).MouseButton1Click:Connect(function()
-    if player.Character and player.Character:FindFirstChild("Humanoid") then
-        player:SetAttribute("CurrentSpeed", geniusSpeed)
-    end
-end)
-
-makeButton("Discord", Color3.fromRGB(100, 100, 255)).MouseButton1Click:Connect(function()
-    setclipboard("https://discord.gg/FgR3MXqZy9")
-end)
-
-content.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
-layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    content.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
-end)
+Window:Notify({
+    Title = "Welcome",
+    Content = "Axomic - Escape Tsunami For Brainrot loaded!",
+    Duration = 3,
+    Type = "Info"
+})
