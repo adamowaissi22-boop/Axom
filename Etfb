@@ -1,0 +1,699 @@
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ProximityPromptService = game:GetService("ProximityPromptService")
+local camera = workspace.CurrentCamera
+local PPS = game:GetService("ProximityPromptService")
+
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+local removedVIP = {}
+local removedWalls = {}
+local wallsDeleted = false
+local InstantPrompt = false
+local cache = {}
+local AutoCollect = false
+local SlotList = {}
+for i = 1, 20 do
+    table.insert(SlotList, tostring(i))
+end
+
+local isGodmode = false
+local ghostClone, connection, noclipConn, deathConn = nil, nil, nil, nil
+local lastPromptUpdate = 0
+local geniusSpeed = 70
+local instantTakeEnabled = false
+local InfiniteJump = false
+local AutoRebirth = false
+local AutoUpgradeSpeed1 = false
+local AutoUpgradeSpeed10 = false
+
+local Window = WindUI:CreateWindow({
+    Title = "Axomic - Escape Tsunami For Brainrot",
+    Folder = "AxomicETFB",
+    Icon = "solar:skull-bold",
+    HideSearchBar = false,
+    Topbar = {
+        Height = 44,
+        ButtonsType = "Mac",
+    },
+})
+
+local MainTab = Window:Tab({
+    Title = "Main",
+    Icon = "solar:home-2-bold",
+    Desc = "Main Features",
+})
+
+local CreditsTab = Window:Tab({
+    Title = "Credits",
+    Icon = "solar:info-square-bold",
+    Desc = "Script Information",
+})
+
+local function cleanup()
+    isGodmode = false
+    if connection then connection:Disconnect() connection = nil end
+    if noclipConn then noclipConn:Disconnect() noclipConn = nil end
+    if deathConn then deathConn:Disconnect() deathConn = nil end
+    local char = player.Character
+    if char then
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if root and ghostClone then root.CFrame = ghostClone.HumanoidRootPart.CFrame end
+        if char:FindFirstChild("Humanoid") then 
+            char.Humanoid.PlatformStand = false 
+            camera.CameraSubject = char.Humanoid 
+        end
+    end
+    if ghostClone then ghostClone:Destroy() ghostClone = nil end
+end
+
+local function enableGodmode()
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    cleanup()
+    isGodmode = true
+    char.Archivable = true
+    ghostClone = char:Clone()
+    ghostClone.Name = "GhostDecoy"
+    ghostClone.Parent = workspace
+    char.Archivable = false
+    for _, v in pairs(ghostClone:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Transparency = (v.Name:lower():find("root") or v.Name:lower():find("collision")) and 0.5 or 0
+            v.CanCollide = true
+        elseif v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 0 end
+    end
+    if char:FindFirstChild("Animate") then char.Animate:Clone().Parent = ghostClone end
+    char.Humanoid.PlatformStand = true
+    camera.CameraSubject = ghostClone.Humanoid
+    noclipConn = RunService.Stepped:Connect(function()
+        if char then
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then v.CanCollide = false end
+            end
+        end
+    end)
+    connection = RunService.Heartbeat:Connect(function()
+        if ghostClone and char and char:FindFirstChild("HumanoidRootPart") then
+            local moveDir = char.Humanoid.MoveDirection
+            ghostClone.Humanoid:Move(moveDir, false)
+            ghostClone.Humanoid.Jump = char.Humanoid.Jump
+            if moveDir.Magnitude > 0 then
+                local targetRot = CFrame.lookAt(ghostClone.HumanoidRootPart.Position, ghostClone.HumanoidRootPart.Position + moveDir)
+                ghostClone.HumanoidRootPart.CFrame = ghostClone.HumanoidRootPart.CFrame:Lerp(targetRot, 0.25)
+            end
+            if tick() - lastPromptUpdate > 0.5 then
+                for _, p in pairs(workspace:GetDescendants()) do
+                    if p:IsA("ProximityPrompt") then
+                        p.MaxActivationDistance = 25
+                        p.RequiresLineOfSight = false
+                    end
+                end
+                lastPromptUpdate = tick()
+            end
+            char.HumanoidRootPart.CFrame = ghostClone.HumanoidRootPart.CFrame * CFrame.new(0, -15, 0)
+            char.HumanoidRootPart.Velocity = Vector3.zero
+        else cleanup() end
+    end)
+    deathConn = char.Humanoid.Died:Connect(cleanup)
+end
+
+player.CharacterAdded:Connect(function()
+    if isGodmode then task.wait(0.5) enableGodmode() end
+end)
+
+PPS.PromptButtonHoldBegan:Connect(function(p)
+    if instantTakeEnabled then
+        fireproximityprompt(p)
+    end
+end)
+
+local function removeVIP()
+    table.clear(removedVIP)
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj.Name:lower():find("vip") then
+            removedVIP[#removedVIP + 1] = { clone = obj:Clone(), parent = obj.Parent }
+            obj:Destroy()
+        end
+    end
+end
+
+local function bringBackVIP()
+    for _, data in ipairs(removedVIP) do
+        if data.parent and data.clone then
+            data.clone.Parent = data.parent
+        end
+    end
+    table.clear(removedVIP)
+end
+
+local function deleteWalls()
+    table.clear(removedWalls)
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        local cleanName = obj.Name:lower():gsub("%s","")
+        if cleanName:find("rightwall") and obj.Parent then
+            table.insert(removedWalls, {clone = obj:Clone(), parent = obj.Parent})
+            obj:Destroy()
+        end
+    end
+    wallsDeleted = true
+end
+
+local function undoWalls()
+    for _, data in ipairs(removedWalls) do
+        if data.parent and data.clone then
+            data.clone.Parent = data.parent
+        end
+    end
+    table.clear(removedWalls)
+    wallsDeleted = false
+end
+
+local function applyPrompt(prompt)
+    if not cache[prompt] then
+        cache[prompt] = prompt.HoldDuration
+    end
+    prompt.HoldDuration = 0
+    prompt.RequiresLineOfSight = false
+end
+
+local function restorePrompt(prompt)
+    if cache[prompt] then
+        prompt.HoldDuration = cache[prompt]
+    end
+end
+
+workspace.DescendantAdded:Connect(function(v)
+    if InstantPrompt and v:IsA("ProximityPrompt") then
+        task.wait()
+        applyPrompt(v)
+    end
+end)
+
+local Remote = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Net"):WaitForChild("RF/Plot.PlotAction")
+
+local function GetMyBaseName()
+    local basesFolder = workspace:WaitForChild("Bases")
+    local character = player.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+
+    local closestBase = nil
+    local shortestDistance = math.huge
+
+    for _, base in pairs(basesFolder:GetChildren()) do
+        if base:IsA("Model") and base.PrimaryPart then
+            local distance = (base.PrimaryPart.Position - root.Position).Magnitude
+            if distance < shortestDistance then
+                shortestDistance = distance
+                closestBase = base
+            end
+        end
+    end
+
+    return closestBase and closestBase.Name or nil
+end
+
+task.spawn(function()
+    while task.wait(1) do
+        if AutoCollect then
+            local BaseName = GetMyBaseName()
+            if not BaseName then continue end
+
+            for _, slot in ipairs(SlotList) do
+                if not AutoCollect then break end
+                pcall(function()
+                    Remote:InvokeServer("Collect Money", BaseName, slot)
+                end)
+                task.wait(0.05)
+            end
+        end
+    end
+end)
+
+local RebirthRemote = ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("Rebirth")
+
+task.spawn(function()
+    while task.wait(1) do
+        if AutoRebirth then
+            pcall(function()
+                RebirthRemote:InvokeServer()
+            end)
+        end
+    end
+end)
+
+local AutoSellTool = false
+local SellDelay = 1
+
+local Enabled = false
+local Backup = {}
+local Connection
+
+local function getVIP()
+    local map = workspace:FindFirstChild("DefaultMap_SharedInstances", true)
+    if not map then return end
+    return map:FindFirstChild("VIPWalls")
+end
+
+local function backupVIP(vip)
+    Backup = {}
+    for _, v in ipairs(vip:GetChildren()) do
+        table.insert(Backup, v:Clone())
+    end
+end
+
+local function restoreVIP(vip)
+    vip:ClearAllChildren()
+    for _, v in ipairs(Backup) do
+        v:Clone().Parent = vip
+    end
+end
+
+local function enableVIP()
+    local vip = getVIP()
+    if not vip then return end
+
+    if #Backup == 0 then
+        backupVIP(vip)
+    end
+
+    Connection = RunService.Heartbeat:Connect(function()
+        for _, v in ipairs(vip:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = false
+            end
+            if v:IsA("GuiObject") or v:IsA("Decal") or v:IsA("Texture") or v.Name:lower():match("vip") then
+                pcall(function()
+                    v:Destroy()
+                end)
+            end
+        end
+    end)
+end
+
+local function disableVIP()
+    if Connection then
+        Connection:Disconnect()
+        Connection = nil
+    end
+
+    local vip = getVIP()
+    if vip and #Backup > 0 then
+        restoreVIP(vip)
+    end
+end
+
+local function teleportTween(targetPos, customDuration, customOffsetY)
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+
+    local currentPos = hrp.Position
+    local startPos = currentPos + Vector3.new(0, customOffsetY or 0, 0)
+    hrp.CFrame = CFrame.new(startPos)
+
+    local finalPos = targetPos + Vector3.new(0, 0, 0)
+    local duration = customDuration or 10
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(finalPos)}):Play()
+end
+
+local gapsData = {
+    ["Gap 1"] = { pos = Vector3.new(197, -3, 0), duration = 2, offsetY = -2 },
+    ["Gap 2"] = { pos = Vector3.new(284, -3, 0), duration = 5, offsetY = -5 },
+    ["Gap 3"] = { pos = Vector3.new(397, -3, 0), duration = 5, offsetY = -8 },
+    ["Gap 4"] = { pos = Vector3.new(547, -3, 0), duration = 5, offsetY = -11 },
+    ["Gap 5"] = { pos = Vector3.new(755, -3, 0), duration = 5, offsetY = -14 },
+    ["Gap 6"] = { pos = Vector3.new(1075, -3, 0), duration = 10, offsetY = -17 },
+    ["Gap 7"] = { pos = Vector3.new(1545, -3, 0), duration = 10, offsetY = -17 },
+    ["Gap 8"] = { pos = Vector3.new(2263, -3, 0), duration = 10, offsetY = -17 },
+    ["Gap 9"] = { pos = Vector3.new(2959, -3, 0), duration = 10, offsetY = -17 },
+    ["Gap 10"] = { pos = Vector3.new(3329, -3, 0), duration = 10, offsetY = -17 },
+    ["Gap 11"] = { pos = Vector3.new(3682, -3, 0), duration = 10, offsetY = -17 },
+    ["Gap 12"] = { pos = Vector3.new(4023, -3, 0), duration = 10, offsetY = -20 }
+}
+
+local UpgradeSpeedRemote = ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("UpgradeSpeed")
+
+task.spawn(function()
+    while task.wait(0.1) do
+        if AutoUpgradeSpeed1 then
+            pcall(function()
+                UpgradeSpeedRemote:InvokeServer(1)
+            end)
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(0.1) do
+        if AutoUpgradeSpeed10 then
+            pcall(function()
+                UpgradeSpeedRemote:InvokeServer(10)
+            end)
+        end
+    end
+end)
+
+local autoBase = false
+
+MainTab:Button({
+    Title = "Remove VIP",
+    Callback = removeVIP
+})
+
+MainTab:Button({
+    Title = "Bring Back VIP",
+    Callback = bringBackVIP
+})
+
+MainTab:Button({
+    Title = "Delete All Walls",
+    Callback = function()
+        if wallsDeleted then
+            undoWalls()
+        else
+            deleteWalls()
+        end
+    end
+})
+
+MainTab:Button({
+    Title = "Fly",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/Fly%20Script"))()
+    end
+})
+
+MainTab:Toggle({
+    Title = "Infinite Jump",
+    Default = false,
+    Callback = function(value)
+        InfiniteJump = value
+    end
+})
+
+UIS.JumpRequest:Connect(function()
+    if InfiniteJump then
+        local h = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+        if h then
+            h:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+local Z = {player.CameraMaxZoomDistance, player.CameraMinZoomDistance}
+MainTab:Toggle({
+    Title = "Infinite Zoom",
+    Default = false,
+    Callback = function(s)
+        if s then
+            player.CameraMaxZoomDistance = math.huge
+            player.CameraMinZoomDistance = 0.5
+        else
+            player.CameraMaxZoomDistance = Z[1] or 128
+            player.CameraMinZoomDistance = Z[2] or 0.5
+        end
+    end
+})
+
+MainTab:Toggle({
+    Title = "Instant Interact",
+    Default = false,
+    Callback = function(state)
+        InstantPrompt = state
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("ProximityPrompt") then
+                if state then
+                    applyPrompt(v)
+                else
+                    restorePrompt(v)
+                end
+            end
+        end
+    end
+})
+
+MainTab:Toggle({
+    Title = "Auto Collect Cash",
+    Default = false,
+    Callback = function(state)
+        AutoCollect = state
+    end
+})
+
+MainTab:Toggle({
+    Title = "Auto Rebirth",
+    Default = false,
+    Callback = function(state)
+        AutoRebirth = state
+    end
+})
+
+MainTab:Input({
+    Title = "Sell Tool Delay",
+    Default = "1",
+    Callback = function(val)
+        local num = tonumber(val)
+        if num then
+            SellDelay = num
+            WindUI:Notify({
+                Title = "Updated",
+                Content = "Sell Tool delay set to " .. num .. " seconds",
+                Duration = 3
+            })
+        else
+            WindUI:Notify({
+                Title = "Error",
+                Content = "Invalid delay input",
+                Duration = 2
+            })
+        end
+    end
+})
+
+MainTab:Toggle({
+    Title = "Auto Sell Tool",
+    Default = false,
+    Callback = function(state)
+        AutoSellTool = state
+        if state then
+            WindUI:Notify({Title = "Auto Sell", Content = "Auto Sell Tool ON", Duration = 2})
+            task.spawn(function()
+                while AutoSellTool do
+                    pcall(function()
+                        ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("SellTool"):InvokeServer()
+                    end)
+                    task.wait(SellDelay)
+                end
+            end)
+        else
+            WindUI:Notify({Title = "Auto Sell", Content = "Auto Sell Tool OFF", Duration = 2})
+        end
+    end
+})
+
+MainTab:Button({
+    Title = "Sell All Inventory",
+    Callback = function()
+        pcall(function()
+            ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("SellAll"):InvokeServer()
+        end)
+        WindUI:Notify({
+            Title = "Success",
+            Content = "Successfully Sold All Inventory",
+            Duration = 2
+        })
+    end
+})
+
+MainTab:Button({
+    Title = "Unlock Vip And Vip+",
+    Callback = function()
+        Enabled = not Enabled
+        if Enabled then
+            WindUI:Notify({Title = "VIP Unlock", Content = "VIP Walls Disabled", Duration = 2})
+            enableVIP()
+        else
+            WindUI:Notify({Title = "VIP Unlock", Content = "VIP Walls Restored", Duration = 2})
+            disableVIP()
+        end
+    end
+})
+
+for i = 1, 12 do
+    local gapName = "Gap " .. i
+    MainTab:Button({
+        Title = "Teleport to " .. gapName,
+        Callback = function()
+            local data = gapsData[gapName]
+            if data then
+                teleportTween(data.pos, data.duration, data.offsetY)
+                WindUI:Notify({
+                    Title = "Teleport",
+                    Content = "Teleporting to " .. gapName,
+                    Duration = 2
+                })
+            end
+        end
+    })
+end
+
+MainTab:Toggle({
+    Title = "Auto Upgrade Speed +1",
+    Default = false,
+    Callback = function(state)
+        AutoUpgradeSpeed1 = state
+        WindUI:Notify({
+            Title = "Auto Upgrade",
+            Content = state and "Auto Speed +1 activated!" or "Auto Speed +1 stopped.",
+            Duration = 2
+        })
+    end
+})
+
+MainTab:Toggle({
+    Title = "Auto Upgrade Speed +10",
+    Default = false,
+    Callback = function(state)
+        AutoUpgradeSpeed10 = state
+        WindUI:Notify({
+            Title = "Auto Upgrade",
+            Content = state and "Auto Speed +10 activated!" or "Auto Speed +10 stopped.",
+            Duration = 2
+        })
+    end
+})
+
+MainTab:Button({
+    Title = "Upgrade Speed +1",
+    Callback = function()
+        pcall(function()
+            UpgradeSpeedRemote:InvokeServer(1)
+        end)
+        WindUI:Notify({
+            Title = "Upgrade",
+            Content = "Speed +1 requested!",
+            Duration = 1
+        })
+    end
+})
+
+MainTab:Button({
+    Title = "Upgrade Speed +10",
+    Callback = function()
+        pcall(function()
+            UpgradeSpeedRemote:InvokeServer(10)
+        end)
+        WindUI:Notify({
+            Title = "Upgrade",
+            Content = "Speed +10 requested!",
+            Duration = 1
+        })
+    end
+})
+
+MainTab:Button({
+    Title = "Upgrade Carry",
+    Callback = function()
+        pcall(function()
+            ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("UpgradeCarry"):InvokeServer()
+        end)
+        WindUI:Notify({
+            Title = "Upgrade Carry",
+            Content = "Carry upgrade requested!",
+            Duration = 1
+        })
+    end
+})
+
+MainTab:Toggle({
+    Title = "Auto Upgrade Base",
+    Default = false,
+    Callback = function(value)
+        autoBase = value
+        while autoBase do
+            game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Net"):WaitForChild("RE/Plot.UpgradeBase"):FireServer()
+            task.wait(0.1)
+        end
+    end
+})
+
+MainTab:Toggle({
+    Title = "God Mode",
+    Default = false,
+    Callback = function(state)
+        if state then
+            enableGodmode()
+        else
+            cleanup()
+        end
+    end
+})
+
+MainTab:Input({
+    Title = "Change Speed",
+    Default = tostring(geniusSpeed),
+    Callback = function(val)
+        local num = tonumber(val)
+        if num then
+            geniusSpeed = num
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                player:SetAttribute("CurrentSpeed", geniusSpeed)
+            end
+            WindUI:Notify({
+                Title = "Speed Updated",
+                Content = "Speed set to " .. num,
+                Duration = 2
+            })
+        else
+            WindUI:Notify({
+                Title = "Error",
+                Content = "Invalid speed value",
+                Duration = 2
+            })
+        end
+    end
+})
+
+MainTab:Toggle({
+    Title = "Instant Take",
+    Default = false,
+    Callback = function(state)
+        instantTakeEnabled = state
+    end
+})
+
+MainTab:Button({
+    Title = "Apply Speed",
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player:SetAttribute("CurrentSpeed", geniusSpeed)
+            WindUI:Notify({
+                Title = "Speed Applied",
+                Content = "Speed set to " .. geniusSpeed,
+                Duration = 2
+            })
+        end
+    end
+})
+
+CreditsTab:Paragraph({
+    Title = "This script is made by Axom",
+})
+
+CreditsTab:Button({
+    Title = "Discord",
+    Callback = function()
+        setclipboard("https://discord.gg/FgR3MXqZy9")
+        WindUI:Notify({
+            Title = "Discord Link",
+            Content = "Discord link copied to clipboard!",
+            Duration = 2
+        })
+    end
+})
