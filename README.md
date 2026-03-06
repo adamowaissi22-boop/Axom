@@ -35,23 +35,38 @@
 
 <img src="https://raw.githubusercontent.com/trinib/trinib/82213791fa9ff58d3ca768ddd6de2489ec23ffca/images/footer.svg" width="100%">
 
+<div align="left">
+
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 15px; color: white; font-size: 16px; line-height: 1.8; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin: 20px 0; border-left: 5px solid #ff6b6b;">
+
+Hello! 
+I Am Axom, 
+this is my public official Repo 👨‍💻
+
+</div>
+
+</div>
+
 ### **COMMUNITY**
 
 <a href="https://discord.gg/FgR3MXqZy9">
-  <img src="https://discord-readme-badge.vercel.app/api?id=1405775654443552889" width="350">
+  <img src="https://img.shields.io/badge/DISCORD-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40">
 </a>
 
 ### **CONTENT**
 
 <a href="https://youtube.com/@axos0022">
-  <img src="https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" height="40">
+  <img src="https://img.shields.io/badge/YOUTUBE-FF0000?style=for-the-badge&logo=youtube&logoColor=white" height="40">
 </a>
 <a href="https://tiktok.com/@axos002">
-  <img src="https://img.shields.io/badge/TikTok-000000?style=for-the-badge&logo=tiktok&logoColor=white" height="40">
+  <img src="https://img.shields.io/badge/TIKTOK-000000?style=for-the-badge&logo=tiktok&logoColor=white" height="40">
 </a>
 
 <svg width="800" height="20" viewBox="0 0 800 20" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path d="M0 10 C200 20, 600 0, 800 10" stroke="#FFFFFF" stroke-width="1" fill="none"/>
+</svg>
+
+</div>  <path d="M0 10 C200 20, 600 0, 800 10" stroke="#FFFFFF" stroke-width="1" fill="none"/>
 </svg>
 
 <img src="https://profile-counter.glitch.me/yourusername/count.svg" width="240">
