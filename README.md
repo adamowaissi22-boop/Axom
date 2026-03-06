@@ -6,6 +6,25 @@
 
 <img src="https://raw.githubusercontent.com/khoa083/khoa/main/Khoa_ne/img/Rainbow.gif" width="100%">
 
+<div align="left" style="margin-top: 20px;">
+
+<div style="background: linear-gradient(270deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000); background-size: 400% 400%; padding: 30px; border-radius: 20px; color: white; font-size: 18px; line-height: 1.8; box-shadow: 0 0 30px rgba(255,255,255,0.3); margin: 20px 0; border: 2px solid rgba(255,255,255,0.5); animation: gradientShift 10s ease infinite; text-shadow: 0 0 10px rgba(0,0,0,0.5);">
+
+Hello, I Am Axom! 
+this is my official public REPO on github 👨‍💻
+
+</div>
+
+<style>
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+</style>
+
+</div>
+
 <a href="https://discord.gg/FgR3MXqZy9">
   <img src="https://img.shields.io/badge/DISCORD-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40">
 </a>
@@ -34,16 +53,6 @@
 | Reverse Engineering | Tech Mastering | Social Engineering |
 
 <img src="https://raw.githubusercontent.com/trinib/trinib/82213791fa9ff58d3ca768ddd6de2489ec23ffca/images/footer.svg" width="100%">
-
-<div align="left">
-
-<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 15px; color: white; font-size: 16px; line-height: 1.8; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin: 20px 0; border-left: 5px solid #ff6b6b;">
-
-bla
-
-</div>
-
-</div>
 
 ### **COMMUNITY**
 
