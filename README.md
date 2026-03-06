@@ -1,6 +1,8 @@
 <div align="center">
   
 # **AXOM**
+Hello, I Am Axom! 
+this is my public official github repo 👨‍💻
 
 <img src="https://readme-typing-svg.herokuapp.com?font=Inter&weight=400&size=20&duration=2500&pause=500&color=FFFFFF&center=true&vCenter=true&width=300&lines=Security+Researcher;Reverse+Engineer;Exploit+Developer" alt="Typing SVG" />
 
@@ -49,6 +51,6 @@
   <path d="M0 10 C200 20, 600 0, 800 10" stroke="#FFFFFF" stroke-width="1" fill="none"/>
 </svg>
 
-<img src="https://profile-counter.glitch.me/adamowaissi22/count.svg" width="240">
+<img src="https://profile-counter.glitch.me/adamowaissi22-boop/count.svg" width="240">
 
 </div>
