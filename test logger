@@ -149,7 +149,7 @@ local function ApplyTabState()
     end
     local offsets = {Deobf = 0, EnvLog = 1, Funcs = 2, Settings = 3}
     local idx = offsets[STATE.ActiveTab] or 0
-    local tabW = TabBar.AbsoluteSize.X / 4
+    local tabW = (TabBar.AbsoluteSize.X > 0 and TabBar.AbsoluteSize.X or BASE_W) / 4
     TabIndicator.Position = UDim2.new(0, idx * tabW, 1, -2)
     TabIndicator.Size = UDim2.new(0, tabW, 0, 2)
 end
@@ -218,11 +218,27 @@ local function MakeActionBtn(parent, text, xPos, yPos, w, h, accent)
     end)
     return btn
 end
-ScreenGui.Name = "AxomDeobfuscator"
+ScreenGui.Name = "sg"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
-ScreenGui.Parent = (gethui and gethui()) or game:GetService("CoreGui")
+do
+    local ok, gui = pcall(function() return game:GetService("CoreGui") end)
+    if ok and gui then
+        local pok = pcall(function() ScreenGui.Parent = gui end)
+        if not pok then
+            local Players = game:GetService("Players")
+            local lp = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait() and Players.LocalPlayer
+            ScreenGui.Parent = lp and lp:WaitForChild("PlayerGui") or gui
+        end
+    else
+        local Players = game:GetService("Players")
+        local lp = Players.LocalPlayer
+        if lp then
+            ScreenGui.Parent = lp:WaitForChild("PlayerGui")
+        end
+    end
+end
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, BASE_W, 0, BASE_H)
 MainFrame.Position = UDim2.new(0.5, -BASE_W / 2, 0.5, -BASE_H / 2)
@@ -468,10 +484,14 @@ local BTN_AREA_H = BTN_H + PAD * 2
 local cw = ContentFrame.AbsoluteSize.X
 local ch = ContentFrame.AbsoluteSize.Y
 local HALF_W_FUNC = function()
-    return math.floor((MainFrame.AbsoluteSize.X - PAD * 3) / 2)
+    local w = MainFrame.AbsoluteSize.X
+    if w < 10 then w = BASE_W end
+    return math.floor((w - PAD * 3) / 2)
 end
 local CODE_H_FUNC = function()
-    return math.floor((MainFrame.AbsoluteSize.Y - 38 - 34 - 26 - 18 - 20 - BTN_AREA_H - PAD * 2) / 2) - 24
+    local h = MainFrame.AbsoluteSize.Y
+    if h < 10 then h = BASE_H end
+    return math.floor((h - 38 - 34 - 26 - 18 - 20 - BTN_AREA_H - PAD * 2) / 2) - 24
 end
 InputLabel, InputScroll, InputBox = MakeCodePanel(PanelDeobf, "▸ INPUT  (obfuscated code)", PAD, PAD, HALF_W_FUNC(), CODE_H_FUNC(), true)
 OutputLabel, OutputScroll, OutputBox = MakeCodePanel(PanelDeobf, "▸ OUTPUT  (deobfuscated / logged)", HALF_W_FUNC() + PAD * 2, PAD, HALF_W_FUNC(), CODE_H_FUNC(), false)
@@ -1917,8 +1937,10 @@ ResizeHandle.InputBegan:Connect(function(input)
         STATE.ResizeOrigSz = MainFrame.AbsoluteSize
     end
 end)
-ApplyTabState()
-LayoutDeobfPanels()
+task.defer(function()
+    ApplyTabState()
+    LayoutDeobfPanels()
+end)
 SetStatus("Ready — paste obfuscated code then press DEOBFUSCATE, or use ENV LOG tab", COLORS.ACCENT2)
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
     local vs = workspace.CurrentCamera.ViewportSize
