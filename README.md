@@ -34,7 +34,7 @@ this is my public official github repo 👨‍💻
 ### **COMMUNITY**
 
 <a href="https://discord.gg/FgR3MXqZy9">
-  <img src="https://discord-readme-badge.vercel.app/api?id=1271137283372027935" width="350">
+  <img src="https://discord-readme-badge.vercel.app/api?id=1405775654443552889" width="350">
 </a>
 
 ### **CONTENT**
