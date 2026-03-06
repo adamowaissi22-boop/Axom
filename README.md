@@ -39,9 +39,7 @@
 
 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 15px; color: white; font-size: 16px; line-height: 1.8; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin: 20px 0; border-left: 5px solid #ff6b6b;">
 
-Hello! 
-I Am Axom, 
-this is my public official Repo 👨‍💻
+bla
 
 </div>
 
@@ -65,10 +63,5 @@ this is my public official Repo 👨‍💻
 <svg width="800" height="20" viewBox="0 0 800 20" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path d="M0 10 C200 20, 600 0, 800 10" stroke="#FFFFFF" stroke-width="1" fill="none"/>
 </svg>
-
-</div>  <path d="M0 10 C200 20, 600 0, 800 10" stroke="#FFFFFF" stroke-width="1" fill="none"/>
-</svg>
-
-<img src="https://profile-counter.glitch.me/yourusername/count.svg" width="240">
 
 </div>
