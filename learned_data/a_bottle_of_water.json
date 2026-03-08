@@ -1,0 +1,18 @@
+{
+  "concept": "a bottle of water",
+  "colors": [
+    [
+      100,
+      100,
+      100
+    ],
+    [
+      150,
+      150,
+      150
+    ]
+  ],
+  "shape": "unknown",
+  "learned_from": 0,
+  "source": "fallback"
+}
