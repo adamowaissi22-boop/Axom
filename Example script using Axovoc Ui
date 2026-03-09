@@ -25,7 +25,7 @@ mainTab:AddDivider({
 
 mainTab:AddButton({
     Text = "Infinite Yield",
-    Icon = "rbxassetid://3926305904",
+    Icon = "rbxassetid://3926307971",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
     end
@@ -37,11 +37,6 @@ mainTab:AddToggle({
     Default = false,
     Callback = function(value)
         print("Auto Farm:", value)
-        if value then
-            -- start farming
-        else
-            -- stop farming
-        end
     end
 })
 
@@ -53,7 +48,9 @@ mainTab:AddSlider({
     Suffix = " studs",
     Icon = "rbxassetid://3926305904",
     Callback = function(value)
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = value
+        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = value
+        end
     end
 })
 
@@ -262,7 +259,7 @@ settingsTab:AddDivider()
 
 settingsTab:AddButton({
     Text = "Rejoin Game",
-    Icon = "rbxassetid://3926305904",
+    Icon = "rbxassetid://3926307971",
     Callback = function()
         game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
     end
