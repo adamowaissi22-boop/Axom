@@ -1,0 +1,309 @@
+local Axovoc = loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/axovoc%20ui"))()
+
+Axovoc:SetTheme("Dark")
+
+local window = Axovoc:CreateWindow({
+    Name = "Hub",
+    Title = "Universal Script",
+    Version = "v2.5",
+    MinimizedText = "Open Hub"
+})
+
+local mainTab = window:AddTab({
+    Name = "Main",
+    Icon = "rbxassetid://3926305904"
+})
+
+mainTab:AddLabel({
+    Text = "Welcome to Universal Script",
+    Size = 18
+})
+
+mainTab:AddDivider({
+    Text = "Player"
+})
+
+mainTab:AddButton({
+    Text = "Infinite Yield",
+    Icon = "rbxassetid://3926305904",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    end
+})
+
+mainTab:AddToggle({
+    Text = "Auto Farm",
+    Icon = "rbxassetid://3926305904",
+    Default = false,
+    Callback = function(value)
+        print("Auto Farm:", value)
+        if value then
+            -- start farming
+        else
+            -- stop farming
+        end
+    end
+})
+
+mainTab:AddSlider({
+    Text = "Walk Speed",
+    Min = 16,
+    Max = 100,
+    Default = 16,
+    Suffix = " studs",
+    Icon = "rbxassetid://3926305904",
+    Callback = function(value)
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = value
+    end
+})
+
+mainTab:AddDropdown({
+    Text = "ESP Mode",
+    Options = {"Box", "Tracer", "Name", "Distance", "Off"},
+    Default = "Off",
+    Icon = "rbxassetid://3926305904",
+    Callback = function(option)
+        print("ESP Mode:", option)
+    end
+})
+
+mainTab:AddTextbox({
+    Text = "Chat Spam",
+    Placeholder = "Enter message...",
+    Default = "",
+    Icon = "rbxassetid://3926305904",
+    Callback = function(text)
+        if text ~= "" then
+            game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(text, "All")
+        end
+    end
+})
+
+mainTab:AddKeybind({
+    Text = "Toggle GUI",
+    Default = Enum.KeyCode.RightControl,
+    Icon = "rbxassetid://3926305904",
+    Callback = function(key)
+        print("Keybind set to:", key.Name)
+    end
+})
+
+mainTab:AddDivider()
+
+local combatTab = window:AddTab({
+    Name = "Combat",
+    Icon = "rbxassetid://3926305904"
+})
+
+combatTab:AddLabel({
+    Text = "Combat Features",
+    Size = 16
+})
+
+combatTab:AddToggle({
+    Text = "Aimbot",
+    Default = false,
+    Callback = function(value)
+        print("Aimbot:", value)
+    end
+})
+
+combatTab:AddSlider({
+    Text = "Aimbot Smoothness",
+    Min = 1,
+    Max = 10,
+    Default = 5,
+    Callback = function(value)
+        print("Smoothness:", value)
+    end
+})
+
+combatTab:AddDropdown({
+    Text = "Aimbot Hitpart",
+    Options = {"Head", "Torso", "HumanoidRootPart"},
+    Default = "Head",
+    Callback = function(option)
+        print("Hitpart:", option)
+    end
+})
+
+combatTab:AddButton({
+    Text = "Kill All",
+    Callback = function()
+        for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+            if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+                player.Character.Humanoid.Health = 0
+            end
+        end
+    end
+})
+
+combatTab:AddDivider()
+
+local visualsTab = window:AddTab({
+    Name = "Visuals",
+    Icon = "rbxassetid://3926305904"
+})
+
+visualsTab:AddLabel({
+    Text = "ESP Settings",
+    Size = 16
+})
+
+visualsTab:AddToggle({
+    Text = "Enable ESP",
+    Default = false,
+    Callback = function(value)
+        print("ESP:", value)
+    end
+})
+
+visualsTab:AddColorPicker({
+    Text = "ESP Color",
+    Default = Color3.fromRGB(255, 0, 0),
+    Callback = function(color)
+        print("ESP Color:", color)
+    end
+})
+
+visualsTab:AddSlider({
+    Text = "ESP Thickness",
+    Min = 1,
+    Max = 5,
+    Default = 2,
+    Callback = function(value)
+        print("Thickness:", value)
+    end
+})
+
+visualsTab:AddDivider({
+    Text = "World"
+})
+
+visualsTab:AddToggle({
+    Text = "Fullbright",
+    Default = false,
+    Callback = function(value)
+        if value then
+            game:GetService("Lighting").Brightness = 2
+            game:GetService("Lighting").FogEnd = 100000
+        else
+            game:GetService("Lighting").Brightness = 1
+        end
+    end
+})
+
+visualsTab:AddToggle({
+    Text = "X-Ray",
+    Default = false,
+    Callback = function(value)
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") and not v:IsDescendantOf(game.Players.LocalPlayer.Character) then
+                v.LocalTransparencyModifier = value and 0.5 or 0
+            end
+        end
+    end
+})
+
+local settingsTab = window:AddTab({
+    Name = "Settings",
+    Icon = "rbxassetid://3926305904"
+})
+
+settingsTab:AddLabel({
+    Text = "UI Settings",
+    Size = 16
+})
+
+settingsTab:AddDropdown({
+    Text = "Theme",
+    Options = Axovoc:GetThemes(),
+    Default = "Dark",
+    Callback = function(option)
+        Axovoc:SetTheme(option)
+    end
+})
+
+settingsTab:AddDivider()
+
+local section = settingsTab:AddSection({
+    Text = "Keybinds",
+    Default = true
+})
+
+section:AddKeybind({
+    Text = "Kill All",
+    Default = Enum.KeyCode.K,
+    Callback = function()
+        for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+            if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+                player.Character.Humanoid.Health = 0
+            end
+        end
+    end
+})
+
+section:AddKeybind({
+    Text = "Toggle Noclip",
+    Default = Enum.KeyCode.N,
+    Callback = function()
+        local character = game.Players.LocalPlayer.Character
+        if character then
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = not part.CanCollide
+                end
+            end
+        end
+    end
+})
+
+settingsTab:AddDivider()
+
+settingsTab:AddButton({
+    Text = "Rejoin Game",
+    Icon = "rbxassetid://3926305904",
+    Callback = function()
+        game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+    end
+})
+
+settingsTab:AddButton({
+    Text = "Server Hop",
+    Callback = function()
+        local HttpService = game:GetService("HttpService")
+        local servers = {}
+        local req = syn and syn.request or http_request or request
+        if not req then
+            warn("No request function found")
+            return
+        end
+        
+        local response = req({
+            Url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?limit=100",
+            Method = "GET"
+        })
+        
+        if response and response.StatusCode == 200 then
+            local data = HttpService:JSONDecode(response.Body)
+            for _, server in ipairs(data.data) do
+                if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                    table.insert(servers, server.id)
+                end
+            end
+        end
+        
+        if #servers > 0 then
+            game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], game.Players.LocalPlayer)
+        end
+    end
+})
+
+settingsTab:AddDivider()
+
+settingsTab:AddButton({
+    Text = "Destroy GUI",
+    Callback = function()
+        window.ScreenGui:Destroy()
+    end
+})
