@@ -4,7 +4,7 @@ local Mouse = Player:GetMouse()
 local CoreGui = game:GetService("CoreGui")
 
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "AxomPanel"
+ScreenGui.Name = "screengui"
 
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 300, 0, 150)
