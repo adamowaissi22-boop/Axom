@@ -1,0 +1,745 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+using BepInEx;
+using BepInEx.Logging;
+using GorillaLocomotion;
+using GorillaNetworking;
+using Photon.Pun;
+using Photon.Realtime;
+using TMPro;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.Networking;
+using UnityEngine.UI;
+
+namespace com.Serpent.SerpentCaster
+{
+    [BepInPlugin("com.Serpent.SerpentCaster", "SerpentCaster", "1.0.0")]
+    public class SerpentCaster : BaseUnityPlugin
+    {
+        public static SerpentCaster instance;
+
+        private string loadedKey;
+        private bool keyIsValid;
+        private string serverUrl;
+
+        private Rect windowRect;
+        private bool guiOpen;
+        private int activePage;
+        private bool homePageShown;
+        private Vector2 mainScroll;
+        private Vector2 inspectScroll;
+        private Vector2 presetScroll;
+        private Vector2 fontScroll;
+        private bool inspectOpen;
+        private Rect[] inspectRects;
+
+        private Texture2D texBg, texPanel, texBtnNormal, texBtnHover, texBtnActive;
+        private Texture2D texSidebar, texSideBtnNormal, texSideBtnActive;
+        private Texture2D texSliderBg, texSliderThumb, texSliderThumbHover;
+        private Texture2D texRoundedBorder, texTile, texTileHighlight;
+        private Texture2D logoTex, noiseTex, scanlineTex, glowTex, bokehTex;
+        private Texture2D auroraTex, starTexSmall, starTexLarge;
+        private bool texturesCached, stylesCached;
+
+        private GUIStyle styleBtn, styleBtnSide, styleBtnSideActive;
+        private GUIStyle styleLabel, styleLabelBold, stylePanel;
+        private GUIStyle styleBox, styleOutlined, styleBg;
+        private GUIStyle styleSlider, styleSliderThumb, styleTF;
+
+        private float fov = 90f;
+        private float clipping = 0.05f;
+        private float smoothing = 0.1f;
+        private int smoothingType;
+        private float offsetX, offsetY, offsetZ;
+        private bool specLookAt;
+        private Camera mainCamera;
+
+        private bool bodyLerping;
+        private string codeJoin;
+        private bool micOn;
+        private bool autoswitch;
+        private bool nametags;
+        private float nametagHeight = 0.3f;
+        private bool velocitycounter;
+        private bool wasd;
+        private bool basicPlayerInfo;
+        private float basicPlayerInfoScale = 1.0f;
+
+        private bool spheresEnabled;
+        private float sphereSize = 0.1f;
+        private float sOffsetX, sOffsetY, sOffsetZ;
+        private float sphereSmoothing = 0.15f;
+        private List<GameObject> leftSpheres  = new List<GameObject>();
+        private List<GameObject> rightSpheres = new List<GameObject>();
+        private List<Vector3>   leftVelocities  = new List<Vector3>();
+        private List<Vector3>   rightVelocities = new List<Vector3>();
+
+        private bool enableFogFollow;
+        private float groundFogHeight;
+        private float fogDepthFade  = 5f;
+        private float fogHeightFade = 3f;
+        private float fogUpdateTimer;
+        private List<object> cachedFogZones = new List<object>();
+
+        private List<string> availableFonts     = new List<string>();
+        private List<string> availableFontNames = new List<string>();
+        private int currentFontIdx;
+        private string currentFontName;
+        private string fontFolderPath;
+
+        private List<string> presetNames   = new List<string>();
+        private string presetNewName       = "";
+        private string presetStatusMsg     = "";
+        private float  presetStatusTimer;
+        private const string PRESET_PREFIX = "SC_";
+        private const string PRESET_LIST_KEY = "SC_PresetList";
+
+        private GTPlayer targetPlayer;
+        private List<GTPlayer> vrrigs = new List<GTPlayer>();
+        private List<object>   cachedRigs = new List<object>();
+        private bool rigsDirty;
+        private float vrigRefreshTimer;
+        private bool riglerping;
+
+        private Vector3 lastPlayerPos;
+        private Vector3 prevLeftPos, prevRightPos;
+        private Vector3 leftHandPos, rightHandPos;
+        private Transform leftHandTransform, rightHandTransform;
+        private Vector3 leftHandVel, rightHandVel;
+        private float peakSpeed;
+        private List<Vector3> bodyVelocities  = new List<Vector3>();
+        private List<Vector3> prevPositions   = new List<Vector3>();
+        private float bpiSmoothedSpeed;
+        private float lerpValueBody   = 0.15f;
+        private float lerpValueFingers = 0.1f;
+        private float smoothPos;
+
+        private string reportStatusMsg   = "";
+        private float  reportStatusTimer;
+
+        private bool disableAFKKick;
+        private float globalTime;
+        private float glowPhase;
+        private float waveTime;
+        private float tileAnimTime;
+        private float scanlineTime;
+        private float animProgress;
+        private float[] tileColors;
+        private float[] tileGlowIntensities;
+        private float[] tileHoverScales;
+        private float rotationSpeed = 45f;
+        private float MAX_PLAUSIBLE_SPEED = 12f;
+        private float bassIntensity, trebleIntensity, breathingIntensity;
+        private float intensity;
+        private string title = "â”€â”€â”€â”€â”€â”€â”€ Serpent By 9xvcb â”€â”€â”€â”€â”€â”€â”€";
+        private float titleH;
+        private float sideW;
+        private bool initialized;
+        private GameObject tpcObject;
+        private float life;
+        private bool isRight;
+        private AudioListener audioListener;
+        private int GRID_ROWS = 6;
+        private int GRID_COLS = 4;
+        private bool playerNameVisible;
+        private Color playerColor;
+        private bool isInfected;
+        private Vector3 velocity;
+        private bool isOfflineVRRig;
+        private GameObject offlineVRRig;
+
+        void Awake()
+        {
+            instance = this;
+            fontFolderPath = Path.Combine(Paths.PluginPath, "SerpentCaster");
+            Directory.CreateDirectory(fontFolderPath);
+            StartCoroutine(ValidateKeyCoroutine());
+        }
+
+        void Start()
+        {
+            mainCamera = Camera.main;
+            DontDestroyOnLoad(gameObject);
+            LoadPresetList();
+        }
+
+        void Update()
+        {
+            globalTime += Time.deltaTime;
+            waveTime   += Time.deltaTime;
+            glowPhase  += Time.deltaTime;
+            scanlineTime += Time.deltaTime;
+            tileAnimTime += Time.deltaTime;
+
+            if (Keyboard.current.escapeKey.wasPressedThisFrame)
+                guiOpen = !guiOpen;
+
+            if (!keyIsValid) return;
+
+            HandleWASD();
+            UpdateNametags();
+            UpdateVelocityCounter();
+            UpdateHandSpheres();
+            UpdateFog();
+            TrackPlayerVelocities();
+            RefreshVRRigs();
+            CheckAutoSwitch();
+        }
+
+        void OnGUI()
+        {
+            if (!guiOpen) return;
+            if (!stylesCached) BuildStyles();
+            windowRect = GUILayout.Window(0, windowRect, DrawWindow, "", styleBg,
+                GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+        }
+
+        private IEnumerator ValidateKeyCoroutine()
+        {
+            string keyPath = Path.Combine(Paths.PluginPath, "SerpentCaster", "Key.txt");
+            if (!File.Exists(keyPath))
+            {
+                Logger.LogError("âŒ Key.txt not found at: " + keyPath);
+                yield break;
+            }
+
+            loadedKey = File.ReadAllText(keyPath).Trim();
+
+            using UnityWebRequest request = UnityWebRequest.Post(serverUrl, new WWWForm());
+            request.downloadHandler = new DownloadHandlerBuffer();
+            yield return request.SendWebRequest();
+
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Logger.LogError("Coroutine validation error: " + request.error);
+                yield break;
+            }
+
+            string response = request.downloadHandler.text;
+            bool parsed;
+            try
+            {
+                parsed = bool.Parse(response);
+            }
+            catch
+            {
+                Logger.LogError("Coroutine: Failed to parse validation response.");
+                yield break;
+            }
+
+            if (parsed)
+            {
+                keyIsValid = true;
+                Logger.LogWarning("âœ… Valid key detected. Enabling mod features.");
+            }
+            else
+            {
+                keyIsValid = false;
+                Logger.LogWarning("âŒ Invalid or expired key. Mod features disabled.");
+            }
+        }
+
+        private async Task<bool> ValidateKeyAsync(string key)
+        {
+            using UnityWebRequest request = UnityWebRequest.Post(serverUrl, new WWWForm());
+            request.downloadHandler = new DownloadHandlerBuffer();
+            var asyncOp = request.SendWebRequest();
+            while (!asyncOp.isDone)
+                await Task.Yield();
+
+            if (request.result != UnityWebRequest.Result.Success)
+                return false;
+
+            return bool.TryParse(request.downloadHandler.text, out bool result) && result;
+        }
+
+        private void DrawWindow(int id)
+        {
+            GUILayout.BeginHorizontal();
+            DrawSidebar();
+            GUILayout.BeginVertical();
+
+            switch (activePage)
+            {
+                case 0: DrawFeaturesPage();  break;
+                case 1: DrawPlayersPage();   break;
+                case 2: DrawSpheresPage();   break;
+                case 3: DrawFogPage();       break;
+                case 4: DrawFontsPage();     break;
+                case 5: DrawPresetsPage();   break;
+                case 6: DrawReportPage();    break;
+            }
+
+            GUILayout.EndVertical();
+            GUILayout.EndHorizontal();
+            GUI.DragWindow();
+        }
+
+        private void DrawSidebar()
+        {
+            GUILayout.BeginVertical(GUILayout.Width(sideW));
+            if (GUILayout.Button("Features",  styleBtnSide)) activePage = 0;
+            if (GUILayout.Button("Players",   styleBtnSide)) activePage = 1;
+            if (GUILayout.Button("Hand Spheres", styleBtnSide)) activePage = 2;
+            if (GUILayout.Button("Fog",       styleBtnSide)) activePage = 3;
+            if (GUILayout.Button("Fonts",     styleBtnSide)) activePage = 4;
+            if (GUILayout.Button("Presets",   styleBtnSide)) activePage = 5;
+            if (GUILayout.Button("Report",    styleBtnSide)) activePage = 6;
+            GUILayout.EndVertical();
+        }
+
+        private void DrawFeaturesPage()
+        {
+            mainScroll = GUILayout.BeginScrollView(mainScroll);
+
+            GUILayout.Label("Room", styleLabelBold);
+            codeJoin = GUILayout.TextField(codeJoin, styleTF);
+            GUILayout.Label("Room Code", styleLabel);
+            if (GUILayout.Button("Join Room",   styleBtn)) AttemptJoin();
+            if (GUILayout.Button("Disconnect",  styleBtn)) PhotonNetwork.Disconnect();
+
+            GUILayout.Label("Features", styleLabelBold);
+            micOn       = GUILayout.Toggle(micOn,       "  Open Mic",                    styleBtn);
+            autoswitch  = GUILayout.Toggle(autoswitch,  "  Auto Switch (avoid infected)", styleBtn);
+            velocitycounter = GUILayout.Toggle(velocitycounter, "  Velocity Counter",     styleBtn);
+            wasd        = GUILayout.Toggle(wasd,        "  WASD Movement",               styleBtn);
+            nametags    = GUILayout.Toggle(nametags,    "  Nametags",                    styleBtn);
+            if (nametags)
+            {
+                GUILayout.Label("Nametag Height", styleLabel);
+                nametagHeight = GUILayout.HorizontalSlider(nametagHeight, -2f, 2f, styleSlider, styleSliderThumb);
+            }
+
+            basicPlayerInfo = GUILayout.Toggle(basicPlayerInfo, "  Basic Player Info", styleBtn);
+            if (basicPlayerInfo)
+            {
+                GUILayout.Label("Info Panel Scale", styleLabel);
+                basicPlayerInfoScale = GUILayout.HorizontalSlider(basicPlayerInfoScale, 0.5f, 2f, styleSlider, styleSliderThumb);
+            }
+
+            GUILayout.Label("Time of Day", styleLabelBold);
+            if (GUILayout.Button("Morning", styleBtn)) SetTimeOfDay(WeatherType.Morning);
+            if (GUILayout.Button("Day",     styleBtn)) SetTimeOfDay(WeatherType.Day);
+            if (GUILayout.Button("Evening", styleBtn)) SetTimeOfDay(WeatherType.Evening);
+            if (GUILayout.Button("Night",   styleBtn)) SetTimeOfDay(WeatherType.Night);
+
+            GUILayout.Label("Lens", styleLabelBold);
+            if (GUILayout.Button("  Look At Player", styleBtn)) specLookAt = !specLookAt;
+            GUILayout.Label("Field of View", styleLabel);
+            fov = GUILayout.HorizontalSlider(fov, 40f, 120f, styleSlider, styleSliderThumb);
+            GUILayout.Label("F0",  styleLabel);
+            GUILayout.Label("Near Clip", styleLabel);
+            clipping = GUILayout.HorizontalSlider(clipping, 0.01f, 1f, styleSlider, styleSliderThumb);
+
+            GUILayout.EndScrollView();
+        }
+
+        private void DrawPlayersPage()
+        {
+            if (!PhotonNetwork.InRoom)
+            {
+                GUILayout.Label("Not in a room.", styleLabel);
+                return;
+            }
+
+            mainScroll = GUILayout.BeginScrollView(mainScroll);
+            foreach (GTPlayer p in vrrigs)
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(p.name + ". ", styleLabel);
+                if (GUILayout.Button("Spectate", styleBtn))  { targetPlayer = p; }
+                if (GUILayout.Button("Inspect",  styleBtn))  { targetPlayer = p; inspectOpen = true; }
+                GUILayout.EndHorizontal();
+            }
+            GUILayout.EndScrollView();
+
+            if (inspectOpen && targetPlayer != null)
+                DrawPlayerInspector();
+        }
+
+        private void DrawPlayerInspector()
+        {
+            GUILayout.Label("Player Inspector", styleLabelBold);
+            if (GUILayout.Button("Close", styleBtn)) inspectOpen = false;
+
+            GUILayout.Label("Inspecting: " + targetPlayer.name, styleLabel);
+
+            inspectScroll = GUILayout.BeginScrollView(inspectScroll);
+            GUILayout.Label("Name    " + targetPlayer.name,                          styleLabel);
+            GUILayout.Label("Actor # " + targetPlayer.GetComponent<PhotonView>()?.Owner?.ActorNumber, styleLabel);
+            GUILayout.Label("User ID " + targetPlayer.GetComponent<PhotonView>()?.Owner?.UserId,      styleLabel);
+
+            GUILayout.Label("Color   " + string.Format("Colour ({0:F2}, {1:F2}, {2:F2})",
+                playerColor.r, playerColor.g, playerColor.b), styleLabel);
+            GUILayout.Label("Infected " + (isInfected ? "Yes" : "No"), styleLabel);
+
+            Vector3 pos = targetPlayer.transform.position;
+            GUILayout.Label("Position " + string.Format("({0:F2}, {1:F2}, {2:F2})", pos.x, pos.y, pos.z), styleLabel);
+            GUILayout.Label("Velocity " + string.Format("({0:F2}, {1:F2}, {2:F2})", velocity.x, velocity.y, velocity.z), styleLabel);
+            GUILayout.Label("Speed (mag) " + velocity.magnitude.ToString("F2") + " m/s", styleLabel);
+
+            GUILayout.Label("Left Hand Vel  " + string.Format("({0:F2}, {1:F2}, {2:F2})", leftHandVel.x,  leftHandVel.y,  leftHandVel.z),  styleLabel);
+            GUILayout.Label("Right Hand Vel " + string.Format("({0:F2}, {1:F2}, {2:F2})", rightHandVel.x, rightHandVel.y, rightHandVel.z), styleLabel);
+            GUILayout.Label("Left Hand Pos  " + string.Format("({0:F2}, {1:F2}, {2:F2})", leftHandPos.x,  leftHandPos.y,  leftHandPos.z),  styleLabel);
+            GUILayout.Label("Right Hand Pos " + string.Format("({0:F2}, {1:F2}, {2:F2})", rightHandPos.x, rightHandPos.y, rightHandPos.z), styleLabel);
+
+            GUILayout.Label("Peak Speed   " + peakSpeed.ToString("F2"), styleLabel);
+            GUILayout.Label("Highest m/s", styleLabel);
+
+            float leftSpd  = leftHandVel.magnitude;
+            float rightSpd = rightHandVel.magnitude;
+            bool likelyCheating = leftSpd > MAX_PLAUSIBLE_SPEED || rightSpd > MAX_PLAUSIBLE_SPEED;
+            GUILayout.Label(likelyCheating ? "âš  Likely Cheating" : "âœ” May Be Legit", styleLabel);
+
+            GUILayout.Label("Swing Prediction", styleLabelBold);
+            GUILayout.Label("Left Hand Speed  " + leftSpd.ToString("F2"),  styleLabel);
+            GUILayout.Label("Right Hand Speed " + rightSpd.ToString("F2"), styleLabel);
+            GUILayout.Label("Est. Body Launch " + bpiSmoothedSpeed.ToString("F2") + " â€“ " + peakSpeed.ToString("F2"), styleLabel);
+
+            GUILayout.EndScrollView();
+        }
+
+        private void DrawSpheresPage()
+        {
+            GUILayout.Label("Hand Spheres", styleLabelBold);
+            spheresEnabled = GUILayout.Toggle(spheresEnabled, "  Enable Spheres", styleBtn);
+            GUILayout.Label("Sphere Size", styleLabel);
+            sphereSize = GUILayout.HorizontalSlider(sphereSize, 0.01f, 0.5f, styleSlider, styleSliderThumb);
+
+            if (!PhotonNetwork.InRoom)
+                GUILayout.Label("â—‹ disabled", styleLabel);
+            else if (!spheresEnabled)
+                GUILayout.Label("â—‹ waiting for roomâ€¦", styleLabel);
+            else
+                GUILayout.Label("â— ACTIVE", styleLabel);
+        }
+
+        private void DrawFogPage()
+        {
+            GUILayout.Label("Fog Controls", styleLabelBold);
+            enableFogFollow = GUILayout.Toggle(enableFogFollow, "  Enable Fog Follow", styleBtn);
+            GUILayout.Label("Ground Fog Height", styleLabel);
+            groundFogHeight = GUILayout.HorizontalSlider(groundFogHeight, -20f, 20f, styleSlider, styleSliderThumb);
+            GUILayout.Label("Depth Fade Size", styleLabel);
+            fogDepthFade = GUILayout.HorizontalSlider(fogDepthFade, 0f, 50f, styleSlider, styleSliderThumb);
+            GUILayout.Label("Height Fade Size", styleLabel);
+            fogHeightFade = GUILayout.HorizontalSlider(fogHeightFade, 0f, 50f, styleSlider, styleSliderThumb);
+        }
+
+        private void DrawFontsPage()
+        {
+            GUILayout.Label("Nametag Fonts", styleLabelBold);
+            if (GUILayout.Button("Refresh Font List", styleBtn)) RefreshFontList();
+            GUILayout.Label("Place .ttf files in: BepInEx/plugins/SerpentCaster/", styleLabel);
+
+            fontScroll = GUILayout.BeginScrollView(fontScroll);
+            if (availableFontNames.Count == 0)
+            {
+                GUILayout.Label("No fonts found.", styleLabel);
+            }
+            else
+            {
+                for (int i = 0; i < availableFontNames.Count; i++)
+                {
+                    if (GUILayout.Button(availableFontNames[i], styleBtn))
+                        currentFontIdx = i;
+                }
+            }
+            GUILayout.EndScrollView();
+
+            if (GUILayout.Button("Apply",      styleBtn)) ApplyFont();
+            if (GUILayout.Button("âœ” Applied",  styleBtn)) { }
+            if (GUILayout.Button("Clear Font", styleBtn)) ClearFont();
+        }
+
+        private void DrawPresetsPage()
+        {
+            GUILayout.Label("Save & Load Presets", styleLabelBold);
+            GUILayout.Label("Name:", styleLabel);
+            presetNewName = GUILayout.TextField(presetNewName, styleTF);
+
+            if (GUILayout.Button("Save Preset", styleBtn))
+            {
+                if (string.IsNullOrEmpty(presetNewName))
+                { presetStatusMsg = "âš  Enter a name first."; presetStatusTimer = 3f; }
+                else
+                {
+                    SavePreset(presetNewName);
+                    presetStatusMsg = "âœ” Saved [" + presetNewName + "]"; presetStatusTimer = 3f;
+                }
+            }
+            if (GUILayout.Button("Save & Overwrite", styleBtn))
+            {
+                SavePreset(presetNewName, overwrite: true);
+                presetStatusMsg = "âœ” Overwritten [" + presetNewName + "]"; presetStatusTimer = 3f;
+            }
+
+            if (presetStatusTimer > 0)
+            {
+                GUILayout.Label(presetStatusMsg, styleLabel);
+                presetStatusTimer -= Time.deltaTime;
+            }
+
+            GUILayout.Label("Saved Presets", styleLabelBold);
+            presetScroll = GUILayout.BeginScrollView(presetScroll);
+            if (presetNames.Count == 0)
+            {
+                GUILayout.Label("No presets saved yet.", styleLabel);
+            }
+            else
+            {
+                foreach (string name in presetNames)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(name, styleLabel);
+                    if (GUILayout.Button("Load",   styleBtn)) { LoadPreset(name); presetStatusMsg = "âœ” Loaded [" + name + "]"; presetStatusTimer = 3f; }
+                    if (GUILayout.Button("Delete", styleBtn)) { DeletePreset(name); presetStatusMsg = "Deleted [" + name + "]"; presetStatusTimer = 3f; }
+                    GUILayout.EndHorizontal();
+                }
+            }
+            GUILayout.EndScrollView();
+        }
+
+        private void DrawReportPage()
+        {
+            GUILayout.Label("Report Player", styleLabelBold);
+            GUILayout.Label("Select a player, then choose a reason to report them.", styleLabel);
+
+            foreach (GTPlayer p in vrrigs)
+                if (GUILayout.Button(p.name, styleBtn)) targetPlayer = p;
+
+            if (targetPlayer == null) return;
+
+            if (GUILayout.Button("Cheating",    styleBtn)) SendReport(targetPlayer, "Cheating");
+            if (GUILayout.Button("Hate Speech", styleBtn)) SendReport(targetPlayer, "Hate Speech");
+            if (GUILayout.Button("Toxicity",    styleBtn)) SendReport(targetPlayer, "Toxicity");
+
+            if (reportStatusTimer > 0)
+            {
+                GUILayout.Label(reportStatusMsg, styleLabel);
+                reportStatusTimer -= Time.deltaTime;
+            }
+        }
+
+        private void SendReport(GTPlayer p, string reason)
+        {
+            PhotonView pv = p.GetComponent<PhotonView>();
+            if (pv == null) return;
+            string msg = "âœ” Reported " + p.name + " for " + reason + ".";
+            reportStatusMsg = msg;
+            reportStatusTimer = 4f;
+        }
+
+        private void HandleWASD()
+        {
+            if (!wasd) return;
+            Vector3 move = Vector3.zero;
+            if (Keyboard.current.wKey.isPressed) move += Camera.main.transform.forward;
+            if (Keyboard.current.sKey.isPressed) move -= Camera.main.transform.forward;
+            if (Keyboard.current.aKey.isPressed) move -= Camera.main.transform.right;
+            if (Keyboard.current.dKey.isPressed) move += Camera.main.transform.right;
+            GorillaTagger.Instance.GetComponent<Rigidbody>().linearVelocity += move * speed;
+        }
+
+        private float speed = 5f;
+
+        private void UpdateNametags()
+        {
+            if (!nametags) return;
+            foreach (GTPlayer p in vrrigs)
+            {
+            }
+        }
+
+        private void UpdateVelocityCounter()
+        {
+            if (!velocitycounter) return;
+            velocity = (GorillaTagger.Instance.transform.position - lastPlayerPos) / Time.deltaTime;
+            lastPlayerPos = GorillaTagger.Instance.transform.position;
+        }
+
+        private void UpdateHandSpheres()
+        {
+            if (!spheresEnabled || !PhotonNetwork.InRoom) return;
+        }
+
+        private void UpdateFog()
+        {
+            if (!enableFogFollow) return;
+            fogUpdateTimer -= Time.deltaTime;
+            if (fogUpdateTimer > 0) return;
+            fogUpdateTimer = 0.1f;
+        }
+
+        private void TrackPlayerVelocities()
+        {
+            if (targetPlayer == null) return;
+            velocity = (targetPlayer.transform.position - lastPlayerPos) / Time.deltaTime;
+            lastPlayerPos = targetPlayer.transform.position;
+
+            float spd = velocity.magnitude;
+            if (spd > peakSpeed) peakSpeed = spd;
+            bpiSmoothedSpeed = Mathf.Lerp(bpiSmoothedSpeed, spd, lerpValueBody);
+        }
+
+        private void RefreshVRRigs()
+        {
+            vrigRefreshTimer -= Time.deltaTime;
+            if (vrigRefreshTimer > 0 && !rigsDirty) return;
+            vrigRefreshTimer = 1f;
+            rigsDirty = false;
+            vrrigs.Clear();
+            vrrigs.AddRange(FindObjectsByType<GTPlayer>(FindObjectsSortMode.None));
+        }
+
+        private void CheckAutoSwitch()
+        {
+            if (!autoswitch) return;
+        }
+
+        private void AttemptJoin()
+        {
+            if (!string.IsNullOrEmpty(codeJoin))
+                PhotonNetwork.JoinRoom(codeJoin);
+        }
+
+        private void SetTimeOfDay(WeatherType type)
+        {
+            BetterDayNightManager manager = FindObjectsByType<BetterDayNightManager>(FindObjectsSortMode.None)[0];
+            manager?.SetTimeOfDay(type);
+        }
+
+        private void RefreshFontList()
+        {
+            availableFonts.Clear();
+            availableFontNames.Clear();
+            if (!Directory.Exists(fontFolderPath)) return;
+            string[] files = Directory.GetFiles(fontFolderPath, "*.ttf");
+            foreach (string f in files)
+            {
+                availableFonts.Add(f);
+                availableFontNames.Add(Path.GetFileNameWithoutExtension(f));
+            }
+        }
+
+        private void ApplyFont()
+        {
+            if (currentFontIdx < 0 || currentFontIdx >= availableFonts.Count) return;
+        }
+
+        private void ClearFont() { currentFontIdx = -1; currentFontName = null; }
+
+        private void SavePreset(string name, bool overwrite = false)
+        {
+            string key = PRESET_PREFIX + name;
+            PlayerPrefs.SetFloat(key + "_fov",        fov);
+            PlayerPrefs.SetFloat(key + "_clipping",   clipping);
+            PlayerPrefs.SetFloat(key + "_smoothing",  smoothing);
+            PlayerPrefs.SetInt  (key + "_smoothingType", smoothingType);
+            PlayerPrefs.SetFloat(key + "_offsetX",    offsetX);
+            PlayerPrefs.SetFloat(key + "_offsetY",    offsetY);
+            PlayerPrefs.SetFloat(key + "_offsetZ",    offsetZ);
+            PlayerPrefs.SetInt  (key + "_specLookAt", specLookAt ? 1 : 0);
+            PlayerPrefs.SetInt  (key + "_bodyLerping",bodyLerping ? 1 : 0);
+            PlayerPrefs.SetString(key + "_codeJoin",  codeJoin ?? "");
+            PlayerPrefs.SetInt  (key + "_micOn",      micOn ? 1 : 0);
+            PlayerPrefs.SetInt  (key + "_autoswitch", autoswitch ? 1 : 0);
+            PlayerPrefs.SetInt  (key + "_nametags",   nametags ? 1 : 0);
+            PlayerPrefs.SetFloat(key + "_nametagHeight", nametagHeight);
+            PlayerPrefs.SetInt  (key + "_velocitycounter", velocitycounter ? 1 : 0);
+            PlayerPrefs.SetInt  (key + "_wasd",       wasd ? 1 : 0);
+            PlayerPrefs.SetInt  (key + "_basicPlayerInfo", basicPlayerInfo ? 1 : 0);
+            PlayerPrefs.SetFloat(key + "_basicPlayerInfoScale", basicPlayerInfoScale);
+            PlayerPrefs.SetInt  (key + "_spheresEnabled", spheresEnabled ? 1 : 0);
+            PlayerPrefs.SetFloat(key + "_sphereSize", sphereSize);
+            PlayerPrefs.SetFloat(key + "_sOffsetX",   sOffsetX);
+            PlayerPrefs.SetFloat(key + "_sOffsetY",   sOffsetY);
+            PlayerPrefs.SetFloat(key + "_sOffsetZ",   sOffsetZ);
+            PlayerPrefs.SetFloat(key + "_sphereSmoothing", sphereSmoothing);
+            PlayerPrefs.SetInt  (key + "_enableFogFollow", enableFogFollow ? 1 : 0);
+            PlayerPrefs.SetFloat(key + "_fogDepthFade",  fogDepthFade);
+            PlayerPrefs.SetFloat(key + "_fogHeightFade", fogHeightFade);
+            PlayerPrefs.SetInt  (key + "_currentFontIdx",  currentFontIdx);
+            PlayerPrefs.SetString(key + "_currentFontName", currentFontName ?? "");
+            PlayerPrefs.Save();
+
+            if (!presetNames.Contains(name)) presetNames.Add(name);
+            SavePresetList();
+        }
+
+        private void LoadPreset(string name)
+        {
+            string key = PRESET_PREFIX + name;
+            fov              = PlayerPrefs.GetFloat(key + "_fov", 90f);
+            clipping         = PlayerPrefs.GetFloat(key + "_clipping", 0.05f);
+            smoothing        = PlayerPrefs.GetFloat(key + "_smoothing", 0.1f);
+            smoothingType    = PlayerPrefs.GetInt  (key + "_smoothingType", 0);
+            offsetX          = PlayerPrefs.GetFloat(key + "_offsetX", 0f);
+            offsetY          = PlayerPrefs.GetFloat(key + "_offsetY", 0f);
+            offsetZ          = PlayerPrefs.GetFloat(key + "_offsetZ", 0f);
+            specLookAt       = PlayerPrefs.GetInt  (key + "_specLookAt", 0) == 1;
+            bodyLerping      = PlayerPrefs.GetInt  (key + "_bodyLerping", 0) == 1;
+            codeJoin         = PlayerPrefs.GetString(key + "_codeJoin", "");
+            micOn            = PlayerPrefs.GetInt  (key + "_micOn", 0) == 1;
+            autoswitch       = PlayerPrefs.GetInt  (key + "_autoswitch", 0) == 1;
+            nametags         = PlayerPrefs.GetInt  (key + "_nametags", 0) == 1;
+            nametagHeight    = PlayerPrefs.GetFloat(key + "_nametagHeight", 0.3f);
+            velocitycounter  = PlayerPrefs.GetInt  (key + "_velocitycounter", 0) == 1;
+            wasd             = PlayerPrefs.GetInt  (key + "_wasd", 0) == 1;
+            basicPlayerInfo  = PlayerPrefs.GetInt  (key + "_basicPlayerInfo", 0) == 1;
+            basicPlayerInfoScale = PlayerPrefs.GetFloat(key + "_basicPlayerInfoScale", 1f);
+            spheresEnabled   = PlayerPrefs.GetInt  (key + "_spheresEnabled", 0) == 1;
+            sphereSize       = PlayerPrefs.GetFloat(key + "_sphereSize", 0.1f);
+            sOffsetX         = PlayerPrefs.GetFloat(key + "_sOffsetX", 0f);
+            sOffsetY         = PlayerPrefs.GetFloat(key + "_sOffsetY", 0f);
+            sOffsetZ         = PlayerPrefs.GetFloat(key + "_sOffsetZ", 0f);
+            sphereSmoothing  = PlayerPrefs.GetFloat(key + "_sphereSmoothing", 0.15f);
+            enableFogFollow  = PlayerPrefs.GetInt  (key + "_enableFogFollow", 0) == 1;
+            fogDepthFade     = PlayerPrefs.GetFloat(key + "_fogDepthFade", 5f);
+            fogHeightFade    = PlayerPrefs.GetFloat(key + "_fogHeightFade", 3f);
+            currentFontIdx   = PlayerPrefs.GetInt  (key + "_currentFontIdx", -1);
+            currentFontName  = PlayerPrefs.GetString(key + "_currentFontName", "");
+        }
+
+        private void DeletePreset(string name)
+        {
+            string key = PRESET_PREFIX + name;
+            PlayerPrefs.DeleteKey(key);
+            presetNames.Remove(name);
+            SavePresetList();
+        }
+
+        private void LoadPresetList()
+        {
+            string raw = PlayerPrefs.GetString(PRESET_LIST_KEY, "");
+            if (!string.IsNullOrEmpty(raw))
+                presetNames.AddRange(raw.Split(','));
+        }
+
+        private void SavePresetList()
+        {
+            PlayerPrefs.SetString(PRESET_LIST_KEY, string.Join(",", presetNames));
+            PlayerPrefs.Save();
+        }
+
+        private void BuildStyles()
+        {
+            stylesCached = true;
+        }
+
+        void OnDestroy()  { }
+        void OnDisable()  { }
+        void OnEnable()   { }
+    }
+
+    internal class KeyValidator
+    {
+    }
+}
