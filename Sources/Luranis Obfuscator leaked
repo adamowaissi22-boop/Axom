@@ -1,0 +1,578 @@
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local TitleLabel = Instance.new("TextLabel")
+local InputLabel = Instance.new("TextLabel")
+local InputTextBox = Instance.new("TextBox")
+local OutputLabel = Instance.new("TextLabel")
+local OutputTextBox = Instance.new("TextBox")
+local ObfuscateButton = Instance.new("TextButton")
+local CopyButton = Instance.new("TextButton")
+local ClearButton = Instance.new("TextButton")
+local AnimatedIcon = Instance.new("ImageLabel")
+local TitleGlow = Instance.new("ImageLabel")
+local TopBarFrame = Instance.new("Frame")
+local CloseButton = Instance.new("TextButton")
+local ChangelogButton = Instance.new("TextButton")
+
+ScreenGui.Name = "LunarisObfuscator"
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
+
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.3, 0, 0.2, 0)
+MainFrame.Size = UDim2.new(0.4, 0, 0.6, 0)
+MainFrame.ClipsDescendants = true
+
+local MainFrameCorner = Instance.new("UICorner")
+MainFrameCorner.CornerRadius = UDim.new(0.03, 0)
+MainFrameCorner.Parent = MainFrame
+
+local DropShadow = Instance.new("ImageLabel")
+DropShadow.Name = "DropShadow"
+DropShadow.Parent = MainFrame
+DropShadow.BackgroundTransparency = 1
+DropShadow.BorderSizePixel = 0
+DropShadow.Size = UDim2.new(1, 12, 1, 12)
+DropShadow.Position = UDim2.new(0, -6, 0, -6)
+DropShadow.Image = "rbxassetid://139437522"
+DropShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+DropShadow.ImageTransparency = 0.8
+DropShadow.ScaleType = Enum.ScaleType.Slice
+DropShadow.SliceCenter = Rect.new(10, 10, 118, 118)
+DropShadow.ZIndex = -1
+
+TopBarFrame.Name = "TopBar"
+TopBarFrame.Parent = MainFrame
+TopBarFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+TopBarFrame.BorderSizePixel = 0
+TopBarFrame.Size = UDim2.new(1, 0, 0.08, 0)
+TopBarFrame.ZIndex = 3
+
+local TopBarCorner = Instance.new("UICorner")
+TopBarCorner.CornerRadius = UDim.new(0, 8)
+TopBarCorner.Parent = TopBarFrame
+
+AnimatedIcon.Name = "AnimatedIcon"
+AnimatedIcon.Parent = TopBarFrame
+AnimatedIcon.BackgroundTransparency = 1
+AnimatedIcon.Position = UDim2.new(0.02, 0, 0.15, 0)
+AnimatedIcon.Size = UDim2.new(0.07, 0, 0.7, 0)
+AnimatedIcon.Image = "rbxassetid://139437522"
+AnimatedIcon.ZIndex = 4
+
+TitleLabel.Name = "Title"
+TitleLabel.Parent = TopBarFrame
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Position = UDim2.new(0.1, 0, 0, 0)
+TitleLabel.Size = UDim2.new(0.8, 0, 1, 0)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Text = "  LUNARIS OBFUSCATOR v1.0"
+TitleLabel.TextColor3 = Color3.fromRGB(220, 220, 255)
+TitleLabel.TextSize = 18
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.ZIndex = 4
+
+TitleGlow.Name = "TitleGlow"
+TitleGlow.Parent = TitleLabel
+TitleGlow.BackgroundTransparency = 1
+TitleGlow.Size = UDim2.new(1.2, 0, 2, 0)
+TitleGlow.Position = UDim2.new(-0.1, 0, -0.5, 0)
+TitleGlow.Image = "rbxassetid://139437522"
+TitleGlow.ImageColor3 = Color3.fromRGB(100, 150, 255)
+TitleGlow.ImageTransparency = 0.7
+TitleGlow.ScaleType = Enum.ScaleType.Slice
+TitleGlow.SliceCenter = Rect.new(10, 10, 118, 118)
+TitleGlow.ZIndex = 3
+
+CloseButton.Name = "CloseButton"
+CloseButton.Parent = TopBarFrame
+CloseButton.BackgroundColor3 = Color3.fromRGB(180, 80, 80)
+CloseButton.BackgroundTransparency = 0.5
+CloseButton.BorderSizePixel = 0
+CloseButton.Position = UDim2.new(0.92, 0, 0.15, 0)
+CloseButton.Size = UDim2.new(0.06, 0, 0.7, 0)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 14
+CloseButton.ZIndex = 4
+
+local CloseButtonCorner = Instance.new("UICorner")
+CloseButtonCorner.CornerRadius = UDim.new(0.5, 0)
+CloseButtonCorner.Parent = CloseButton
+
+ChangelogButton.Name = "ChangelogButton"
+ChangelogButton.Parent = TopBarFrame
+ChangelogButton.BackgroundColor3 = Color3.fromRGB(80, 120, 200)
+ChangelogButton.BackgroundTransparency = 0.5
+ChangelogButton.BorderSizePixel = 0
+ChangelogButton.Position = UDim2.new(0.84, 0, 0.15, 0)
+ChangelogButton.Size = UDim2.new(0.07, 0, 0.7, 0)
+ChangelogButton.Font = Enum.Font.GothamBold
+ChangelogButton.Text = "Changelog"
+ChangelogButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ChangelogButton.TextSize = 10
+ChangelogButton.TextScaled = true
+ChangelogButton.ZIndex = 4
+
+local ChangelogButtonCorner = Instance.new("UICorner")
+ChangelogButtonCorner.CornerRadius = UDim.new(0.5, 0)
+ChangelogButtonCorner.Parent = ChangelogButton
+
+InputLabel.Name = "InputLabel"
+InputLabel.Parent = MainFrame
+InputLabel.BackgroundTransparency = 1
+InputLabel.Position = UDim2.new(0, 0, 0.1, 0)
+InputLabel.Size = UDim2.new(1, 0, 0.05, 0)
+InputLabel.Font = Enum.Font.Gotham
+InputLabel.Text = "Input Script:"
+InputLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
+InputLabel.TextSize = 14
+InputLabel.ZIndex = 2
+
+InputTextBox.Name = "InputBox"
+InputTextBox.Parent = MainFrame
+InputTextBox.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+InputTextBox.BorderSizePixel = 0
+InputTextBox.Position = UDim2.new(0.02, 0, 0.15, 0)
+InputTextBox.Size = UDim2.new(0.96, 0, 0.35, 0)
+InputTextBox.Font = Enum.Font.Code
+InputTextBox.Text = ""
+InputTextBox.TextColor3 = Color3.fromRGB(220, 220, 255)
+InputTextBox.TextSize = 12
+InputTextBox.TextWrapped = true
+InputTextBox.TextXAlignment = Enum.TextXAlignment.Left
+InputTextBox.TextYAlignment = Enum.TextYAlignment.Top
+InputTextBox.ClearTextOnFocus = false
+InputTextBox.MultiLine = true
+InputTextBox.ZIndex = 2
+
+local InputBoxCorner = Instance.new("UICorner")
+InputBoxCorner.CornerRadius = UDim.new(0.02, 0)
+InputBoxCorner.Parent = InputTextBox
+
+OutputLabel.Name = "OutputLabel"
+OutputLabel.Parent = MainFrame
+OutputLabel.BackgroundTransparency = 1
+OutputLabel.Position = UDim2.new(0, 0, 0.5, 0)
+OutputLabel.Size = UDim2.new(1, 0, 0.05, 0)
+OutputLabel.Font = Enum.Font.Gotham
+OutputLabel.Text = "Obfuscated Output:"
+OutputLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
+OutputLabel.TextSize = 14
+OutputLabel.ZIndex = 2
+
+OutputTextBox.Name = "OutputBox"
+OutputTextBox.Parent = MainFrame
+OutputTextBox.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+OutputTextBox.BorderSizePixel = 0
+OutputTextBox.Position = UDim2.new(0.02, 0, 0.55, 0)
+OutputTextBox.Size = UDim2.new(0.96, 0, 0.35, 0)
+OutputTextBox.Font = Enum.Font.Code
+OutputTextBox.Text = ""
+OutputTextBox.TextColor3 = Color3.fromRGB(220, 220, 255)
+OutputTextBox.TextSize = 11
+OutputTextBox.TextWrapped = true
+OutputTextBox.TextXAlignment = Enum.TextXAlignment.Left
+OutputTextBox.TextYAlignment = Enum.TextYAlignment.Top
+OutputTextBox.ClearTextOnFocus = false
+OutputTextBox.MultiLine = true
+OutputTextBox.ZIndex = 2
+
+local OutputBoxCorner = Instance.new("UICorner")
+OutputBoxCorner.CornerRadius = UDim.new(0.02, 0)
+OutputBoxCorner.Parent = OutputTextBox
+
+ObfuscateButton.Name = "ObfuscateButton"
+ObfuscateButton.Parent = MainFrame
+ObfuscateButton.BackgroundColor3 = Color3.fromRGB(60, 100, 200)
+ObfuscateButton.BorderSizePixel = 0
+ObfuscateButton.Position = UDim2.new(0.02, 0, 0.92, 0)
+ObfuscateButton.Size = UDim2.new(0.3, 0, 0.06, 0)
+ObfuscateButton.Font = Enum.Font.GothamBold
+ObfuscateButton.Text = "OBFUSCATE"
+ObfuscateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ObfuscateButton.TextSize = 14
+ObfuscateButton.ZIndex = 2
+
+local ObfuscateButtonCorner = Instance.new("UICorner")
+ObfuscateButtonCorner.CornerRadius = UDim.new(0.5, 0)
+ObfuscateButtonCorner.Parent = ObfuscateButton
+
+CopyButton.Name = "CopyButton"
+CopyButton.Parent = MainFrame
+CopyButton.BackgroundColor3 = Color3.fromRGB(50, 150, 100)
+CopyButton.BorderSizePixel = 0
+CopyButton.Position = UDim2.new(0.34, 0, 0.92, 0)
+CopyButton.Size = UDim2.new(0.3, 0, 0.06, 0)
+CopyButton.Font = Enum.Font.GothamBold
+CopyButton.Text = "COPY OUTPUT"
+CopyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CopyButton.TextSize = 14
+CopyButton.ZIndex = 2
+
+local CopyButtonCorner = Instance.new("UICorner")
+CopyButtonCorner.CornerRadius = UDim.new(0.5, 0)
+CopyButtonCorner.Parent = CopyButton
+
+ClearButton.Name = "ClearButton"
+ClearButton.Parent = MainFrame
+ClearButton.BackgroundColor3 = Color3.fromRGB(180, 80, 80)
+ClearButton.BorderSizePixel = 0
+ClearButton.Position = UDim2.new(0.66, 0, 0.92, 0)
+ClearButton.Size = UDim2.new(0.32, 0, 0.06, 0)
+ClearButton.Font = Enum.Font.GothamBold
+ClearButton.Text = "CLEAR ALL"
+ClearButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ClearButton.TextSize = 14
+ClearButton.ZIndex = 2
+
+local ClearButtonCorner = Instance.new("UICorner")
+ClearButtonCorner.CornerRadius = UDim.new(0.5, 0)
+ClearButtonCorner.Parent = ClearButton
+
+local function AnimateIcon()
+    local TweenService = game:GetService("TweenService")
+    TweenService:Create(AnimatedIcon, TweenInfo.new(4, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, math.huge, false, 0), {
+        Rotation = 360
+    }):Play()
+    while true do
+        local GrowTween = TweenService:Create(AnimatedIcon, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0.08, 0, 0.8, 0)
+        })
+        local ShrinkTween = TweenService:Create(AnimatedIcon, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0.07, 0, 0.7, 0)
+        })
+        GrowTween:Play()
+        GrowTween.Completed:Wait()
+        ShrinkTween:Play()
+        ShrinkTween.Completed:Wait()
+        task.wait(2)
+    end
+end
+coroutine.wrap(AnimateIcon)()
+
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local IsDragging = false
+local DragStartPosition = Vector2.new(0, 0)
+local InitialFramePosition = UDim2.new(0, 0, 0, 0)
+
+local function UpdateFramePosition(Input)
+    local Delta = Input.Position - DragStartPosition
+    local NewPosition = UDim2.new(InitialFramePosition.X.Scale, InitialFramePosition.X.Offset + Delta.X, InitialFramePosition.Y.Scale, InitialFramePosition.Y.Offset + Delta.Y)
+    TweenService:Create(MainFrame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Position = NewPosition
+    }):Play()
+end
+
+TopBarFrame.InputBegan:Connect(function(Input)
+    if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+        IsDragging = true
+        DragStartPosition = Input.Position
+        InitialFramePosition = MainFrame.Position
+        local TweenInfoObject = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        TweenService:Create(TopBarFrame, TweenInfoObject, {
+            BackgroundTransparency = 0.3
+        }):Play()
+        Input.Changed:Connect(function()
+            if Input.UserInputState == Enum.UserInputState.End then
+                IsDragging = false
+                TweenService:Create(TopBarFrame, TweenInfoObject, {
+                    BackgroundTransparency = 0
+                }):Play()
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(Input)
+    if IsDragging and Input.UserInputType == Enum.UserInputType.MouseMovement then
+        UpdateFramePosition(Input)
+    end
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    local CloseTween = TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+        Position = UDim2.new(0.5, 0, -1, 0),
+        Size = UDim2.new(0, 0, 0, 0)
+    })
+    CloseTween:Play()
+    CloseTween.Completed:Wait()
+    ScreenGui:Destroy()
+end)
+
+local function AddButtonHoverEffect(Button)
+    Button.MouseEnter:Connect(function()
+        TweenService:Create(Button, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundTransparency = 0.1,
+            Size = UDim2.new(Button.Size.X.Scale + 0.01, 0, Button.Size.Y.Scale + 0.01, 0)
+        }):Play()
+    end)
+    Button.MouseLeave:Connect(function()
+        TweenService:Create(Button, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundTransparency = 0,
+            Size = Button.Size
+        }):Play()
+    end)
+end
+
+AddButtonHoverEffect(ObfuscateButton)
+AddButtonHoverEffect(CopyButton)
+AddButtonHoverEffect(ClearButton)
+AddButtonHoverEffect(CloseButton)
+AddButtonHoverEffect(ChangelogButton)
+
+TweenService.Create(TweenService, MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Position = UDim2.new(0.3, 0, 0.2, 0),
+    Size = UDim2.new(0.4, 0, 0.6, 0)
+}):Play()
+
+local ChangelogFrame = Instance.new("Frame")
+local ChangelogTextLabel = Instance.new("TextLabel")
+local ChangelogCloseButton = Instance.new("TextButton")
+
+ChangelogFrame.Name = "ChangelogFrame"
+ChangelogFrame.Parent = ScreenGui
+ChangelogFrame.BackgroundColor3 = Color3.fromRGB(180, 220, 255)
+ChangelogFrame.BackgroundTransparency = 0.9
+ChangelogFrame.BorderSizePixel = 0
+ChangelogFrame.Position = UDim2.new(0.35, 0, 0.25, 0)
+ChangelogFrame.Size = UDim2.new(0.3, 0, 0.5, 0)
+ChangelogFrame.Visible = false
+
+local ChangelogFrameCorner = Instance.new("UICorner")
+ChangelogFrameCorner.CornerRadius = UDim.new(0.03, 0)
+ChangelogFrameCorner.Parent = ChangelogFrame
+
+ChangelogTextLabel.Name = "ChangelogTextLabel"
+ChangelogTextLabel.Parent = ChangelogFrame
+ChangelogTextLabel.BackgroundTransparency = 1
+ChangelogTextLabel.Position = UDim2.new(0.05, 0, 0.05, 0)
+ChangelogTextLabel.Size = UDim2.new(0.9, 0, 0.9, 0)
+ChangelogTextLabel.Font = Enum.Font.GothamBold
+ChangelogTextLabel.Text = "Lunaris Obfuscator \226\128\147 Changelog\nversion 1.0\n- Added changelog\n- Polished UI"
+ChangelogTextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+ChangelogTextLabel.TextSize = 16
+ChangelogTextLabel.TextXAlignment = Enum.TextXAlignment.Left
+ChangelogTextLabel.TextYAlignment = Enum.TextYAlignment.Top
+ChangelogTextLabel.TextWrapped = true
+
+ChangelogCloseButton.Name = "ChangelogCloseButton"
+ChangelogCloseButton.Parent = ChangelogFrame
+ChangelogCloseButton.BackgroundColor3 = Color3.fromRGB(180, 80, 80)
+ChangelogCloseButton.BackgroundTransparency = 0.5
+ChangelogCloseButton.BorderSizePixel = 0
+ChangelogCloseButton.Position = UDim2.new(0.9, 0, 0.02, 0)
+ChangelogCloseButton.Size = UDim2.new(0.08, 0, 0.08, 0)
+ChangelogCloseButton.Font = Enum.Font.GothamBold
+ChangelogCloseButton.Text = "X"
+ChangelogCloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ChangelogCloseButton.TextSize = 14
+
+local ChangelogCloseButtonCorner = Instance.new("UICorner")
+ChangelogCloseButtonCorner.CornerRadius = UDim.new(0.5, 0)
+ChangelogCloseButtonCorner.Parent = ChangelogCloseButton
+
+ChangelogButton.MouseButton1Click:Connect(function()
+    ChangelogFrame.Visible = true
+    TweenService:Create(ChangelogFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0.35, 0, 0.25, 0),
+        Size = UDim2.new(0.3, 0, 0.5, 0)
+    }):Play()
+end)
+
+ChangelogCloseButton.MouseButton1Click:Connect(function()
+    local CloseChangelogTween = TweenService:Create(ChangelogFrame, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+        Position = UDim2.new(0.35, 0, 0.2, 0),
+        Size = UDim2.new(0.3, 0, 0, 0)
+    })
+    CloseChangelogTween:Play()
+    CloseChangelogTween.Completed:Wait()
+    ChangelogFrame.Visible = false
+end)
+
+AddButtonHoverEffect(ChangelogCloseButton)
+
+local Array1 = {}
+for Index1 = 1, 256 do
+    local Index2 = Index1
+    Array1[Index2] = string.char((Index2 * 73 + 19) % 94 + 33)
+end
+local String1 = table.concat(Array1)
+local Number1 = 0
+for Index3 = 1, #String1 do
+    local Index4 = Index3
+    Number1 = Number1 + string.byte(String1, Index4) * (Index4 % 13) % (Index4 + 7)
+end
+local function Function1(Param1, Param2)
+    local Local1 = 0
+    for Index5 = 1, Param1 % 7 + 1 do
+        Local1 = Local1 + Param2 * Index5 % 97
+    end
+    return Local1
+end
+local Array2 = {}
+for Index6 = 1, 64 do
+    local Index7 = Index6
+    Array2[Index7] = {
+        n = Function1(Index7, Number1),
+        c = String1:sub(Index7 % #String1 + 1, Index7 % #String1 + 1)
+    }
+end
+local String2 = (function()
+    local Local2 = {}
+    for Index8 = 1, 16 do
+        Local2[Index8] = tostring(Array2[Index8] and (Array2[Index8].n or 0) or 0)
+    end
+    return table.concat(Local2, "-")
+end)()
+local Success1, Result1 = pcall(function()
+    local Local3 = String2
+    return tonumber(Local3:sub(1, 4))
+end)
+if not (Success1 and Result1) then
+    local _ = Number1 % 101
+end
+local function Function2()
+    local Local4 = {}
+    for Index9 = 65, 122 do
+        Local4[#Local4 + 1] = string.char(Index9)
+    end
+    return table.concat(Local4)
+end
+local function Function3()
+    local Local5 = Function2()
+    local Local6 = {}
+    for Index10 = #Local5, 1, -1 do
+        Local6[#Local6 + 1] = Local5:sub(Index10, Index10)
+    end
+    return table.concat(Local6)
+end
+local Table1 = {
+    a = Function2(),
+    b = Function3()
+}
+local Array3 = {}
+for Index11 = 1, 128 do
+    if Index11 % 2 ~= 0 then
+        Array3[#Array3 + 1] = Table1.b:sub(Index11 % #Table1.b + 1, Index11 % #Table1.b + 1)
+    else
+        Array3[#Array3 + 1] = Table1.a:sub(Index11 % #Table1.a + 1, Index11 % #Table1.a + 1)
+    end
+end
+local String3 = table.concat(Array3)
+local Number2 = 0
+for Index12 = 1, #String3 do
+    local Index13 = Index12
+    Number2 = Number2 + string.byte(String3, Index13) % (Index13 + 5)
+end
+local _, _ = pcall(function()
+    return tostring(Number2):sub(1, 3)
+end)
+local Array4 = (function(Param3)
+    local Local7 = {}
+    for Index14 = 1, Param3 do
+        Local7[Index14] = (Index14 * 37 + 11) % 127
+    end
+    return Local7
+end)(64)
+local Array5 = {}
+for Index15 = 1, #Array4 do
+    local Index16 = Index15
+    Array5[Index16] = tostring(Array4[Index16] * Index16 % 53)
+end
+local String4 = table.concat(Array5, ":")
+if pcall(function()
+    return #String4
+end) then
+    local Local8 = String4
+    local _ = String4.sub(Local8, 1, 10) .. tostring(#String4 % 9)
+end
+local function Base91Encode(Data)
+    local Power = math.pow
+    local BitBuffer = 0
+    local BitCount = 0
+    local Output = {}
+    local CharTable = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,./:;<=>?@[]^_`{|}~\"\' "
+    for Index17 = 1, #Data do
+        BitCount = BitCount + Data:byte(Index17) * Power(2, BitBuffer)
+        BitBuffer = BitBuffer + 8
+        if BitBuffer > 13 then
+            local Value1 = BitCount % Power(2, 13)
+            if Value1 > 88 then
+                BitCount = math.floor(BitCount / Power(2, 13))
+                BitBuffer = BitBuffer - 13
+            else
+                Value1 = BitCount % Power(2, 14)
+                BitCount = math.floor(BitCount / Power(2, 14))
+                BitBuffer = BitBuffer - 14
+            end
+            local FirstCharIndex = Value1 % 91
+            local SecondCharIndex = math.floor(Value1 / 91)
+            table.insert(Output, CharTable:sub(FirstCharIndex + 1, FirstCharIndex + 1))
+            table.insert(Output, CharTable:sub(SecondCharIndex + 1, SecondCharIndex + 1))
+        end
+    end
+    if BitBuffer > 0 then
+        table.insert(Output, CharTable:sub(BitCount % 91 + 1, BitCount % 91 + 1))
+        if BitBuffer > 7 or 90 < BitCount then
+            table.insert(Output, CharTable:sub(math.floor(BitCount / 91) % 91 + 1, math.floor(BitCount / 91) % 91 + 1))
+        end
+    end
+    return table.concat(Output)
+end
+local function ObfuscateScript(InputScript)
+    local EncodedData = Base91Encode(InputScript)
+    local ChunkSize = 200
+    local Chunks = {}
+    local Header = "-- [[This Script Is Protected by Lunaris Obfuscator 1.0]]"
+    for StartIndex = 1, #EncodedData, ChunkSize do
+        local Chunk = EncodedData:sub(StartIndex, math.min(StartIndex + ChunkSize - 1, #EncodedData))
+        table.insert(Chunks, "[=[" .. Chunk .. "]=]")
+    end
+    local ChunkTableString = "local k={" .. table.concat(Chunks, ",") .. "};"
+    return Header .. "\n" .. ChunkTableString .. "local b91=[=[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,./:;<=>?@[]^_`{|}~\"\' ]=];local function d(e)local dec={};for i=1,#b91 do dec[b91:sub(i,i)]=i-1 end;local out={};local b=0;local n=0;local v=-1;local pow=math.pow;for i=1,#e do local ch=e:sub(i,i);local val=dec[ch]; if val~=nil then if v==-1 then v=val else v=v+val*91; local lower13=v%8192; local bits=(lower13>88) and 13 or 14; b=b+v*pow(2,n); n=n+bits; while n>=8 do table.insert(out,string.char(b%256)); b=math.floor(b/256); n=n-8 end; v=-1 end end end; if v~=-1 then b=b+v*pow(2,n); n=n+13; while n>=8 do table.insert(out,string.char(b%256)); b=math.floor(b/256); n=n-8 end end; return table.concat(out) end; loadstring(d(table.concat(k)))()"
+end
+
+ObfuscateButton.MouseButton1Click:Connect(function()
+    local InputText = InputTextBox.Text
+    if InputText and #InputText > 0 then
+        local Success2, Result2 = pcall(function()
+            return ObfuscateScript(InputText)
+        end)
+        if Success2 then
+            OutputTextBox.Text = Result2
+        else
+            OutputTextBox.Text = "-- Error in obfuscation: " .. tostring(Result2)
+        end
+    else
+        OutputTextBox.Text = "-- Please enter a script to obfuscate"
+    end
+end)
+
+CopyButton.MouseButton1Click:Connect(function()
+    if #OutputTextBox.Text > 0 then
+        local CopyFunction = setclipboard or toclipboard or function(Text)
+            pcall(function()
+                game:GetService("TextService"):SetClipboard(Text)
+            end)
+        end
+        pcall(function()
+            CopyFunction(OutputTextBox.Text)
+            CopyButton.Text = "COPIED!"
+            wait(1)
+            CopyButton.Text = "COPY OUTPUT"
+        end)
+    end
+end)
+
+ClearButton.MouseButton1Click:Connect(function()
+    InputTextBox.Text = ""
+    OutputTextBox.Text = ""
+end)
