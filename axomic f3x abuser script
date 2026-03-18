@@ -2,7 +2,7 @@ local fenv = getfenv()
 local WindUI = loadstring(game:HttpGet('https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua'))()
 local Window = WindUI:CreateWindow({
     Folder = 'AXOMIC_HUB',
-    Title = 'Axomic - F3x Script',
+    Title = 'Axomic - F3x Abuser script',
     NewElements = true,
     Topbar = {
         Height = 44,
@@ -10,198 +10,6 @@ local Window = WindUI:CreateWindow({
     },
     Icon = 'solar:widget-2-bold-duotone',
     HideSearchBar = false,
-})
-
-local WeaponsTab = Window:Tab({
-    Icon = 'solar:gun-bold-duotone',
-    IconColor = Color3.fromHex('#EF4F1D'),
-    Title = 'Weapons',
-    Desc = 'Gear and weapons',
-})
-local WeaponsSection = WeaponsTab:Section({
-    Title = 'Gear Commands',
-})
-
-WeaponsSection:Button({
-    Callback = function()
-        game:GetService('ReplicatedStorage'):FindFirstChild('HDAdminClient'):FindFirstChild('Signals'):FindFirstChild('RequestCommand'):InvokeServer(';gear me 94233344')
-    end,
-    Icon = 'solar:weapon-bold-duotone',
-    Title = 'GUN',
-    Desc = 'Get F3X gear',
-})
-WeaponsSection:Button({
-    Callback = function()
-        game:GetService('ReplicatedStorage'):FindFirstChild('HDAdminClient'):FindFirstChild('Signals'):FindFirstChild('RequestCommand'):InvokeServer(';gear me 18268645')
-    end,
-    Icon = 'solar:weapon-bold-duotone',
-    Title = 'GUN 2',
-    Desc = 'Alternative gear',
-})
-
-local WorldTab = Window:Tab({
-    Icon = 'solar:globe-bold-duotone',
-    IconColor = Color3.fromHex('#10C550'),
-    Title = 'World',
-    Desc = 'Environment & parts',
-})
-local EnvSection = WorldTab:Section({
-    Title = 'Environment',
-})
-
-EnvSection:Button({
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        local char = player.Character
-        local backpack = player.Backpack
-        local function getf3x()
-            for _, v in ipairs(backpack:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
-            for _, v in ipairs(char:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
-            return nil
-        end
-        local f3x = getf3x()
-        if not f3x then return end
-        local syncapi = f3x.SyncAPI
-        local serverendpoint = syncapi.ServerEndpoint
-        local function skybox(texture)
-            serverendpoint:InvokeServer("SyncTexture", {{Part=workspace.Baseplate, TextureType="Skybox", Texture=texture}})
-        end
-        skybox("rbxassetid://99429165130278")
-    end,
-    Icon = 'solar:cloud-bold-duotone',
-    Title = 'SKYBOX',
-    Desc = 'Change sky texture',
-})
-EnvSection:Button({
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        local char = player.Character
-        local backpack = player.Backpack
-        local function getf3x()
-            for _, v in ipairs(backpack:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
-            for _, v in ipairs(char:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
-            return nil
-        end
-        local f3x = getf3x()
-        if not f3x then return end
-        local syncapi = f3x.SyncAPI
-        local serverendpoint = syncapi.ServerEndpoint
-        serverendpoint:InvokeServer("CreatePart", "Normal", CFrame.new(0, 0, 0) * CFrame.new(0, -3, 0), workspace)
-    end,
-    Icon = 'solar:square-bold-duotone',
-    Title = 'BASEPLATE',
-    Desc = 'Create a baseplate',
-})
-EnvSection:Space()
-
-local PartSection = WorldTab:Section({
-    Title = 'Part Management',
-})
-
-PartSection:Button({
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        local char = player.Character
-        local backpack = player.Backpack
-        local function getf3x()
-            for _, v in ipairs(backpack:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
-            for _, v in ipairs(char:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
-            return nil
-        end
-        local f3x = getf3x()
-        if not f3x then return end
-        local syncapi = f3x.SyncAPI
-        local serverendpoint = syncapi.ServerEndpoint
-        local function color(part, c)
-            serverendpoint:InvokeServer("SyncColor", {{Part=part,Color=c,UnionColoring=false}})
-        end
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v:IsA("BasePart") or v:IsA("UnionOperation") then
-                spawn(function() color(v, Color3.new(math.random(0,255)/255, math.random(0,255)/255, math.random(0,255)/255)) end)
-            end
-        end
-    end,
-    Icon = 'solar:palette-bold-duotone',
-    Title = 'COLOR ALL',
-    Desc = 'Random colors on all parts',
-})
-PartSection:Button({
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        local char = player.Character
-        local backpack = player.Backpack
-        local function getf3x()
-            for _, v in ipairs(backpack:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
-            for _, v in ipairs(char:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
-            return nil
-        end
-        local f3x = getf3x()
-        if not f3x then return end
-        local syncapi = f3x.SyncAPI
-        local serverendpoint = syncapi.ServerEndpoint
-        local function delete(part)
-            serverendpoint:InvokeServer("Remove", {part})
-        end
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v:IsA("BasePart") or v:IsA("UnionOperation") then
-                spawn(function() delete(v) end)
-            end
-        end
-    end,
-    Icon = 'solar:trash-bin-trash-bold-duotone',
-    Title = 'DELETE ALL',
-    Desc = 'Remove all parts',
-})
-PartSection:Button({
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        local char = player.Character
-        local backpack = player.Backpack
-        local function getf3x()
-            for _, v in ipairs(backpack:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
-            for _, v in ipairs(char:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
-            return nil
-        end
-        local f3x = getf3x()
-        if not f3x then return end
-        local syncapi = f3x.SyncAPI
-        local serverendpoint = syncapi.ServerEndpoint
-        local function setanchor(part,b)
-            serverendpoint:InvokeServer("SyncAnchor", {{Part=part,Anchored=b}})
-        end
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v:IsA("BasePart") or v:IsA("UnionOperation") then
-                spawn(function() setanchor(v, false) end)
-            end
-        end
-    end,
-    Icon = 'solar:anchor-bold-duotone',
-    Title = 'UNANCHOR ALL',
-    Desc = 'Unanchor all parts',
-})
-PartSection:Button({
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        local char = player.Character
-        local backpack = player.Backpack
-        local function getf3x()
-            for _, v in ipairs(backpack:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
-            for _, v in ipairs(char:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
-            return nil
-        end
-        local f3x = getf3x()
-        if not f3x then return end
-        local syncapi = f3x.SyncAPI
-        local serverendpoint = syncapi.ServerEndpoint
-        for i = 1, 50 do
-            spawn(function()
-                serverendpoint:InvokeServer("CreatePart", "Normal", (char.Head.CFrame * CFrame.new(0, 50 + i, 0)), workspace)
-            end)
-        end
-    end,
-    Icon = 'solar:box-bold-duotone',
-    Title = 'SPAWN PARTS',
-    Desc = 'Spawn 50 parts above head',
 })
 
 local MapsTab = Window:Tab({
@@ -216,262 +24,162 @@ local MapsSection = MapsTab:Section({
 
 MapsSection:Button({
     Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/projectbl1ssofficialenterprise/Bl1ss-gui/refs/heads/main/nds.txt"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/Axom%20F3x%20Realm%20Script"))()
     end,
-    Title = 'NDS MAP',
+    Title = 'Axom Realm',
     Icon = 'solar:map-arrow-square-bold-duotone',
+})
+MapsSection:Paragraph({
+    Title = 'credits : By Axom',
+    TextSize = 16,
 })
 MapsSection:Button({
     Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/projectbl1ssofficialenterprise/Bl1ss-gui/refs/heads/main/slap%20tower.txt"))()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-BALDI-MAP-F3X-BY-WXA-x-X9D-135857"))()
     end,
-    Title = 'SLAP MAP',
+    Title = 'Baldi map',
     Icon = 'solar:map-arrow-square-bold-duotone',
+})
+MapsSection:Paragraph({
+    Title = 'Baldi map by X9D and 1_wxaa',
+    TextSize = 16,
 })
 MapsSection:Button({
     Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/KryptIT/Obfuscatortest/refs/heads/main/README.md"))()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-PRISON-LIFE-F3X-MAP-BY-WXA-138601"))()
     end,
-    Title = 'Nazi MAP',
+    Title = 'Prison Life map',
     Icon = 'solar:map-arrow-square-bold-duotone',
 })
-MapsSection:Button({
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/KryptIT/Obfuscatortest/refs/heads/main/kfc.lua"))()
-    end,
-    Title = 'KFC MAP',
-    Icon = 'solar:map-arrow-square-bold-duotone',
-})
-MapsSection:Button({
-    Callback = function()
-        local RequestCommandSilent = game:GetService('ReplicatedStorage'):WaitForChild('HDAdminHDClient').Signals.RequestCommandSilent
-        local player = game.Players.LocalPlayer
-        local char = player.Character
-        local backpack = player.Backpack
-        local function getf3x()
-            for _, v in ipairs(backpack:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
-            for _, v in ipairs(char:GetChildren()) do if v:FindFirstChild("SyncAPI") then return v end end
-            return nil
-        end
-        local f3x = getf3x()
-        if not f3x then return end
-        local syncapi = f3x.SyncAPI
-        local serverendpoint = syncapi.ServerEndpoint
-        fenv.mate = function(part, material)
-            serverendpoint:InvokeServer('SyncMaterial', {{Part=part, Material=material}})
-        end
-        fenv.Resize = function(part, size, cframe)
-            serverendpoint:InvokeServer('SyncResize', {{Part=part, CFrame=cframe, Size=size}})
-        end
-        fenv.floor = function(part, face)
-            serverendpoint:InvokeServer('SyncTexture', {{TextureType='Texture', StudsPerTileU=2, Part=part, Face=face, StudsPerTileV=2, Texture='rbxassetid://83901588886686'}})
-        end
-        fenv.DestroyPart = function(part)
-            serverendpoint:InvokeServer('Remove', {part})
-        end
-        RequestCommandSilent:InvokeServer(';punish all')
-        task.wait(1)
-        local model = game:GetObjects('rbxassetid://141621194')[1]
-        model.Parent = game.Lighting
-        for _, v in next, model:GetDescendants() do
-            v.Anchored = true
-        end
-        task.wait(10)
-        model.Parent = nil
-        fenv.f3xbuildpart = function() end
-        print('Finished build.')
-        task.wait(5)
-        wait(8)
-        game:GetService('ReplicatedStorage'):WaitForChild('HDAdminHDClient').Signals.RequestCommandSilent:InvokeServer(';respawn all')
-    end,
-    Title = 'CROSSROADS MAP',
-    Icon = 'solar:map-arrow-square-bold-duotone',
+MapsSection:Paragraph({
+    Title = 'Prison life map by X9D and 1_wxaa',
+    TextSize = 16,
 })
 MapsSection:Space()
 
-local EffectsTab = Window:Tab({
-    Icon = 'solar:stars-bold-duotone',
-    IconColor = Color3.fromHex('#10C550'),
-    Title = 'Effects',
-    Desc = 'Visual effects',
-})
-local DecalSection = EffectsTab:Section({
-    Title = 'Decal Spam',
-})
-
-DecalSection:Button({
-    Callback = function()
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v:IsA("BasePart") then
-                local decal = Instance.new("Decal")
-                decal.Texture = "rbxassetid://99429165130278"
-                decal.Face = Enum.NormalId.Front
-                decal.Parent = v
-            end
-        end
-    end,
-    Title = 'DECAL SPAM 1',
-    Icon = 'solar:gallery-bold-duotone',
-})
-DecalSection:Button({
-    Callback = function()
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v:IsA("BasePart") then
-                local decal = Instance.new("Decal")
-                decal.Texture = "rbxassetid://99429165130278"
-                decal.Face = Enum.NormalId.Front
-                decal.Parent = v
-            end
-        end
-    end,
-    Title = 'Big yahu',
-    Icon = 'solar:gallery-bold-duotone',
-})
-DecalSection:Button({
-    Callback = function()
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v:IsA("BasePart") then
-                local decal = Instance.new("Decal")
-                decal.Texture = "rbxassetid://99429165130278"
-                decal.Face = Enum.NormalId.Front
-                decal.Parent = v
-            end
-        end
-    end,
-    Title = 'TD DECAL',
-    Icon = 'solar:gallery-bold-duotone',
-})
-DecalSection:Button({
-    Callback = function()
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v:IsA("BasePart") then
-                local decal = Instance.new("Decal")
-                decal.Texture = "rbxassetid://99429165130278"
-                decal.Face = Enum.NormalId.Front
-                decal.Parent = v
-            end
-        end
-    end,
-    Title = 'DECAL SPAM 2',
-    Icon = 'solar:gallery-bold-duotone',
-})
-EffectsTab:Space()
-
-local PartEffectsSection = EffectsTab:Section({
-    Title = 'Part Effects',
-})
-
-PartEffectsSection:Button({
-    Callback = function()
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v:IsA("BasePart") then
-                local sparkles = Instance.new("Sparkles")
-                sparkles.Parent = v
-            end
-        end
-    end,
-    Icon = 'solar:star-bold-duotone',
-    Title = 'SPARKLES',
-    Desc = 'Add sparkles to all parts',
-})
-PartEffectsSection:Button({
-    Callback = function()
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v:IsA("BasePart") then
-                local mesh = Instance.new("SpecialMesh")
-                mesh.MeshType = Enum.MeshType.Sphere
-                mesh.Parent = v
-            end
-        end
-    end,
-    Icon = 'solar:cubic-bold-duotone',
-    Title = 'MESHIFY',
-    Desc = 'Random mesh on all parts',
-})
-PartEffectsSection:Button({
-    Callback = function()
-        for _, v in ipairs(game.Players:GetPlayers()) do
-            if v.Character and v.Character:FindFirstChild("Head") then
-                v.Character.Head:Destroy()
-            end
-        end
-    end,
-    Icon = 'solar:skull-bold-duotone',
-    Title = 'KILL ALL NEED F3X',
-    Desc = 'Remove all player heads',
-})
-
-local SpecialTab = Window:Tab({
-    Icon = 'solar:code-bold-duotone',
-    IconColor = Color3.fromHex('#EF4F1D'),
-    Title = 'Special',
-    Desc = 'Complex scripts',
-})
-local SpecialSection = SpecialTab:Section({
-    Title = 'Advanced Features',
-})
-
-MapsSection:Button({
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/projectbl1ssofficialenterprise/Bl1ss-gui/refs/heads/main/nds.txt"))()
-    end,
-    Title = 'Team darius realm',
-    Icon = 'solar:map-arrow-square-bold-duotone',
-})
-MapsSection:Button({
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/projectbl1ssofficialenterprise/Bl1ss-gui/refs/heads/main/slap%20tower.txt"))()
-    end,
-    Title = 'AXOM REALM',
-    Icon = 'solar:crown-star-bold-duotone',
-})
-SpecialSection:Button({
-    Callback = function()
-        game:GetService('ReplicatedStorage'):FindFirstChild('HDAdminClient'):FindFirstChild('Signals'):FindFirstChild('RequestCommand'):InvokeServer(';gear me 94233344')
-    end,
-    Title = 'SHEDLETSKY',
-    Icon = 'solar:cloud-storm-bold-duotone',
-})
-SpecialSection:Button({
-    Callback = function()
-        game.Lighting.Ambient = Color3.new(0,0,0)
-        game.Lighting.Brightness = 0
-    end,
-    Icon = 'solar:skull-bold-duotone',
-    Title = '666',
-    Desc = 'Dark mode + effects',
-})
-SpecialSection:Button({
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        if player.Character then
-            player.Character.Head.Mesh:Destroy()
-        end
-    end,
+local TransformationsTab = Window:Tab({
     Icon = 'solar:user-bold-duotone',
-    Title = 'JOHN DOE',
-    Desc = 'John Doe transformation',
+    IconColor = Color3.fromHex('#7775F2'),
+    Title = 'Transformations',
+    Desc = 'Character transformations',
 })
-MapsSection:Button({
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/KryptIT/Obfuscatortest/refs/heads/main/kfc.lua"))()
-    end,
-    Title = 'realm but cafe',
-    Icon = 'solar:cup-hot-bold-duotone',
+local TransformationsSection = TransformationsTab:Section({
+    Title = 'Transformations',
 })
 
-local InputsTab = Window:Tab({
+TransformationsSection:Button({
+    Callback = function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Soul-Reaper-F3X-Script-86505"))()
+    end,
+    Title = 'Soul reaper',
+    Icon = 'solar:skull-bold-duotone',
+})
+TransformationsSection:Paragraph({
+    Title = 'credits : idk who',
+    TextSize = 16,
+})
+TransformationsSection:Button({
+    Callback = function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-John-Doe-F3X-Script-86500"))()
+    end,
+    Title = 'John Doe',
+    Icon = 'solar:user-bold-duotone',
+})
+TransformationsSection:Paragraph({
+    Title = 'credits : idk who',
+    TextSize = 16,
+})
+TransformationsSection:Button({
+    Callback = function()
+        loadstring(game:HttpGet("https://api.rubis.app/v2/scrap/IIPoIWa14yVk8Fet/raw", true))()
+    end,
+    Title = 'chainsaw',
+    Icon = 'solar:scissors-bold-duotone',
+})
+TransformationsSection:Paragraph({
+    Title = 'credits : idk who',
+    TextSize = 16,
+})
+TransformationsSection:Button({
+    Callback = function()
+        loadstring(game:HttpGet("https://api.rubis.app/v2/scrap/fqSw26Rp69Pdax1b/raw", true))()
+    end,
+    Title = 'the glorius sword',
+    Icon = 'solar:sword-bold-duotone',
+})
+TransformationsSection:Paragraph({
+    Title = 'credits : idk who',
+    TextSize = 16,
+})
+TransformationsSection:Button({
+    Callback = function()
+        loadstring(game:HttpGet("https://api.rubis.app/v2/scrap/90QG2RCzyL25UUpR/raw", true))()
+    end,
+    Title = 'Fe goner',
+    Icon = 'solar:skull-bold-duotone',
+})
+TransformationsSection:Paragraph({
+    Title = 'credits : idk who',
+    TextSize = 16,
+})
+TransformationsSection:Button({
+    Callback = function()
+        loadstring(game:HttpGet("https://api.rubis.app/v2/scrap/aO1BP3srvSZbKPrv/raw", true))()
+    end,
+    Title = 'cuff',
+    Icon = 'solar:hand-stars-bold-duotone',
+})
+TransformationsSection:Paragraph({
+    Title = 'credits : idk who',
+    TextSize = 16,
+})
+TransformationsSection:Button({
+    Callback = function()
+        loadstring(game:HttpGet("https://api.rubis.app/v2/scrap/jkDROq5PGm1iNqVv/raw", true))()
+    end,
+    Title = 'infinity gauntlet',
+    Icon = 'solar:hand-stars-bold-duotone',
+})
+TransformationsSection:Paragraph({
+    Title = 'credits : idk who',
+    TextSize = 16,
+})
+TransformationsSection:Button({
+    Callback = function()
+        loadstring(game:HttpGet("https://api.rubis.app/v2/scrap/yM2eZft193oKt7gc/raw", true))()
+    end,
+    Title = 'sledge hammer',
+    Icon = 'solar:hammer-bold-duotone',
+})
+TransformationsSection:Paragraph({
+    Title = 'credits : idk who',
+    TextSize = 16,
+})
+TransformationsSection:Button({
+    Callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/Md8U5MAW"))()
+    end,
+    Title = 'Thomas',
+    Icon = 'solar:user-bold-duotone',
+})
+TransformationsSection:Paragraph({
+    Title = 'credits : Not by me, idk the creator',
+    TextSize = 16,
+})
+TransformationsTab:Space()
+
+local CmdTab = Window:Tab({
     Icon = 'solar:keyboard-bold-duotone',
-    Title = 'Inputs',
+    Title = 'Cmd',
     Desc = 'Custom commands',
 })
-local HintSection = InputsTab:Section({
+local HintSection = CmdTab:Section({
     Title = 'Send Hint',
 })
 
 local hintText = ""
 HintSection:Input({
-    Placeholder = 'Enter hint text...',
+    Placeholder = 'write hint text here',
     Title = 'Hint Message',
     Callback = function(text)
         hintText = text
@@ -484,15 +192,15 @@ HintSection:Button({
     Title = 'Send Hint',
     Icon = 'solar:chat-round-dots-bold-duotone',
 })
-InputsTab:Space()
+CmdTab:Space()
 
-local MsgSection = InputsTab:Section({
+local MsgSection = CmdTab:Section({
     Title = 'Send ServerMessage',
 })
 
 local msgText = ""
 MsgSection:Input({
-    Placeholder = 'Enter message text...',
+    Placeholder = 'write server message text here',
     Title = 'Message contents',
     Callback = function(text)
         msgText = text
@@ -509,34 +217,22 @@ MsgSection:Button({
 local CreditsTab = Window:Tab({
     Icon = 'solar:users-group-two-rounded-bold',
     Title = 'Credits',
-    Desc = 'People behind Axomic Hub',
+    Desc = 'Credits',
 })
 local CreditsSection = CreditsTab:Section({
-    Title = '✨ Special Thanks',
+    Title = '✨ Credits',
 })
 
 CreditsSection:Paragraph({
-    Title = '• Footagesus – WindUI Library',
-    TextSize = 16,
-})
-CreditsSection:Paragraph({
-    Title = '• All contributors & testers',
-    TextSize = 16,
-})
-CreditsSection:Paragraph({
-    Title = '• Explotier community',
-    TextSize = 16,
-})
-CreditsSection:Paragraph({
-    Title = '• You for using this GUI!',
+    Title = 'This script is Made by Axom',
     TextSize = 16,
 })
 CreditsSection:Space({Columns = 2})
 CreditsSection:Button({
     Callback = function()
-        setclipboard("Axom - F3x Script\nCredits: Axom")
+        setclipboard("https://discord.gg/FgR3MXqZy9")
     end,
-    Title = 'Copy Credits',
+    Title = 'Discord',
     Icon = 'solar:copy-bold',
 })
 CreditsTab:Space()
