@@ -1,5 +1,4 @@
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -32,6 +31,10 @@ local isESP = false
 local flyActive = false
 local freecamActive = false
 local spinActive = false
+local walkOnWater = false
+local swimActive = false
+local rspyActive = false
+local webhookSpyActive = false
 local spinSpeed = 10
 local aimbotFOV = 90
 local originalCFrame = nil
@@ -41,6 +44,8 @@ local flyConnection = nil
 local vehicleFlyConnection = nil
 local walkFlingConnection = nil
 local aimbotConnection = nil
+local waterConnection = nil
+local swimConnection = nil
 local espParts = {}
 local xrayParts = {}
 local espConnections = {}
@@ -66,9 +71,9 @@ ScreenGui.Parent = CoreGui
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 300, 0, 400)
-MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.Size = UDim2.new(0, 350, 0, 500)
+MainFrame.Position = UDim2.new(0.5, -175, 0.5, -250)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainFrame.BorderSizePixel = 2
 MainFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
 MainFrame.Active = true
@@ -77,30 +82,30 @@ MainFrame.Parent = ScreenGui
 
 local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
-TopBar.Size = UDim2.new(1, 0, 0, 30)
-TopBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+TopBar.Size = UDim2.new(1, 0, 0, 35)
+TopBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 TopBar.BorderSizePixel = 0
 TopBar.Parent = MainFrame
 
 local Title = Instance.new("TextLabel")
 Title.Name = "Title"
-Title.Size = UDim2.new(1, -30, 1, 0)
-Title.Position = UDim2.new(0, 5, 0, 0)
+Title.Size = UDim2.new(1, -35, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "Axomic CMD"
 Title.TextColor3 = Color3.fromRGB(0, 170, 255)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
+Title.TextSize = 18
 Title.Parent = TopBar
 
 local CloseButton = Instance.new("TextButton")
 CloseButton.Name = "CloseButton"
-CloseButton.Size = UDim2.new(0, 25, 0, 25)
-CloseButton.Position = UDim2.new(1, -27, 0, 2.5)
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 2.5)
 CloseButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-CloseButton.Text = "X"
-CloseButton.TextColor3 = Color3.fromRGB(255, 50, 50)
+CloseButton.Text = "✕"
+CloseButton.TextColor3 = Color3.fromRGB(255, 80, 80)
 CloseButton.TextScaled = true
 CloseButton.Font = Enum.Font.GothamBold
 CloseButton.BorderSizePixel = 0
@@ -110,186 +115,159 @@ CloseButton.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
-local TabButtons = Instance.new("Frame")
-TabButtons.Name = "TabButtons"
-TabButtons.Size = UDim2.new(1, 0, 0, 30)
-TabButtons.Position = UDim2.new(0, 0, 0, 30)
-TabButtons.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-TabButtons.BorderSizePixel = 0
-TabButtons.Parent = MainFrame
+local CommandList = Instance.new("ScrollingFrame")
+CommandList.Name = "CommandList"
+CommandList.Size = UDim2.new(1, -20, 1, -90)
+CommandList.Position = UDim2.new(0, 10, 0, 45)
+CommandList.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+CommandList.BorderSizePixel = 0
+CommandList.ScrollBarThickness = 6
+CommandList.ScrollBarImageColor3 = Color3.fromRGB(0, 170, 255)
+CommandList.CanvasSize = UDim2.new(0, 0, 0, 0)
+CommandList.Parent = MainFrame
 
-local ScrollingFrame = Instance.new("ScrollingFrame")
-ScrollingFrame.Name = "Commands"
-ScrollingFrame.Size = UDim2.new(1, 0, 1, -60)
-ScrollingFrame.Position = UDim2.new(0, 0, 0, 60)
-ScrollingFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-ScrollingFrame.BorderSizePixel = 0
-ScrollingFrame.ScrollBarThickness = 5
-ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-ScrollingFrame.Parent = MainFrame
+local ListLayout = Instance.new("UIListLayout")
+ListLayout.Padding = UDim.new(0, 2)
+ListLayout.Parent = CommandList
 
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Padding = UDim.new(0, 2)
-UIListLayout.Parent = ScrollingFrame
+local commands = {
+    "fly",
+    "unfly",
+    "vehiclefly / vfly",
+    "unvehiclefly",
+    "walkspeed <value>",
+    "jumppower <value>",
+    "noclip",
+    "unnoclip / clip",
+    "infinitejump / infjump",
+    "uninfinitejump / uninfjump",
+    "nofalldamage / nfd",
+    "unnofalldamage / unnfd",
+    "antiafk",
+    "unantiafk",
+    "reset",
+    "respawn",
+    "sit",
+    "unsit / stand",
+    "ragdoll",
+    "unragdoll",
+    "esp",
+    "unesp",
+    "xray",
+    "unxray",
+    "freecamera / freecam",
+    "unfreecam / resetcam / unfreecamera",
+    "hipheight <value>",
+    "gravity <value>",
+    "spin <speed>",
+    "unspin",
+    "walkfling",
+    "unwalkfling",
+    "walkonwalls",
+    "unwalkonwalls",
+    "handlekill / hk",
+    "unhandlekill / unhk",
+    "jerk",
+    "teleporttool / tptool",
+    "animation / emote <id> <speed>",
+    "stopanim / stopemote",
+    "walkonwater",
+    "unwalkonwater",
+    "swim",
+    "unswim",
+    "aimbot",
+    "unaimbot",
+    "silentaim",
+    "unsilentaim",
+    "triggerbot",
+    "untriggerbot",
+    "wallcheck",
+    "unwallcheck",
+    "fov <value>",
+    "serverhop / svhop",
+    "rejoin / rj",
+    "copyjobid / jobid / cjobid",
+    "antifling1",
+    "unantifling1",
+    "antifling2",
+    "unantifling2",
+    "servertime / svtime",
+    "gameinfo / ginfo",
+    "lowgraphics / antilag",
+    "httpspy",
+    "unhttpspy",
+    "rspy",
+    "unrspy",
+    "webhookspy",
+    "unwebhookspy",
+    "discordsv / discord",
+    "tiktok / tk",
+    "youtube / yt"
+}
 
-local commandList = {}
-local currentTab = nil
-
-local function createTab(name)
-    local TabButton = Instance.new("TextButton")
-    TabButton.Name = name.."Tab"
-    TabButton.Size = UDim2.new(0, 60, 1, 0)
-    TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    TabButton.Text = name
-    TabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
-    TabButton.TextScaled = true
-    TabButton.Font = Enum.Font.Gotham
-    TabButton.BorderSizePixel = 0
-    TabButton.Parent = TabButtons
+for i, cmd in ipairs(commands) do
+    local CommandFrame = Instance.new("Frame")
+    CommandFrame.Size = UDim2.new(1, -5, 0, 28)
+    CommandFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    CommandFrame.BorderSizePixel = 0
+    CommandFrame.Parent = CommandList
     
-    local tabContent = Instance.new("Frame")
-    tabContent.Name = name.."Content"
-    tabContent.Size = UDim2.new(1, 0, 0, 0)
-    tabContent.BackgroundTransparency = 1
-    tabContent.Parent = ScrollingFrame
-    tabContent.Visible = false
+    local CommandLabel = Instance.new("TextLabel")
+    CommandLabel.Size = UDim2.new(1, 0, 1, 0)
+    CommandLabel.BackgroundTransparency = 1
+    CommandLabel.Text = "  " .. cmd
+    CommandLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    CommandLabel.TextXAlignment = Enum.TextXAlignment.Left
+    CommandLabel.Font = Enum.Font.Code
+    CommandLabel.TextSize = 14
+    CommandLabel.Parent = CommandFrame
     
-    local tabLayout = Instance.new("UIListLayout")
-    tabLayout.Padding = UDim.new(0, 2)
-    tabLayout.Parent = tabContent
-    
-    tabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, tabLayout.AbsoluteContentSize.Y + 20)
-    end)
-    
-    local function addCommand(text)
-        local CommandFrame = Instance.new("Frame")
-        CommandFrame.Size = UDim2.new(1, -10, 0, 25)
-        CommandFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        CommandFrame.BorderSizePixel = 0
-        CommandFrame.Parent = tabContent
-        
-        local CommandLabel = Instance.new("TextLabel")
-        CommandLabel.Size = UDim2.new(1, 0, 1, 0)
-        CommandLabel.BackgroundTransparency = 1
-        CommandLabel.Text = "  "..text
-        CommandLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
-        CommandLabel.TextXAlignment = Enum.TextXAlignment.Left
-        CommandLabel.Font = Enum.Font.Code
-        CommandLabel.TextSize = 14
-        CommandLabel.Parent = CommandFrame
-    end
-    
-    TabButton.MouseButton1Click:Connect(function()
-        for _, v in pairs(TabButtons:GetChildren()) do
-            if v:IsA("TextButton") then
-                v.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-                v.TextColor3 = Color3.fromRGB(200, 200, 200)
-            end
-        end
-        TabButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-        TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        
-        if currentTab then
-            currentTab.Visible = false
-        end
-        tabContent.Visible = true
-        currentTab = tabContent
-    end)
-    
-    return {AddCommand = addCommand}
-end
-
-local mainTab = createTab("Main")
-local funTab = createTab("Fun")
-local combatTab = createTab("Combat")
-local serverTab = createTab("Server")
-local otherTab = createTab("Other")
-
-mainTab.AddCommand("fly")
-mainTab.AddCommand("unfly")
-mainTab.AddCommand("vehiclefly / vfly")
-mainTab.AddCommand("unvehiclefly")
-mainTab.AddCommand("walkspeed <value>")
-mainTab.AddCommand("jumppower <value>")
-mainTab.AddCommand("noclip")
-mainTab.AddCommand("unnoclip / clip")
-mainTab.AddCommand("infinitejump / infjump")
-mainTab.AddCommand("uninfinitejump / uninfjump")
-mainTab.AddCommand("nofalldamage / nfd")
-mainTab.AddCommand("unnofalldamage / unnfd")
-mainTab.AddCommand("antiafk")
-mainTab.AddCommand("unantiafk")
-mainTab.AddCommand("reset")
-mainTab.AddCommand("respawn")
-mainTab.AddCommand("sit")
-mainTab.AddCommand("unsit / stand")
-mainTab.AddCommand("ragdoll")
-mainTab.AddCommand("unragdoll")
-mainTab.AddCommand("esp")
-mainTab.AddCommand("unesp")
-mainTab.AddCommand("xray")
-mainTab.AddCommand("unxray")
-mainTab.AddCommand("freecamera / freecam")
-mainTab.AddCommand("unfreecam / resetcam / unfreecamera")
-mainTab.AddCommand("hipheight <value>")
-mainTab.AddCommand("gravity <value>")
-
-funTab.AddCommand("spin <speed>")
-funTab.AddCommand("unspin")
-funTab.AddCommand("walkfling")
-funTab.AddCommand("unwalkfling")
-funTab.AddCommand("walkonwalls")
-funTab.AddCommand("unwalkonwalls")
-funTab.AddCommand("handlekill / hk")
-funTab.AddCommand("unhandlekill / unhk")
-funTab.AddCommand("jerk")
-funTab.AddCommand("teleporttool / tptool")
-funTab.AddCommand("animation / emote <id> <speed>")
-funTab.AddCommand("stopanim / stopemote")
-
-combatTab.AddCommand("aimbot")
-combatTab.AddCommand("unaimbot")
-combatTab.AddCommand("silentaim")
-combatTab.AddCommand("unsilentaim")
-combatTab.AddCommand("triggerbot")
-combatTab.AddCommand("untriggerbot")
-combatTab.AddCommand("wallcheck")
-combatTab.AddCommand("unwallcheck")
-combatTab.AddCommand("fov <value>")
-
-serverTab.AddCommand("serverhop / svhop")
-serverTab.AddCommand("rejoin / rj")
-serverTab.AddCommand("copyjobid / jobid / cjobid")
-serverTab.AddCommand("antifling1")
-serverTab.AddCommand("unantifling1")
-serverTab.AddCommand("antifling2")
-serverTab.AddCommand("unantifling2")
-serverTab.AddCommand("servertime / svtime")
-serverTab.AddCommand("gameinfo / ginfo")
-serverTab.AddCommand("lowgraphics / antilag")
-serverTab.AddCommand("httpspy")
-serverTab.AddCommand("unhttpspy")
-
-otherTab.AddCommand("discordsv / discord")
-otherTab.AddCommand("tiktok / tk")
-otherTab.AddCommand("youtube / yt")
-otherTab.AddCommand("walkonwater")
-otherTab.AddCommand("unwalkonwater")
-otherTab.AddCommand("swim")
-otherTab.AddCommand("unswim")
-otherTab.AddCommand("rspy")
-otherTab.AddCommand("unrspy")
-otherTab.AddCommand("webhookspy")
-otherTab.AddCommand("unwebhookspy")
-
-task.wait(0.1)
-for _, v in pairs(TabButtons:GetChildren()) do
-    if v:IsA("TextButton") and v.Name == "MainTab" then
-        v:MouseButton1Click()
-        break
+    if cmd:find("<") then
+        CommandLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+    elseif cmd:find("/") then
+        CommandLabel.TextColor3 = Color3.fromRGB(150, 200, 255)
     end
 end
+
+ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    CommandList.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 10)
+end)
+
+local BottomBar = Instance.new("Frame")
+BottomBar.Name = "BottomBar"
+BottomBar.Size = UDim2.new(1, 0, 0, 45)
+BottomBar.Position = UDim2.new(0, 0, 1, -45)
+BottomBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+BottomBar.BorderSizePixel = 0
+BottomBar.Parent = MainFrame
+
+local CommandBox = Instance.new("TextBox")
+CommandBox.Name = "CommandBox"
+CommandBox.Size = UDim2.new(1, -20, 0, 35)
+CommandBox.Position = UDim2.new(0, 10, 0, 5)
+CommandBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+CommandBox.TextColor3 = Color3.fromRGB(0, 170, 255)
+CommandBox.PlaceholderText = "Enter command here..."
+CommandBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+CommandBox.Text = ""
+CommandBox.Font = Enum.Font.Code
+CommandBox.TextSize = 16
+CommandBox.ClearTextOnFocus = false
+CommandBox.BorderSizePixel = 1
+CommandBox.BorderColor3 = Color3.fromRGB(0, 170, 255)
+CommandBox.Parent = BottomBar
+
+local ExecuteButton = Instance.new("TextButton")
+ExecuteButton.Name = "ExecuteButton"
+ExecuteButton.Size = UDim2.new(0, 60, 0, 35)
+ExecuteButton.Position = UDim2.new(1, -70, 0, 5)
+ExecuteButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+ExecuteButton.Text = "EXEC"
+ExecuteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ExecuteButton.TextScaled = true
+ExecuteButton.Font = Enum.Font.GothamBold
+ExecuteButton.BorderSizePixel = 0
+ExecuteButton.Parent = BottomBar
 
 RunService.Stepped:Connect(function()
     if isNoclipping and player.Character then
@@ -301,6 +279,12 @@ RunService.Stepped:Connect(function()
     end
     if walkOnWalls and player.Character and player.Character:FindFirstChild("Humanoid") then
         player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Climbing)
+    end
+    if walkOnWater and player.Character and getRoot(player.Character) then
+        local root = getRoot(player.Character)
+        if root.Position.Y < 0 then
+            root.CFrame = root.CFrame + Vector3.new(0, 5, 0)
+        end
     end
 end)
 
@@ -815,32 +799,25 @@ local function executeCommand(command)
             notify("Animation", "Stopped")
         end
     elseif cmd == "walkonwater" then
+        walkOnWater = true
         if player.Character and player.Character:FindFirstChild("Humanoid") then
             player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
             player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-            player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Running)
-            local waterConnection = RunService.Heartbeat:Connect(function()
-                if player.Character and getRoot(player.Character) then
-                    local root = getRoot(player.Character)
-                    if root.Position.Y < 0 then
-                        root.CFrame = root.CFrame + Vector3.new(0, 5, 0)
-                    end
-                end
-            end)
-            table.insert(espConnections, waterConnection)
-            notify("WalkOnWater", "Enabled")
         end
+        notify("WalkOnWater", "Enabled")
     elseif cmd == "unwalkonwater" then
+        walkOnWater = false
         if player.Character and player.Character:FindFirstChild("Humanoid") then
             player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, true)
             player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
-            notify("WalkOnWater", "Disabled")
         end
+        notify("WalkOnWater", "Disabled")
     elseif cmd == "swim" then
+        swimActive = true
         if player.Character and player.Character:FindFirstChild("Humanoid") then
             player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
-            local swimConnection = RunService.Heartbeat:Connect(function()
-                if player.Character and getRoot(player.Character) then
+            swimConnection = RunService.Heartbeat:Connect(function()
+                if swimActive and player.Character and getRoot(player.Character) then
                     local root = getRoot(player.Character)
                     local moveDirection = Vector3.new(0, 0, 0)
                     if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
@@ -854,14 +831,18 @@ local function executeCommand(command)
                     end
                 end
             end)
-            table.insert(espConnections, swimConnection)
-            notify("Swim", "Enabled")
         end
+        notify("Swim", "Enabled")
     elseif cmd == "unswim" then
+        swimActive = false
+        if swimConnection then
+            swimConnection:Disconnect()
+            swimConnection = nil
+        end
         if player.Character and player.Character:FindFirstChild("Humanoid") then
             player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Running)
-            notify("Swim", "Disabled")
         end
+        notify("Swim", "Disabled")
     elseif cmd == "aimbot" then
         aimbotEnabled = true
         aimbotConnection = RunService.Heartbeat:Connect(function()
@@ -1002,30 +983,30 @@ local function executeCommand(command)
     elseif cmd == "unhttpspy" then
         notify("HTTPSpy", "Disabled (Re-execute to enable)")
     elseif cmd == "rspy" then
-        local oldfire = nil
-        oldfire = function(obj, ...)
-            if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-                print("Remote Fired: "..obj.Name)
-                print("Parent: "..obj.Parent.Name)
+        rspyActive = true
+        local oldNamecall
+        oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+            local method = getnamecallmethod()
+            local args = {...}
+            if rspyActive and (method == "FireServer" or method == "InvokeServer") then
+                print("Remote Fired: "..tostring(self))
+                print("Method: "..method)
                 print("Arguments: ", ...)
+                print("Parent: "..tostring(self.Parent))
             end
-            return obj:FireServer(...)
-        end
-        for _, v in pairs(game:GetDescendants()) do
-            if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
-                local oldname = v.Name
-                v.Name = oldname
-            end
-        end
+            return oldNamecall(self, ...)
+        end)
         notify("RSpy", "Enabled (Check console)")
     elseif cmd == "unrspy" then
+        rspyActive = false
         notify("RSpy", "Disabled")
     elseif cmd == "webhookspy" then
+        webhookSpyActive = true
         local oldrequest = request or http_request or syn.request
         if oldrequest then
             request = function(...)
                 local args = {...}
-                if args[1].Url and args[1].Url:find("discord.com/api/webhooks") then
+                if webhookSpyActive and args[1].Url and args[1].Url:find("discord.com/api/webhooks") then
                     print("WEBHOOK DETECTED: "..args[1].Url)
                     if args[1].Body then
                         print("Webhook Data: "..args[1].Body)
@@ -1038,6 +1019,7 @@ local function executeCommand(command)
             notify("WebhookSpy", "Enabled")
         end
     elseif cmd == "unwebhookspy" then
+        webhookSpyActive = false
         notify("WebhookSpy", "Disabled")
     elseif cmd == "discordsv" or cmd == "discord" then
         setclipboard("https://discord.gg/FgR3MXqZy9")
@@ -1051,38 +1033,24 @@ local function executeCommand(command)
     end
 end
 
-local ChatBox = Instance.new("TextBox")
-ChatBox.Name = "CommandBox"
-ChatBox.Size = UDim2.new(1, -20, 0, 30)
-ChatBox.Position = UDim2.new(0, 10, 1, -40)
-ChatBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-ChatBox.TextColor3 = Color3.fromRGB(0, 170, 255)
-ChatBox.PlaceholderText = "Enter command... (F5 toggle, F6 chat)"
-ChatBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-ChatBox.Text = ""
-ChatBox.Font = Enum.Font.Code
-ChatBox.TextSize = 14
-ChatBox.ClearTextOnFocus = false
-ChatBox.Parent = MainFrame
+local function executeFromBox()
+    if CommandBox.Text ~= "" then
+        executeCommand(CommandBox.Text)
+        CommandBox.Text = ""
+    end
+end
 
-ChatBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed and ChatBox.Text ~= "" then
-        executeCommand(ChatBox.Text)
-        ChatBox.Text = ""
+CommandBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        executeFromBox()
     end
 end)
+
+ExecuteButton.MouseButton1Click:Connect(executeFromBox)
 
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.F5 then
         MainFrame.Visible = not MainFrame.Visible
-    elseif input.KeyCode == Enum.KeyCode.F6 then
-        local chat = game:GetService("Chat")
-        local message = "Axomic CMD Loaded!"
-        if chat:FindFirstChild("BubbleChat") then
-            chat:Chat(chat.BubbleChat, message)
-        elseif player.Character then
-            chat:Chat(player.Character, message)
-        end
     end
 end)
 
