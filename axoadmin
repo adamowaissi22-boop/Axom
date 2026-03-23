@@ -1,18 +1,3 @@
-local ScreenGui = Instance.new("ScreenGui")
-local MainFrame = Instance.new("Frame")
-local TopBar = Instance.new("Frame")
-local Title = Instance.new("TextLabel")
-local CloseButton = Instance.new("TextButton")
-local Credits = Instance.new("TextLabel")
-local CommandBox = Instance.new("TextBox")
-local ExecuteButton = Instance.new("TextButton")
-local CommandList = Instance.new("ScrollingFrame")
-local ListLayout = Instance.new("UIListLayout")
-local ThemeDropdown = Instance.new("Frame")
-local DropdownButton = Instance.new("TextButton")
-local DropdownList = Instance.new("ScrollingFrame")
-local ThemeLayout = Instance.new("UIListLayout")
-
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -24,6 +9,7 @@ local StarterGui = game:GetService("StarterGui")
 local VirtualUser = game:GetService("VirtualUser")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
@@ -31,103 +17,167 @@ local camera = Workspace.CurrentCamera
 local PlaceId = game.PlaceId
 local JobId = game.JobId
 
-local isNoclipping = false
-local isVehicleFlying = false
-local infiniteJump = false
-local antiAfk = false
-local noFallDamage = false
-local walkFlingEnabled = false
-local walkOnWalls = false
-local handleKillEnabled = false
-local aimbotEnabled = false
-local silentAim = false
-local triggerBot = false
-local wallCheck = false
-local isXray = false
-local isESP = false
+local commands = {}
+local commandHistory = {}
+local currentSuggestionIndex = 1
+local suggestions = {}
+
 local flyActive = false
-local freecamActive = false
-local spinActive = false
-local walkOnWater = false
-local swimActive = false
-local rspyActive = false
-local webhookSpyActive = false
-local hiddenfling = false
-local boostFpsOn = false
-local spinSpeed = 10
-local aimbotFOV = 90
-local originalCFrame = nil
-local spinConnection = nil
-local afkConnection = nil
 local flyConnection = nil
+local vehicleFlyActive = false
 local vehicleFlyConnection = nil
-local walkFlingConnection = nil
-local aimbotConnection = nil
-local waterConnection = nil
-local swimConnection = nil
-local flingThread = nil
-local originalGravity = 196.2
-local originalFOV = 70
+local noclipActive = false
+local noclipConnection = nil
+local infiniteJumpActive = false
+local infiniteJumpConnection = nil
+local antiAfkActive = false
+local antiAfkConnection = nil
+local noFallDamageActive = false
+local xrayActive = false
+local xrayParts = {}
+local espActive = false
+local espParts = {}
+local freecamActive = false
+local freecamConnection = nil
 local originalCameraSubject = nil
+local originalCameraCFrame = nil
+local spinActive = false
+local spinConnection = nil
+local spinSpeed = 10
+local walkFlingActive = false
+local walkFlingThread = nil
+local touchFlingActive = false
+local touchFlingThread = nil
+local walkOnWallsActive = false
+local walkOnWallsConnection = nil
+local handleKillActive = false
+local handleKillConnections = {}
+local aimbotActive = false
+local aimbotConnection = nil
+local silentAimActive = false
+local triggerBotActive = false
+local wallCheckActive = false
+local aimbotFOV = 90
+local walkOnWaterActive = false
+local swimActive = false
+local swimConnection = nil
+local swimOriginalGravity = 196.2
+local originalFOV = 70
+local viewTarget = nil
 local orbitConnection = nil
 local bangConnection = nil
 local bangAnim = nil
-local jerkConnection = nil
 local jerkAnim = nil
+local bunnyHopActive = false
 local bunnyHopConnection = nil
-local walkOnWallsConnection = nil
-local espParts = {}
-local xrayParts = {}
-local espConnections = {}
-local currentColor = Color3.fromRGB(0, 170, 255)
+local boostFpsActive = false
+local loopWsActive = false
+local loopWsConnection = nil
+local loopWsSpeed = 16
+local loopJpActive = false
+local loopJpConnection = nil
+local loopJpPower = 50
+local loopGrabActive = false
+local loopGrabConnection = nil
+local loopMuteActive = false
+local loopMuteConnection = nil
+local loopVoidActive = false
+local loopVoidConnection = nil
+local loopKillActive = false
+local loopKillConnection = nil
+local loopBringActive = false
+local loopBringConnection = nil
+local loopBanActive = false
+local loopBanConnection = nil
+local loopTornadoActive = false
+local loopTornadoConnection = nil
+local loopCuffActive = false
+local loopCuffConnection = nil
+local loopStandActive = false
+local loopStandConnection = nil
+local loopWaveActive = false
+local loopWaveConnection = nil
+local loopSpookActive = false
+local loopSpookConnection = nil
+local annoyActive = false
+local annoyConnection = nil
+local spamActive = false
+local spamConnection = nil
+local spamText = ""
+local yellSpamActive = false
+local yellSpamConnection = nil
+local yellSpamText = ""
+local chatLoggerActive = false
+local chatLoggerGui = nil
+local chatSpyActive = false
+local remoteSpyActive = false
+local httpSpyActive = false
+local webhookSpyActive = false
+local antiKickActive = false
+local antiBanActive = false
+local antiFlingActive = false
+local antiFlingConnection = nil
+local antiVoidActive = false
+local antiVoidConnection = nil
+local antiSitActive = false
+local antiAttachActive = false
+local antiAttachConnection = nil
+local antiKillBrickActive = false
+local freeGamepassActive = false
+local netlessActive = false
+local netlessConnection = nil
+local shiftlockActive = false
+local shiftlockConnection = nil
+local fakeLagActive = false
+local fakeLagConnection = nil
+local invisActive = false
+local headlessActive = false
+local nakedActive = false
+local godModeActive = false
+local godModeConnection = nil
 
-local themes = {
-    Midnight = {
-        Main = Color3.fromRGB(20, 20, 20),
-        TopBar = Color3.fromRGB(30, 30, 30),
-        Accent = Color3.fromRGB(0, 170, 255),
-        Button = Color3.fromRGB(40, 40, 40),
-        ButtonText = Color3.fromRGB(255, 255, 255),
-        Text = Color3.fromRGB(255, 255, 255),
-        Dropdown = Color3.fromRGB(35, 35, 35)
-    },
-    Cyber = {
-        Main = Color3.fromRGB(0, 20, 40),
-        TopBar = Color3.fromRGB(0, 40, 80),
-        Accent = Color3.fromRGB(0, 255, 200),
-        Button = Color3.fromRGB(0, 60, 120),
-        ButtonText = Color3.fromRGB(0, 255, 200),
-        Text = Color3.fromRGB(0, 255, 200),
-        Dropdown = Color3.fromRGB(0, 30, 60)
-    },
-    Sunset = {
-        Main = Color3.fromRGB(40, 20, 30),
-        TopBar = Color3.fromRGB(80, 30, 40),
-        Accent = Color3.fromRGB(255, 120, 100),
-        Button = Color3.fromRGB(120, 40, 50),
-        ButtonText = Color3.fromRGB(255, 200, 150),
-        Text = Color3.fromRGB(255, 200, 150),
-        Dropdown = Color3.fromRGB(60, 30, 40)
-    },
-    Kawaii = {
-        Main = Color3.fromRGB(255, 200, 220),
-        TopBar = Color3.fromRGB(255, 150, 200),
-        Accent = Color3.fromRGB(255, 100, 150),
-        Button = Color3.fromRGB(255, 180, 200),
-        ButtonText = Color3.fromRGB(255, 50, 100),
-        Text = Color3.fromRGB(255, 50, 100),
-        Dropdown = Color3.fromRGB(255, 170, 200)
-    },
-    Axomic = {
-        Main = Color3.fromRGB(40, 0, 0),
-        TopBar = Color3.fromRGB(80, 0, 0),
-        Accent = Color3.fromRGB(255, 0, 0),
-        Button = Color3.fromRGB(100, 0, 0),
-        ButtonText = Color3.fromRGB(255, 100, 100),
-        Text = Color3.fromRGB(255, 200, 200),
-        Dropdown = Color3.fromRGB(60, 0, 0)
-    }
-}
+local function getPlayers(input)
+    local playersList = {}
+    local lowerInput = input:lower()
+    if lowerInput == "me" then
+        table.insert(playersList, player)
+    elseif lowerInput == "random" or lowerInput == "others" then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= player then
+                table.insert(playersList, p)
+            end
+        end
+        if #playersList > 0 and lowerInput == "random" then
+            return {playersList[math.random(1, #playersList)]}
+        end
+    elseif lowerInput == "all" then
+        for _, p in pairs(Players:GetPlayers()) do
+            table.insert(playersList, p)
+        end
+    else
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Name:lower() == lowerInput or p.DisplayName:lower() == lowerInput then
+                table.insert(playersList, p)
+            end
+        end
+        if #playersList == 0 then
+            for _, p in pairs(Players:GetPlayers()) do
+                if p.Name:lower():sub(1, #lowerInput) == lowerInput or p.DisplayName:lower():sub(1, #lowerInput) == lowerInput then
+                    table.insert(playersList, p)
+                end
+            end
+        end
+    end
+    return playersList
+end
+
+local function getSinglePlayer(input)
+    local players = getPlayers(input)
+    if #players > 0 then
+        return players[1]
+    end
+    return nil
+end
 
 local function notify(title, text)
     StarterGui:SetCore("SendNotification", {
@@ -141,268 +191,433 @@ local function getRoot(char)
     return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
 end
 
-local function getPlayer(input)
-    if not input then return nil end
-    local lowerInput = input:lower()
-    if lowerInput == "me" then return player end
-    for _, p in pairs(Players:GetPlayers()) do
-        if p.Name:lower() == lowerInput or p.DisplayName:lower() == lowerInput then
-            return p
-        end
-    end
-    for _, p in pairs(Players:GetPlayers()) do
-        if p.Name:lower():sub(1, #lowerInput) == lowerInput or p.DisplayName:lower():sub(1, #lowerInput) == lowerInput then
-            return p
-        end
-    end
-    return nil
+local function getTorso(char)
+    return char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso") or char:FindFirstChild("LowerTorso")
 end
 
-ScreenGui.Parent = player:WaitForChild("PlayerGui")
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.ResetOnSpawn = false
-
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = themes.Midnight.Main
-MainFrame.BackgroundTransparency = 0.6
-MainFrame.BorderSizePixel = 2
-MainFrame.BorderColor3 = themes.Midnight.Accent
-MainFrame.Position = UDim2.new(0.5, -200, 0.5, -250)
-MainFrame.Size = UDim2.new(0, 400, 0, 500)
-MainFrame.Active = true
-MainFrame.Draggable = true
-
-TopBar.Parent = MainFrame
-TopBar.BackgroundColor3 = themes.Midnight.TopBar
-TopBar.BackgroundTransparency = 0.6
-TopBar.BorderSizePixel = 0
-TopBar.Size = UDim2.new(1, 0, 0, 35)
-
-Title.Parent = TopBar
-Title.BackgroundTransparency = 1
-Title.Size = UDim2.new(1, -35, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.Font = Enum.Font.GothamBold
-Title.Text = "Axomic CMD"
-Title.TextColor3 = themes.Midnight.Accent
-Title.TextSize = 18
-Title.TextXAlignment = Enum.TextXAlignment.Left
-
-CloseButton.Parent = TopBar
-CloseButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-CloseButton.BackgroundTransparency = 0.6
-CloseButton.BorderSizePixel = 0
-CloseButton.Position = UDim2.new(1, -30, 0, 5)
-CloseButton.Size = UDim2.new(0, 25, 0, 25)
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.Text = "✕"
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.TextSize = 16
-
-Credits.Parent = MainFrame
-Credits.BackgroundTransparency = 1
-Credits.Position = UDim2.new(0, 0, 1, -25)
-Credits.Size = UDim2.new(1, 0, 0, 25)
-Credits.Font = Enum.Font.Gotham
-Credits.Text = "Made By Axom"
-Credits.TextColor3 = themes.Midnight.Accent
-Credits.TextSize = 14
-
-ThemeDropdown.Parent = MainFrame
-ThemeDropdown.BackgroundColor3 = themes.Midnight.Dropdown
-ThemeDropdown.BackgroundTransparency = 0.6
-ThemeDropdown.BorderSizePixel = 1
-ThemeDropdown.BorderColor3 = themes.Midnight.Accent
-ThemeDropdown.Position = UDim2.new(0.5, -75, 0.05, 0)
-ThemeDropdown.Size = UDim2.new(0, 150, 0, 30)
-
-DropdownButton.Parent = ThemeDropdown
-DropdownButton.BackgroundColor3 = themes.Midnight.Dropdown
-DropdownButton.BackgroundTransparency = 0.6
-DropdownButton.BorderSizePixel = 0
-DropdownButton.Size = UDim2.new(1, 0, 1, 0)
-DropdownButton.Font = Enum.Font.Gotham
-DropdownButton.Text = "Theme: Midnight ▼"
-DropdownButton.TextColor3 = themes.Midnight.Accent
-DropdownButton.TextSize = 14
-
-DropdownList.Parent = ThemeDropdown
-DropdownList.BackgroundColor3 = themes.Midnight.Dropdown
-DropdownList.BackgroundTransparency = 0.6
-DropdownList.BorderSizePixel = 1
-DropdownList.BorderColor3 = themes.Midnight.Accent
-DropdownList.Position = UDim2.new(0, 0, 1, 2)
-DropdownList.Size = UDim2.new(1, 0, 0, 120)
-DropdownList.Visible = false
-DropdownList.ScrollBarThickness = 5
-DropdownList.CanvasSize = UDim2.new(0, 0, 0, 0)
-
-ThemeLayout.Parent = DropdownList
-ThemeLayout.Padding = UDim.new(0, 2)
-
-CommandList.Parent = MainFrame
-CommandList.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-CommandList.BackgroundTransparency = 0.6
-CommandList.BorderSizePixel = 1
-CommandList.BorderColor3 = themes.Midnight.Accent
-CommandList.Position = UDim2.new(0, 10, 0.15, 0)
-CommandList.Size = UDim2.new(1, -20, 0, 300)
-CommandList.ScrollBarThickness = 6
-CommandList.CanvasSize = UDim2.new(0, 0, 0, 0)
-
-ListLayout.Parent = CommandList
-ListLayout.Padding = UDim.new(0, 2)
-
-local commands = {
-    "audiologger / soundlogger", "console", "fly", "unfly",
-    "invisible", "visible / uninvisible", "naked", "unnaked",
-    "headless", "unheadless / head", "age <username>",
-    "copyposition / copypos / copycords / copycoordinates",
-    "tweentpto / tweento <username>", "orbit <username>", "unorbit",
-    "bang <username>", "unbang", "jerk / jerkoff / jerktool",
-    "bunnyhop / bhop", "unbunnyhop / unbhop",
-    "walkfling / touchfling", "unwalkfling / untouchfling",
-    "antifling1", "swim", "firstperson / firstp / 1stperson",
-    "thirdperson / 3rdperson / 3rdp / unfirstperon / un1stperson / un1stp",
-    "view / spectate <username>", "unview / unspectate",
-    "fov <value>", "resetfov", "resetcam / resetcamera",
-    "audio / playaudio / sound / playsound <id>",
-    "btools / buildingtools", "gear <id>",
-    "clonetool / ctool", "copyavatar / copyoutfit / be / morph / char <username>",
-    "boostfps / antilag", "unboostfps / unantilag",
-    "aimbot", "unaimbot", "walkonwalls", "unwalkonwalls / unwow"
+local commandsTable = {
+    {name = "fly", aliases = {"fly"}, description = "Enable flight"},
+    {name = "unfly", aliases = {"unfly"}, description = "Disable flight"},
+    {name = "vfly", aliases = {"vehiclefly", "vfly"}, description = "Enable vehicle flight"},
+    {name = "unvfly", aliases = {"unvehiclefly", "unvfly"}, description = "Disable vehicle flight"},
+    {name = "walkspeed", aliases = {"ws", "speed"}, description = "Set walkspeed <value>"},
+    {name = "jumppower", aliases = {"jp"}, description = "Set jump power <value>"},
+    {name = "noclip", aliases = {"nc", "noclip"}, description = "Enable noclip"},
+    {name = "clip", aliases = {"clip", "unnoclip"}, description = "Disable noclip"},
+    {name = "infjump", aliases = {"infinitejump", "infjump"}, description = "Enable infinite jump"},
+    {name = "uninfjump", aliases = {"uninfinitejump", "uninfjump"}, description = "Disable infinite jump"},
+    {name = "nfd", aliases = {"nofalldamage", "nfd"}, description = "Enable no fall damage"},
+    {name = "unnfd", aliases = {"unnofalldamage", "unnfd"}, description = "Disable no fall damage"},
+    {name = "antiafk", aliases = {"antiafk"}, description = "Enable anti AFK"},
+    {name = "unantiafk", aliases = {"unantiafk"}, description = "Disable anti AFK"},
+    {name = "reset", aliases = {"reset"}, description = "Reset character"},
+    {name = "respawn", aliases = {"respawn"}, description = "Respawn character"},
+    {name = "sit", aliases = {"sit"}, description = "Make character sit"},
+    {name = "stand", aliases = {"stand", "unsit"}, description = "Make character stand"},
+    {name = "ragdoll", aliases = {"ragdoll"}, description = "Enable ragdoll"},
+    {name = "unragdoll", aliases = {"unragdoll"}, description = "Disable ragdoll"},
+    {name = "esp", aliases = {"esp"}, description = "Enable ESP"},
+    {name = "unesp", aliases = {"unesp"}, description = "Disable ESP"},
+    {name = "xray", aliases = {"xray"}, description = "Enable X-ray"},
+    {name = "unxray", aliases = {"unxray"}, description = "Disable X-ray"},
+    {name = "freecam", aliases = {"freecam", "freecamera", "fc"}, description = "Enable free camera"},
+    {name = "unfreecam", aliases = {"unfreecam", "resetcam", "unfreecamera"}, description = "Disable free camera"},
+    {name = "hipheight", aliases = {"hh", "hipheight"}, description = "Set hip height <value>"},
+    {name = "gravity", aliases = {"grav", "gravity"}, description = "Set gravity <value>"},
+    {name = "spin", aliases = {"spin"}, description = "Enable spin <speed>"},
+    {name = "unspin", aliases = {"unspin"}, description = "Disable spin"},
+    {name = "walkfling", aliases = {"wfling", "walkfling"}, description = "Enable walk fling"},
+    {name = "unwalkfling", aliases = {"unwfling", "unwalkfling"}, description = "Disable walk fling"},
+    {name = "touchfling", aliases = {"touchfling", "tfling"}, description = "Enable touch fling"},
+    {name = "untouchfling", aliases = {"untouchfling", "untfling"}, description = "Disable touch fling"},
+    {name = "walkonwalls", aliases = {"wallwalk", "walkonwalls"}, description = "Enable walk on walls"},
+    {name = "unwalkonwalls", aliases = {"unwallwalk", "unwalkonwalls"}, description = "Disable walk on walls"},
+    {name = "hk", aliases = {"handlekill", "hk"}, description = "Enable handle kill"},
+    {name = "unhk", aliases = {"unhandlekill", "unhk"}, description = "Disable handle kill"},
+    {name = "jerk", aliases = {"jerk", "jerkoff", "jerktool"}, description = "Play jerk animation"},
+    {name = "tptool", aliases = {"teleporttool", "tptool"}, description = "Add teleport tool"},
+    {name = "anim", aliases = {"animation", "emote", "anim"}, description = "Play animation <id> <speed>"},
+    {name = "stopanim", aliases = {"stopanim", "stopemote"}, description = "Stop all animations"},
+    {name = "walkonwater", aliases = {"walkonwater"}, description = "Enable walk on water"},
+    {name = "unwalkonwater", aliases = {"unwalkonwater"}, description = "Disable walk on water"},
+    {name = "swim", aliases = {"swim", "float"}, description = "Enable swimming"},
+    {name = "unswim", aliases = {"unswim", "unfloat"}, description = "Disable swimming"},
+    {name = "aimbot", aliases = {"aimbot", "lockon"}, description = "Enable aimbot"},
+    {name = "unaimbot", aliases = {"unaimbot", "unlockon"}, description = "Disable aimbot"},
+    {name = "silentaim", aliases = {"silentaim"}, description = "Enable silent aim"},
+    {name = "unsilentaim", aliases = {"unsilentaim"}, description = "Disable silent aim"},
+    {name = "triggerbot", aliases = {"triggerbot", "tbot"}, description = "Enable trigger bot"},
+    {name = "untriggerbot", aliases = {"untriggerbot"}, description = "Disable trigger bot"},
+    {name = "wallcheck", aliases = {"wallcheck"}, description = "Enable wall check"},
+    {name = "unwallcheck", aliases = {"unwallcheck"}, description = "Disable wall check"},
+    {name = "fov", aliases = {"fov"}, description = "Set aimbot FOV <value>"},
+    {name = "svhop", aliases = {"serverhop", "svhop"}, description = "Server hop"},
+    {name = "rj", aliases = {"rejoin", "rj"}, description = "Rejoin server"},
+    {name = "jobid", aliases = {"copyjobid", "jobid", "cjobid"}, description = "Copy job ID"},
+    {name = "antifling1", aliases = {"antifling1"}, description = "Enable anti fling v1"},
+    {name = "unantifling1", aliases = {"unantifling1"}, description = "Disable anti fling v1"},
+    {name = "antifling2", aliases = {"antifling2"}, description = "Enable anti fling v2"},
+    {name = "unantifling2", aliases = {"unantifling2"}, description = "Disable anti fling v2"},
+    {name = "svtime", aliases = {"servertime", "svtime"}, description = "Show server time"},
+    {name = "ginfo", aliases = {"gameinfo", "ginfo"}, description = "Show game info"},
+    {name = "antilag", aliases = {"lowgraphics", "antilag", "boostfps"}, description = "Enable anti lag"},
+    {name = "httpspy", aliases = {"httpspy"}, description = "Enable HTTP spy"},
+    {name = "unhttpspy", aliases = {"unhttpspy"}, description = "Disable HTTP spy"},
+    {name = "rspy", aliases = {"remotespy", "rspy"}, description = "Enable remote spy"},
+    {name = "unrspy", aliases = {"unrspy"}, description = "Disable remote spy"},
+    {name = "webhookspy", aliases = {"webhookspy"}, description = "Enable webhook spy"},
+    {name = "unwebhookspy", aliases = {"unwebhookspy"}, description = "Disable webhook spy"},
+    {name = "discord", aliases = {"discord"}, description = "Copy Discord link"},
+    {name = "tiktok", aliases = {"tk", "tiktok"}, description = "Copy TikTok link"},
+    {name = "youtube", aliases = {"yt", "youtube"}, description = "Copy YouTube link"},
+    {name = "goto", aliases = {"to", "tp", "teleport", "goto"}, description = "Teleport to <player>"},
+    {name = "fling", aliases = {"fling"}, description = "Fling <player>"},
+    {name = "unfling", aliases = {"unfling"}, description = "Stop flinging"},
+    {name = "orbit", aliases = {"orbit"}, description = "Orbit <player>"},
+    {name = "unorbit", aliases = {"unorbit"}, description = "Stop orbiting"},
+    {name = "bang", aliases = {"bang"}, description = "Bang <player>"},
+    {name = "unbang", aliases = {"unbang"}, description = "Stop banging"},
+    {name = "bhop", aliases = {"bunnyhop", "bhop"}, description = "Enable bunny hop"},
+    {name = "unbhop", aliases = {"unbunnyhop", "unbhop"}, description = "Disable bunny hop"},
+    {name = "headless", aliases = {"headless"}, description = "Make headless"},
+    {name = "unheadless", aliases = {"head", "unheadless"}, description = "Restore head"},
+    {name = "naked", aliases = {"naked", "bold"}, description = "Remove clothes"},
+    {name = "unnaked", aliases = {"unnaked"}, description = "Restore clothes (rejoin)"},
+    {name = "invis", aliases = {"invisible", "invis"}, description = "Become invisible"},
+    {name = "vis", aliases = {"visible", "vis", "uninvisible"}, description = "Become visible"},
+    {name = "firstp", aliases = {"firstperson", "firstp", "1stp"}, description = "First person view"},
+    {name = "thirdp", aliases = {"thirdperson", "thirdp", "3rdp"}, description = "Third person view"},
+    {name = "view", aliases = {"spectate", "view"}, description = "Spectate <player>"},
+    {name = "unview", aliases = {"unspectate", "unview"}, description = "Stop spectating"},
+    {name = "resetfov", aliases = {"resetfov"}, description = "Reset FOV"},
+    {name = "resetcam", aliases = {"resetcam", "resetcamera"}, description = "Reset camera"},
+    {name = "playaudio", aliases = {"audio", "sound", "playsound", "playaudio"}, description = "Play audio <id> <volume>"},
+    {name = "stopaudio", aliases = {"stopaudio", "unplayaudio"}, description = "Stop audio"},
+    {name = "btools", aliases = {"buildingtools", "btools", "f3x"}, description = "Load building tools"},
+    {name = "gear", aliases = {"gear"}, description = "Spawn gear <id>"},
+    {name = "ctool", aliases = {"clonetool", "ctool"}, description = "Clone current tool"},
+    {name = "morph", aliases = {"morph", "char", "be", "copyoutfit", "copyavatar"}, description = "Copy outfit <player>"},
+    {name = "age", aliases = {"age", "accountage"}, description = "Check account age <player>"},
+    {name = "copypos", aliases = {"copypos", "copyposition", "copycords", "copycoordinates"}, description = "Copy position"},
+    {name = "tweento", aliases = {"tweentpto", "tweento"}, description = "Tween to <player>"},
+    {name = "antikick", aliases = {"antikick", "anticlientkick"}, description = "Enable anti kick"},
+    {name = "chat", aliases = {"chat", "message"}, description = "Send chat message <text>"},
+    {name = "fixcam", aliases = {"fixcam", "fix"}, description = "Fix camera"},
+    {name = "dex", aliases = {"dex", "explorer"}, description = "Open Dex explorer"},
+    {name = "console", aliases = {"console"}, description = "Open console"},
+    {name = "ping", aliases = {"ping"}, description = "Show ping"},
+    {name = "fps", aliases = {"fps"}, description = "Show FPS"},
+    {name = "joke", aliases = {"joke"}, description = "Tell a joke"},
+    {name = "kanye", aliases = {"kanye"}, description = "Kanye quote"},
+    {name = "hitbox", aliases = {"hitbox", "hbox"}, description = "Set hitbox size <player> <size>"},
+    {name = "unhitbox", aliases = {"unhitbox", "unhbox"}, description = "Remove hitboxes"},
+    {name = "fullbright", aliases = {"fullbright", "fullb"}, description = "Enable fullbright"},
+    {name = "nofog", aliases = {"nofog"}, description = "Remove fog"},
+    {name = "day", aliases = {"day"}, description = "Set daytime"},
+    {name = "night", aliases = {"night"}, description = "Set nighttime"},
+    {name = "r6", aliases = {"r6"}, description = "Change to R6"},
+    {name = "r15", aliases = {"r15"}, description = "Change to R15"},
+    {name = "tpwalk", aliases = {"tpwalk"}, description = "Enable tween walk <speed>"},
+    {name = "untpwalk", aliases = {"untpwalk"}, description = "Disable tween walk"},
+    {name = "cmds", aliases = {"commands", "cmds", "cmdlist"}, description = "Show commands"},
+    {name = "antifling", aliases = {"antifling"}, description = "Enable anti fling"},
+    {name = "unantifling", aliases = {"unantifling"}, description = "Disable anti fling"},
+    {name = "antivoid", aliases = {"antivoid"}, description = "Enable anti void"},
+    {name = "unantivoid", aliases = {"unantivoid"}, description = "Disable anti void"},
+    {name = "antisit", aliases = {"antisit"}, description = "Enable anti sit"},
+    {name = "unantisit", aliases = {"unantisit"}, description = "Disable anti sit"},
+    {name = "antiattach", aliases = {"antiattach"}, description = "Enable anti attach"},
+    {name = "unantiattach", aliases = {"unantiattach"}, description = "Disable anti attach"},
+    {name = "antikillbrick", aliases = {"antikillbrick", "antikb"}, description = "Enable anti kill brick"},
+    {name = "unantikillbrick", aliases = {"unantikillbrick", "unantikb"}, description = "Disable anti kill brick"},
+    {name = "freegp", aliases = {"freegamepass", "freegp"}, description = "Enable free gamepass"},
+    {name = "netless", aliases = {"netless", "net"}, description = "Enable netless"},
+    {name = "unnetless", aliases = {"unnetless", "unnet"}, description = "Disable netless"},
+    {name = "shiftlock", aliases = {"shiftlock", "sl"}, description = "Enable shiftlock"},
+    {name = "unshiftlock", aliases = {"unshiftlock", "unsl"}, description = "Disable shiftlock"},
+    {name = "fakelag", aliases = {"fakelag", "flag"}, description = "Enable fake lag"},
+    {name = "unfakelag", aliases = {"unfakelag", "unflag"}, description = "Disable fake lag"},
+    {name = "godmode", aliases = {"godmode", "god"}, description = "Enable god mode"},
+    {name = "ungodmode", aliases = {"ungodmode"}, description = "Disable god mode"},
+    {name = "loopws", aliases = {"loopwalkspeed", "loopws"}, description = "Loop walkspeed <speed>"},
+    {name = "unloopws", aliases = {"unloopwalkspeed", "unloopws"}, description = "Stop loop walkspeed"},
+    {name = "loopjp", aliases = {"loopjumppower", "loopjp"}, description = "Loop jump power <power>"},
+    {name = "unloopjp", aliases = {"unloopjumppower", "unloopjp"}, description = "Stop loop jump power"},
+    {name = "loopgrab", aliases = {"loopgrab", "loopgrabtools"}, description = "Loop grab tools"},
+    {name = "unloopgrab", aliases = {"unloopgrab", "unloopgrabtools"}, description = "Stop loop grab"},
+    {name = "loopmute", aliases = {"loopmute", "loopmuteboombox"}, description = "Loop mute <player>"},
+    {name = "unloopmute", aliases = {"unloopmute", "unloopmuteboombox"}, description = "Stop loop mute"},
+    {name = "loopvoid", aliases = {"loopvoid", "loopv"}, description = "Loop void <player>"},
+    {name = "unloopvoid", aliases = {"unloopvoid", "unloopv"}, description = "Stop loop void"},
+    {name = "loopkill", aliases = {"loopkill"}, description = "Loop kill <player>"},
+    {name = "unloopkill", aliases = {"unloopkill"}, description = "Stop loop kill"},
+    {name = "loopbring", aliases = {"loopbring"}, description = "Loop bring <player>"},
+    {name = "unloopbring", aliases = {"unloopbring"}, description = "Stop loop bring"},
+    {name = "loopban", aliases = {"loopbanish", "loopban"}, description = "Loop ban <player>"},
+    {name = "unloopban", aliases = {"unloopbanish", "unloopban"}, description = "Stop loop ban"},
+    {name = "looptornado", aliases = {"looptornado"}, description = "Loop tornado <player>"},
+    {name = "unlooptornado", aliases = {"unlooptornado"}, description = "Stop loop tornado"},
+    {name = "loopcuff", aliases = {"loopcuff", "loopjail"}, description = "Loop cuff <player>"},
+    {name = "unloopcuff", aliases = {"unloopcuff", "unloopjail"}, description = "Stop loop cuff"},
+    {name = "loopstand", aliases = {"loopstand"}, description = "Loop stand <player>"},
+    {name = "unloopstand", aliases = {"unloopstand"}, description = "Stop loop stand"},
+    {name = "loopwave", aliases = {"loopwaveat", "loopwave"}, description = "Loop wave at <player>"},
+    {name = "unloopwave", aliases = {"unloopwaveat", "unloopwave"}, description = "Stop loop wave"},
+    {name = "loopspook", aliases = {"loopspook", "loopscare"}, description = "Loop spook <player>"},
+    {name = "unloopspook", aliases = {"unloopspook", "unloopscare"}, description = "Stop loop spook"},
+    {name = "annoy", aliases = {"annoy"}, description = "Annoy <player>"},
+    {name = "unannoy", aliases = {"unannoy"}, description = "Stop annoying"},
+    {name = "spam", aliases = {"spam"}, description = "Spam message <text>"},
+    {name = "unspam", aliases = {"unspam"}, description = "Stop spam"},
+    {name = "yellspam", aliases = {"yellspam", "syell"}, description = "Spam yell <text>"},
+    {name = "unyellspam", aliases = {"unyellspam", "unsyell"}, description = "Stop yell spam"},
+    {name = "chatlog", aliases = {"chatlogger", "chatlog"}, description = "Enable chat logger"},
+    {name = "unchatlog", aliases = {"unchatlogger", "unchatlog"}, description = "Disable chat logger"},
+    {name = "chatspy", aliases = {"chatspy"}, description = "Enable chat spy"},
+    {name = "unchatspy", aliases = {"unchatspy"}, description = "Disable chat spy"}
 }
 
-for _, cmd in ipairs(commands) do
-    local CommandFrame = Instance.new("Frame")
-    CommandFrame.Size = UDim2.new(1, -5, 0, 25)
-    CommandFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    CommandFrame.BackgroundTransparency = 0.6
-    CommandFrame.BorderSizePixel = 0
-    CommandFrame.Parent = CommandList
-    
-    local CommandLabel = Instance.new("TextLabel")
-    CommandLabel.Size = UDim2.new(1, 0, 1, 0)
-    CommandLabel.BackgroundTransparency = 1
-    CommandLabel.Text = "  " .. cmd
-    CommandLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    CommandLabel.TextXAlignment = Enum.TextXAlignment.Left
-    CommandLabel.Font = Enum.Font.Code
-    CommandLabel.TextSize = 13
-    CommandLabel.Parent = CommandFrame
-    
-    if cmd:find("<") then
-        CommandLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-    elseif cmd:find("/") then
-        CommandLabel.TextColor3 = Color3.fromRGB(150, 200, 255)
-    end
-end
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "screengui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = CoreGui
 
-ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    CommandList.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 10)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 380, 0, 480)
+MainFrame.Position = UDim2.new(0.5, -190, 0.5, -240)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BackgroundTransparency = 0.6
+MainFrame.BorderSizePixel = 2
+MainFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 35)
+TopBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TopBar.BackgroundTransparency = 0.6
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, -35, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "AxoAdmin Cmd"
+Title.TextColor3 = Color3.fromRGB(0, 170, 255)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.Parent = TopBar
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 2.5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+CloseButton.BackgroundTransparency = 0.6
+CloseButton.Text = "✕"
+CloseButton.TextColor3 = Color3.fromRGB(255, 80, 80)
+CloseButton.TextScaled = true
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.BorderSizePixel = 0
+CloseButton.Parent = TopBar
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
 end)
 
-local BottomBar = Instance.new("Frame")
-BottomBar.Parent = MainFrame
-BottomBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-BottomBar.BackgroundTransparency = 0.6
-BottomBar.BorderSizePixel = 1
-BottomBar.BorderColor3 = themes.Midnight.Accent
-BottomBar.Position = UDim2.new(0, 0, 1, -60)
-BottomBar.Size = UDim2.new(1, 0, 0, 60)
+local Credits = Instance.new("TextLabel")
+Credits.Name = "Credits"
+Credits.Size = UDim2.new(1, 0, 0, 20)
+Credits.Position = UDim2.new(0, 0, 1, -22)
+Credits.BackgroundTransparency = 1
+Credits.Text = "Made By Axom"
+Credits.TextColor3 = Color3.fromRGB(150, 150, 150)
+Credits.TextSize = 12
+Credits.Font = Enum.Font.Gotham
+Credits.Parent = MainFrame
 
-CommandBox = Instance.new("TextBox")
-CommandBox.Parent = BottomBar
-CommandBox.Size = UDim2.new(1, -90, 0, 35)
-CommandBox.Position = UDim2.new(0, 10, 0, 12)
+local CommandBox = Instance.new("TextBox")
+CommandBox.Name = "CommandBox"
+CommandBox.Size = UDim2.new(1, -20, 0, 35)
+CommandBox.Position = UDim2.new(0, 10, 0, 42)
 CommandBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 CommandBox.BackgroundTransparency = 0.6
-CommandBox.TextColor3 = themes.Midnight.Accent
-CommandBox.PlaceholderText = "Enter command..."
+CommandBox.TextColor3 = Color3.fromRGB(0, 170, 255)
+CommandBox.PlaceholderText = "Type command... (me, random, all, others, or username)"
 CommandBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
 CommandBox.Text = ""
 CommandBox.Font = Enum.Font.Code
-CommandBox.TextSize = 16
+CommandBox.TextSize = 14
 CommandBox.ClearTextOnFocus = false
 CommandBox.BorderSizePixel = 1
-CommandBox.BorderColor3 = themes.Midnight.Accent
+CommandBox.BorderColor3 = Color3.fromRGB(0, 170, 255)
+CommandBox.Parent = MainFrame
 
-ExecuteButton = Instance.new("TextButton")
-ExecuteButton.Parent = BottomBar
+local ExecuteButton = Instance.new("TextButton")
+ExecuteButton.Name = "ExecuteButton"
 ExecuteButton.Size = UDim2.new(0, 70, 0, 35)
-ExecuteButton.Position = UDim2.new(1, -80, 0, 12)
-ExecuteButton.BackgroundColor3 = themes.Midnight.Accent
+ExecuteButton.Position = UDim2.new(1, -80, 0, 42)
+ExecuteButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
 ExecuteButton.BackgroundTransparency = 0.6
 ExecuteButton.Text = "EXEC"
 ExecuteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ExecuteButton.TextScaled = true
 ExecuteButton.Font = Enum.Font.GothamBold
 ExecuteButton.BorderSizePixel = 0
+ExecuteButton.Parent = MainFrame
 
-for themeName, _ in pairs(themes) do
-    local themeButton = Instance.new("TextButton")
-    themeButton.Parent = DropdownList
-    themeButton.BackgroundColor3 = themes.Midnight.Dropdown
-    themeButton.BackgroundTransparency = 0.6
-    themeButton.BorderSizePixel = 0
-    themeButton.Size = UDim2.new(1, 0, 0, 25)
-    themeButton.Font = Enum.Font.Gotham
-    themeButton.Text = themeName
-    themeButton.TextColor3 = themes.Midnight.Accent
-    themeButton.TextSize = 14
+local SuggestionFrame = Instance.new("Frame")
+SuggestionFrame.Name = "SuggestionFrame"
+SuggestionFrame.Size = UDim2.new(1, -20, 0, 150)
+SuggestionFrame.Position = UDim2.new(0, 10, 0, 80)
+SuggestionFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+SuggestionFrame.BackgroundTransparency = 0.6
+SuggestionFrame.BorderSizePixel = 1
+SuggestionFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+SuggestionFrame.Visible = false
+SuggestionFrame.Parent = MainFrame
+
+local SuggestionList = Instance.new("ScrollingFrame")
+SuggestionList.Name = "SuggestionList"
+SuggestionList.Size = UDim2.new(1, -10, 1, -10)
+SuggestionList.Position = UDim2.new(0, 5, 0, 5)
+SuggestionList.BackgroundTransparency = 1
+SuggestionList.BorderSizePixel = 0
+SuggestionList.ScrollBarThickness = 4
+SuggestionList.CanvasSize = UDim2.new(0, 0, 0, 0)
+SuggestionList.Parent = SuggestionFrame
+
+local SuggestionLayout = Instance.new("UIListLayout")
+SuggestionLayout.Padding = UDim.new(0, 2)
+SuggestionLayout.Parent = SuggestionList
+
+local CommandDisplay = Instance.new("ScrollingFrame")
+CommandDisplay.Name = "CommandDisplay"
+CommandDisplay.Size = UDim2.new(1, -20, 1, -100)
+CommandDisplay.Position = UDim2.new(0, 10, 0, 85)
+CommandDisplay.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+CommandDisplay.BackgroundTransparency = 0.6
+CommandDisplay.BorderSizePixel = 1
+CommandDisplay.BorderColor3 = Color3.fromRGB(0, 170, 255)
+CommandDisplay.ScrollBarThickness = 6
+CommandDisplay.CanvasSize = UDim2.new(0, 0, 0, 0)
+CommandDisplay.Parent = MainFrame
+
+local DisplayLayout = Instance.new("UIListLayout")
+DisplayLayout.Padding = UDim.new(0, 2)
+DisplayLayout.Parent = CommandDisplay
+
+local function updateCommandDisplay(filter)
+    for _, child in pairs(CommandDisplay:GetChildren()) do
+        if child:IsA("TextLabel") then
+            child:Destroy()
+        end
+    end
     
-    themeButton.MouseButton1Click:Connect(function()
-        local theme = themes[themeName]
-        DropdownButton.Text = "Theme: " .. themeName .. " ▼"
-        DropdownList.Visible = false
-        MainFrame.BackgroundColor3 = theme.Main
-        MainFrame.BorderColor3 = theme.Accent
-        TopBar.BackgroundColor3 = theme.TopBar
-        Title.TextColor3 = theme.Accent
-        Credits.TextColor3 = theme.Accent
-        CommandBox.BorderColor3 = theme.Accent
-        CommandBox.TextColor3 = theme.Accent
-        ExecuteButton.BackgroundColor3 = theme.Accent
-        ThemeDropdown.BackgroundColor3 = theme.Dropdown
-        ThemeDropdown.BorderColor3 = theme.Accent
-        DropdownButton.BackgroundColor3 = theme.Dropdown
-        DropdownButton.TextColor3 = theme.Accent
-        DropdownList.BackgroundColor3 = theme.Dropdown
-        DropdownList.BorderColor3 = theme.Accent
-        BottomBar.BorderColor3 = theme.Accent
-        CommandList.BorderColor3 = theme.Accent
-        for _, button in pairs(DropdownList:GetChildren()) do
-            if button:IsA("TextButton") then
-                button.BackgroundColor3 = theme.Dropdown
-                button.TextColor3 = theme.Accent
+    local lowerFilter = filter:lower()
+    for _, cmd in pairs(commandsTable) do
+        local show = false
+        if lowerFilter == "" then
+            show = true
+        elseif cmd.name:lower():sub(1, #lowerFilter) == lowerFilter then
+            show = true
+        else
+            for _, alias in pairs(cmd.aliases) do
+                if alias:lower():sub(1, #lowerFilter) == lowerFilter then
+                    show = true
+                    break
+                end
             end
         end
+        if show then
+            local cmdLabel = Instance.new("TextLabel")
+            cmdLabel.Size = UDim2.new(1, -10, 0, 28)
+            cmdLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+            cmdLabel.BackgroundTransparency = 0.6
+            cmdLabel.Text = "  " .. cmd.name .. " - " .. cmd.description
+            cmdLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+            cmdLabel.TextXAlignment = Enum.TextXAlignment.Left
+            cmdLabel.Font = Enum.Font.Code
+            cmdLabel.TextSize = 13
+            cmdLabel.Parent = CommandDisplay
+        end
+    end
+    DisplayLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        CommandDisplay.CanvasSize = UDim2.new(0, 0, 0, DisplayLayout.AbsoluteContentSize.Y + 10)
     end)
 end
 
-DropdownButton.MouseButton1Click:Connect(function()
-    DropdownList.Visible = not DropdownList.Visible
-    DropdownList.CanvasSize = UDim2.new(0, 0, 0, ThemeLayout.AbsoluteContentSize.Y)
-end)
-
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
-local function executeCommand(command)
-    local args = command:split(" ")
-    local cmd = args[1]:lower()
-    local value = args[2]
-    local value2 = args[3]
-    local value3 = args[4]
+local function updateSuggestions(text)
+    for _, child in pairs(SuggestionList:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
     
-    if cmd == "audiologger" or cmd == "soundlogger" then
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/audiologger.lua"))()
-        notify("AudioLogger", "Loaded")
-    elseif cmd == "console" then
-        StarterGui:SetCore("DevConsoleVisible", true)
-        notify("Console", "Opened")
-    elseif cmd == "fly" then
+    if text == "" then
+        SuggestionFrame.Visible = false
+        return
+    end
+    
+    local matches = {}
+    local lowerText = text:lower()
+    for _, cmd in pairs(commandsTable) do
+        if cmd.name:lower():sub(1, #lowerText) == lowerText then
+            table.insert(matches, cmd.name)
+        else
+            for _, alias in pairs(cmd.aliases) do
+                if alias:lower():sub(1, #lowerText) == lowerText then
+                    table.insert(matches, cmd.name)
+                    break
+                end
+            end
+        end
+    end
+    
+    if #matches > 0 then
+        SuggestionFrame.Visible = true
+        SuggestionFrame.Size = UDim2.new(1, -20, 0, math.min(#matches * 32 + 10, 150))
+        for _, cmdName in ipairs(matches) do
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1, -10, 0, 28)
+            btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            btn.BackgroundTransparency = 0.6
+            btn.BorderSizePixel = 0
+            btn.Text = cmdName
+            btn.TextColor3 = Color3.fromRGB(0, 170, 255)
+            btn.TextSize = 14
+            btn.Font = Enum.Font.Code
+            btn.Parent = SuggestionList
+            btn.MouseButton1Click:Connect(function()
+                CommandBox.Text = cmdName
+                SuggestionFrame.Visible = false
+                CommandBox:CaptureFocus()
+            end)
+        end
+        SuggestionList.CanvasSize = UDim2.new(0, 0, 0, #matches * 30 + 10)
+    else
+        SuggestionFrame.Visible = false
+    end
+end
+
+local function executeCommand(cmd)
+    local args = {}
+    for word in cmd:gmatch("%S+") do
+        table.insert(args, word)
+    end
+    local command = args[1]:lower()
+    local arg1 = args[2]
+    local arg2 = args[3]
+    local arg3 = args[4]
+    
+    if command == "fly" then
         if not flyActive then
             flyActive = true
             local char = player.Character
@@ -411,33 +626,33 @@ local function executeCommand(command)
                 local root = getRoot(char)
                 if humanoid and root then
                     humanoid.PlatformStand = true
-                    local bodyGyro = Instance.new("BodyGyro")
-                    local bodyVelocity = Instance.new("BodyVelocity")
-                    bodyGyro.Parent = root
-                    bodyVelocity.Parent = root
-                    bodyGyro.MaxTorque = Vector3.new(0, 4000, 0)
-                    bodyGyro.P = 1000
-                    bodyGyro.D = 50
-                    bodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
-                    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+                    local bg = Instance.new("BodyGyro")
+                    local bv = Instance.new("BodyVelocity")
+                    bg.Parent = root
+                    bv.Parent = root
+                    bg.MaxTorque = Vector3.new(0, 4000, 0)
+                    bg.P = 1000
+                    bg.D = 50
+                    bv.MaxForce = Vector3.new(4000, 4000, 4000)
+                    bv.Velocity = Vector3.new(0, 0, 0)
                     flyConnection = RunService.Heartbeat:Connect(function()
                         if not flyActive or not char or not root then return end
-                        local moveDirection = Vector3.new(0, 0, 0)
-                        if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDirection = moveDirection + camera.CFrame.LookVector end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDirection = moveDirection - camera.CFrame.LookVector end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDirection = moveDirection - camera.CFrame.RightVector end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDirection = moveDirection + camera.CFrame.RightVector end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDirection = moveDirection + Vector3.new(0, 1, 0) end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDirection = moveDirection - Vector3.new(0, 1, 0) end
-                        if moveDirection.Magnitude > 0 then moveDirection = moveDirection.Unit * 50 end
-                        bodyVelocity.Velocity = moveDirection
-                        bodyGyro.CFrame = camera.CFrame
+                        local move = Vector3.new(0, 0, 0)
+                        if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + camera.CFrame.LookVector end
+                        if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - camera.CFrame.LookVector end
+                        if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - camera.CFrame.RightVector end
+                        if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + camera.CFrame.RightVector end
+                        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
+                        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0, 1, 0) end
+                        if move.Magnitude > 0 then move = move.Unit * 50 end
+                        bv.Velocity = move
+                        bg.CFrame = camera.CFrame
                     end)
                 end
             end
-            notify("Fly", "Enabled")
+            notify("AxoAdmin", "Fly enabled")
         end
-    elseif cmd == "unfly" then
+    elseif command == "unfly" then
         if flyActive then
             flyActive = false
             if flyConnection then flyConnection:Disconnect() flyConnection = nil end
@@ -452,297 +667,452 @@ local function executeCommand(command)
                     end
                 end
             end
-            notify("Fly", "Disabled")
+            notify("AxoAdmin", "Fly disabled")
         end
-    elseif cmd == "invisible" then
-        if player.Character then
-            for _, v in pairs(player.Character:GetDescendants()) do
-                if v:IsA("BasePart") then v.Transparency = 1 end
+    elseif command == "vfly" or command == "vehiclefly" then
+        if not vehicleFlyActive then
+            vehicleFlyActive = true
+            local seat = nil
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                seat = player.Character.Humanoid.SeatPart
             end
-            notify("Invisible", "Enabled")
-        end
-    elseif cmd == "visible" or cmd == "uninvisible" then
-        if player.Character then
-            for _, v in pairs(player.Character:GetDescendants()) do
-                if v:IsA("BasePart") then v.Transparency = 0 end
-            end
-            notify("Visible", "Enabled")
-        end
-    elseif cmd == "naked" then
-        if player.Character then
-            for _, v in pairs(player.Character:GetDescendants()) do
-                if v:IsA("Clothing") or v:IsA("Shirt") or v:IsA("Pants") or v:IsA("ShirtGraphic") then
-                    v:Destroy()
-                end
-            end
-            notify("Naked", "Applied")
-        end
-    elseif cmd == "unnaked" then
-        notify("UnNaked", "Rejoin to restore clothes")
-    elseif cmd == "headless" then
-        if player.Character and player.Character:FindFirstChild("Head") then
-            player.Character.Head.Size = Vector3.new(0.1, 0.1, 0.1)
-            player.Character.Head.Transparency = 1
-            for _, v in pairs(player.Character.Head:GetChildren()) do
-                if v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 1 end
-            end
-            notify("Headless", "Enabled")
-        end
-    elseif cmd == "unheadless" or cmd == "head" then
-        if player.Character and player.Character:FindFirstChild("Head") then
-            player.Character.Head.Size = Vector3.new(2, 1, 1)
-            player.Character.Head.Transparency = 0
-            for _, v in pairs(player.Character.Head:GetChildren()) do
-                if v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 0 end
-            end
-            notify("Head", "Restored")
-        end
-    elseif cmd == "age" then
-        if value then
-            local target = getPlayer(value)
-            if target then
-                local age = target.AccountAge
-                notify("Age", target.DisplayName .. " is " .. age .. " days old")
-            else
-                notify("Error", "Player not found")
-            end
-        end
-    elseif cmd == "copyposition" or cmd == "copypos" or cmd == "copycords" or cmd == "copycoordinates" then
-        if player.Character and getRoot(player.Character) then
-            local pos = getRoot(player.Character).Position
-            local posStr = string.format("%.1f, %.1f, %.1f", pos.X, pos.Y, pos.Z)
-            setclipboard(posStr)
-            notify("Position", "Copied: " .. posStr)
-        end
-    elseif cmd == "tweentpto" or cmd == "tweento" then
-        if value then
-            local target = getPlayer(value)
-            if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
-                local tween = TweenService:Create(getRoot(player.Character), TweenInfo.new(2, Enum.EasingStyle.Linear), {CFrame = getRoot(target.Character).CFrame})
-                tween:Play()
-                notify("Tween", "Moving to " .. target.DisplayName)
-            else
-                notify("Error", "Player not found")
-            end
-        end
-    elseif cmd == "orbit" then
-        if value then
-            local target = getPlayer(value)
-            if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
-                if orbitConnection then orbitConnection:Disconnect() end
-                local angle = 0
-                orbitConnection = RunService.Heartbeat:Connect(function()
-                    if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
-                        angle = angle + 0.1
-                        local radius = 5
-                        local x = getRoot(target.Character).Position.X + math.cos(angle) * radius
-                        local z = getRoot(target.Character).Position.Z + math.sin(angle) * radius
-                        getRoot(player.Character).CFrame = CFrame.new(x, getRoot(target.Character).Position.Y + 2, z)
-                    end
+            if seat and seat.Parent then
+                local bv = Instance.new("BodyVelocity")
+                bv.MaxForce = Vector3.new(4000, 4000, 4000)
+                bv.Parent = seat
+                vehicleFlyConnection = RunService.Heartbeat:Connect(function()
+                    if not vehicleFlyActive or not seat or not seat.Parent then return end
+                    local move = Vector3.new(0, 0, 0)
+                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + camera.CFrame.LookVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - camera.CFrame.LookVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - camera.CFrame.RightVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + camera.CFrame.RightVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0, 1, 0) end
+                    if move.Magnitude > 0 then move = move.Unit * 100 end
+                    bv.Velocity = move
                 end)
-                notify("Orbit", "Orbiting " .. target.DisplayName)
+            end
+            notify("AxoAdmin", "Vehicle fly enabled")
+        end
+    elseif command == "unvfly" or command == "unvehiclefly" then
+        if vehicleFlyActive then
+            vehicleFlyActive = false
+            if vehicleFlyConnection then vehicleFlyConnection:Disconnect() vehicleFlyConnection = nil end
+            notify("AxoAdmin", "Vehicle fly disabled")
+        end
+    elseif command == "walkspeed" or command == "ws" or command == "speed" then
+        if arg1 and player.Character and player.Character:FindFirstChild("Humanoid") then
+            local speed = tonumber(arg1)
+            if speed then
+                player.Character.Humanoid.WalkSpeed = speed
+                notify("AxoAdmin", "Walkspeed set to " .. speed)
             end
         end
-    elseif cmd == "unorbit" then
-        if orbitConnection then orbitConnection:Disconnect() orbitConnection = nil end
-        notify("Orbit", "Disabled")
-    elseif cmd == "bang" then
-        if value then
-            local target = getPlayer(value)
-            if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
-                if bangConnection then bangConnection:Disconnect() end
-                local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
-                if humanoid then
-                    local anim = Instance.new("Animation")
-                    anim.AnimationId = "rbxassetid://5918726674"
-                    bangAnim = humanoid:LoadAnimation(anim)
-                    bangAnim:Play()
+    elseif command == "jumppower" or command == "jp" then
+        if arg1 and player.Character and player.Character:FindFirstChild("Humanoid") then
+            local power = tonumber(arg1)
+            if power then
+                player.Character.Humanoid.JumpPower = power
+                notify("AxoAdmin", "Jump power set to " .. power)
+            end
+        end
+    elseif command == "noclip" or command == "nc" then
+        noclipActive = true
+        noclipConnection = RunService.Stepped:Connect(function()
+            if noclipActive and player.Character then
+                for _, part in pairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
                 end
-                bangConnection = RunService.Heartbeat:Connect(function()
-                    if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
-                        getRoot(player.Character).CFrame = getRoot(target.Character).CFrame * CFrame.new(0, 0, 1.5)
-                    end
-                end)
-                notify("Bang", "Banging " .. target.DisplayName)
-            end
-        end
-    elseif cmd == "unbang" then
-        if bangConnection then bangConnection:Disconnect() bangConnection = nil end
-        if bangAnim then bangAnim:Stop() bangAnim = nil end
-        notify("Bang", "Disabled")
-    elseif cmd == "jerk" or cmd == "jerkoff" or cmd == "jerktool" then
-        local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
-        if humanoid then
-            local anim = Instance.new("Animation")
-            anim.AnimationId = "rbxassetid://698251653"
-            jerkAnim = humanoid:LoadAnimation(anim)
-            jerkAnim:Play()
-            jerkAnim:AdjustSpeed(0.7)
-            notify("Jerk", "Enabled")
-        end
-    elseif cmd == "bunnyhop" or cmd == "bhop" then
-        if bunnyHopConnection then bunnyHopConnection:Disconnect() end
-        bunnyHopConnection = RunService.Heartbeat:Connect(function()
-            local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
-            if humanoid and humanoid.MoveDirection.Magnitude > 0 then
-                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
             end
         end)
-        notify("BunnyHop", "Enabled")
-    elseif cmd == "unbunnyhop" or cmd == "unbhop" then
-        if bunnyHopConnection then bunnyHopConnection:Disconnect() bunnyHopConnection = nil end
-        notify("BunnyHop", "Disabled")
-    elseif cmd == "walkfling" or cmd == "touchfling" then
-        if not walkFlingEnabled then
-            walkFlingEnabled = true
-            task.spawn(function()
-                local char = player.Character
-                local root = getRoot(char)
-                local vel, movel = nil, 0.1
-                while walkFlingEnabled do
+        notify("AxoAdmin", "Noclip enabled")
+    elseif command == "clip" or command == "unnoclip" then
+        noclipActive = false
+        if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
+        if player.Character then
+            for _, part in pairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = true end
+            end
+        end
+        notify("AxoAdmin", "Noclip disabled")
+    elseif command == "infjump" or command == "infinitejump" then
+        infiniteJumpActive = true
+        infiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
+            if infiniteJumpActive and player.Character and player.Character:FindFirstChild("Humanoid") then
+                player.Character.Humanoid:ChangeState("Jumping")
+            end
+        end)
+        notify("AxoAdmin", "Infinite jump enabled")
+    elseif command == "uninfjump" or command == "uninfinitejump" then
+        infiniteJumpActive = false
+        if infiniteJumpConnection then infiniteJumpConnection:Disconnect() infiniteJumpConnection = nil end
+        notify("AxoAdmin", "Infinite jump disabled")
+    elseif command == "nfd" or command == "nofalldamage" then
+        noFallDamageActive = true
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+        end
+        notify("AxoAdmin", "No fall damage enabled")
+    elseif command == "unnfd" or command == "unnofalldamage" then
+        noFallDamageActive = false
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+        end
+        notify("AxoAdmin", "No fall damage disabled")
+    elseif command == "antiafk" then
+        antiAfkActive = true
+        antiAfkConnection = RunService.Heartbeat:Connect(function()
+            if antiAfkActive then
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new())
+            end
+        end)
+        notify("AxoAdmin", "Anti AFK enabled")
+    elseif command == "unantiafk" then
+        antiAfkActive = false
+        if antiAfkConnection then antiAfkConnection:Disconnect() antiAfkConnection = nil end
+        notify("AxoAdmin", "Anti AFK disabled")
+    elseif command == "reset" then
+        if player.Character then player.Character:BreakJoints() end
+        notify("AxoAdmin", "Character reset")
+    elseif command == "respawn" then
+        player:LoadCharacter()
+        notify("AxoAdmin", "Respawning...")
+    elseif command == "sit" then
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.Sit = true
+            notify("AxoAdmin", "Sitting")
+        end
+    elseif command == "stand" or command == "unsit" then
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.Sit = false
+            notify("AxoAdmin", "Standing")
+        end
+    elseif command == "ragdoll" then
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.PlatformStand = true
+            notify("AxoAdmin", "Ragdoll enabled")
+        end
+    elseif command == "unragdoll" then
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.PlatformStand = false
+            notify("AxoAdmin", "Ragdoll disabled")
+        end
+    elseif command == "esp" then
+        if not espActive then
+            espActive = true
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= player and plr.Character then
+                    local highlight = Instance.new("Highlight")
+                    highlight.Name = "AxoESP"
+                    highlight.FillColor = Color3.fromRGB(0, 255, 0)
+                    highlight.OutlineColor = Color3.fromRGB(0, 255, 0)
+                    highlight.FillTransparency = 0.5
+                    highlight.Parent = plr.Character
+                    table.insert(espParts, highlight)
+                end
+            end
+            local conn = Players.PlayerAdded:Connect(function(plr)
+                plr.CharacterAdded:Connect(function(char)
+                    local highlight = Instance.new("Highlight")
+                    highlight.Name = "AxoESP"
+                    highlight.FillColor = Color3.fromRGB(0, 255, 0)
+                    highlight.OutlineColor = Color3.fromRGB(0, 255, 0)
+                    highlight.FillTransparency = 0.5
+                    highlight.Parent = char
+                    table.insert(espParts, highlight)
+                end)
+            end)
+            table.insert(espParts, conn)
+            notify("AxoAdmin", "ESP enabled")
+        end
+    elseif command == "unesp" then
+        if espActive then
+            espActive = false
+            for _, part in pairs(espParts) do
+                pcall(function() part:Destroy() end)
+            end
+            espParts = {}
+            notify("AxoAdmin", "ESP disabled")
+        end
+    elseif command == "xray" then
+        if not xrayActive then
+            xrayActive = true
+            for _, part in pairs(Workspace:GetDescendants()) do
+                if part:IsA("BasePart") and part.Transparency < 1 then
+                    table.insert(xrayParts, part)
+                    part.LocalTransparencyModifier = 0.5
+                end
+            end
+            notify("AxoAdmin", "X-ray enabled")
+        end
+    elseif command == "unxray" then
+        if xrayActive then
+            xrayActive = false
+            for _, part in pairs(xrayParts) do
+                pcall(function() part.LocalTransparencyModifier = 0 end)
+            end
+            xrayParts = {}
+            notify("AxoAdmin", "X-ray disabled")
+        end
+    elseif command == "freecam" or command == "freecamera" or command == "fc" then
+        if not freecamActive then
+            freecamActive = true
+            originalCameraSubject = camera.CameraSubject
+            originalCameraCFrame = camera.CFrame
+            camera.CameraType = Enum.CameraType.Scriptable
+            local pos = camera.CFrame.Position
+            freecamConnection = RunService.Heartbeat:Connect(function()
+                if not freecamActive then return end
+                local move = Vector3.new(0, 0, 0)
+                if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + camera.CFrame.LookVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - camera.CFrame.LookVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - camera.CFrame.RightVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + camera.CFrame.RightVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
+                if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0, 1, 0) end
+                if move.Magnitude > 0 then
+                    move = move.Unit * 5
+                    pos = pos + move
+                end
+                camera.CFrame = CFrame.lookAt(pos, pos + camera.CFrame.LookVector)
+            end)
+            notify("AxoAdmin", "Freecam enabled")
+        end
+    elseif command == "unfreecam" or command == "resetcam" or command == "unfreecamera" then
+        if freecamActive then
+            freecamActive = false
+            if freecamConnection then freecamConnection:Disconnect() freecamConnection = nil end
+            camera.CameraType = Enum.CameraType.Custom
+            if originalCameraSubject then camera.CameraSubject = originalCameraSubject end
+            if originalCameraCFrame then camera.CFrame = originalCameraCFrame end
+            notify("AxoAdmin", "Freecam disabled")
+        end
+    elseif command == "hipheight" or command == "hh" then
+        if arg1 and player.Character and player.Character:FindFirstChild("Humanoid") then
+            local height = tonumber(arg1)
+            if height then
+                player.Character.Humanoid.HipHeight = height
+                notify("AxoAdmin", "Hip height set to " .. height)
+            end
+        end
+    elseif command == "gravity" or command == "grav" then
+        if arg1 then
+            local grav = tonumber(arg1)
+            if grav then
+                Workspace.Gravity = grav
+                notify("AxoAdmin", "Gravity set to " .. grav)
+            end
+        end
+    elseif command == "spin" then
+        spinActive = true
+        spinSpeed = tonumber(arg1) or 10
+        spinConnection = RunService.Stepped:Connect(function()
+            if spinActive and player.Character and getRoot(player.Character) then
+                local root = getRoot(player.Character)
+                root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(spinSpeed), 0)
+            end
+        end)
+        notify("AxoAdmin", "Spin enabled at speed " .. spinSpeed)
+    elseif command == "unspin" then
+        spinActive = false
+        if spinConnection then spinConnection:Disconnect() spinConnection = nil end
+        notify("AxoAdmin", "Spin disabled")
+    elseif command == "walkfling" or command == "wfling" then
+        if not walkFlingActive then
+            walkFlingActive = true
+            walkFlingThread = coroutine.create(function()
+                local c, hrp, vel, movel = nil, nil, nil, 0.1
+                while walkFlingActive do
                     RunService.Heartbeat:Wait()
-                    char = player.Character
-                    root = getRoot(char)
-                    if root then
-                        vel = root.Velocity
-                        root.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+                    c = player.Character
+                    hrp = c and getRoot(c)
+                    if hrp then
+                        vel = hrp.Velocity
+                        hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
                         RunService.RenderStepped:Wait()
-                        if root then root.Velocity = vel end
+                        if hrp then hrp.Velocity = vel end
                         RunService.Stepped:Wait()
-                        if root then root.Velocity = vel + Vector3.new(0, movel, 0) end
+                        if hrp then hrp.Velocity = vel + Vector3.new(0, movel, 0) end
                         movel = -movel
                     end
                 end
             end)
-            notify("WalkFling", "Enabled")
+            coroutine.resume(walkFlingThread)
+            notify("AxoAdmin", "Walk fling enabled")
         end
-    elseif cmd == "unwalkfling" or cmd == "untouchfling" then
-        walkFlingEnabled = false
-        notify("WalkFling", "Disabled")
-    elseif cmd == "antifling1" then
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/AntiFling%20Script"))()
-        notify("AntiFling1", "Enabled")
-    elseif cmd == "swim" then
-        local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
-        if humanoid then
-            originalGravity = Workspace.Gravity
-            Workspace.Gravity = 0
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, true)
-            humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
-            notify("Swim", "Enabled")
-        end
-    elseif cmd == "firstperson" or cmd == "firstp" or cmd == "1stperson" then
-        player.CameraMode = Enum.CameraMode.LockFirstPerson
-        notify("FirstPerson", "Enabled")
-    elseif cmd == "thirdperson" or cmd == "3rdperson" or cmd == "3rdp" or cmd == "unfirstperon" or cmd == "un1stperson" or cmd == "un1stp" then
-        player.CameraMode = Enum.CameraMode.Classic
-        notify("ThirdPerson", "Enabled")
-    elseif cmd == "view" or cmd == "spectate" then
-        if value then
-            local target = getPlayer(value)
-            if target and target.Character and target.Character:FindFirstChildWhichIsA("Humanoid") then
-                originalCameraSubject = camera.CameraSubject
-                camera.CameraSubject = target.Character:FindFirstChildWhichIsA("Humanoid")
-                notify("View", "Viewing " .. target.DisplayName)
+    elseif command == "unwalkfling" or command == "unwfling" then
+        walkFlingActive = false
+        walkFlingThread = nil
+        notify("AxoAdmin", "Walk fling disabled")
+    elseif command == "touchfling" or command == "tfling" then
+        if not touchFlingActive then
+            touchFlingActive = true
+            if not ReplicatedStorage:FindFirstChild("axo_touch_fling") then
+                local detection = Instance.new("Decal")
+                detection.Name = "axo_touch_fling"
+                detection.Parent = ReplicatedStorage
             end
-        end
-    elseif cmd == "unview" or cmd == "unspectate" then
-        if originalCameraSubject then
-            camera.CameraSubject = originalCameraSubject
-            originalCameraSubject = nil
-        else
-            camera.CameraSubject = player.Character:FindFirstChildWhichIsA("Humanoid")
-        end
-        notify("View", "Disabled")
-    elseif cmd == "fov" then
-        if value then
-            local fov = tonumber(value)
-            if fov then
-                originalFOV = camera.FieldOfView
-                camera.FieldOfView = fov
-                notify("FOV", "Set to " .. fov)
-            end
-        end
-    elseif cmd == "resetfov" then
-        camera.FieldOfView = 70
-        notify("FOV", "Reset to 70")
-    elseif cmd == "resetcam" or cmd == "resetcamera" then
-        camera.CameraType = Enum.CameraType.Custom
-        camera.CameraSubject = player.Character:FindFirstChildWhichIsA("Humanoid")
-        camera.FieldOfView = 70
-        player.CameraMode = Enum.CameraMode.Classic
-        notify("Camera", "Reset")
-    elseif cmd == "audio" or cmd == "playaudio" or cmd == "sound" or cmd == "playsound" then
-        if value then
-            local cleanId = value:gsub("rbxassetid://", "")
-            local volume = tonumber(value2) or 1
-            if Workspace:FindFirstChild("AxomicAudio") then Workspace.AxomicAudio:Destroy() end
-            local sound = Instance.new("Sound")
-            sound.Name = "AxomicAudio"
-            sound.SoundId = "rbxassetid://" .. cleanId
-            sound.Volume = volume
-            sound.Looped = true
-            sound.Parent = Workspace
-            sound:Play()
-            notify("Audio", "Playing ID: " .. cleanId)
-        end
-    elseif cmd == "btools" or cmd == "buildingtools" then
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/refs/heads/main/f3x.lua"))()
-        notify("BuildingTools", "Loaded")
-    elseif cmd == "gear" then
-        if value then
-            local cleanId = value:gsub("rbxassetid://", "")
-            local success, result = pcall(function()
-                return game:GetObjects("rbxassetid://" .. cleanId)[1]
+            touchFlingThread = coroutine.create(function()
+                local c, hrp, vel, movel = nil, nil, nil, 0.1
+                while touchFlingActive do
+                    RunService.Heartbeat:Wait()
+                    c = player.Character
+                    hrp = c and getRoot(c)
+                    if hrp then
+                        vel = hrp.Velocity
+                        hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+                        RunService.RenderStepped:Wait()
+                        if hrp then hrp.Velocity = vel end
+                        RunService.Stepped:Wait()
+                        if hrp then hrp.Velocity = vel + Vector3.new(0, movel, 0) end
+                        movel = -movel
+                    end
+                end
             end)
-            if success and result then
-                result.Parent = player.Backpack
-                notify("Gear", "Added to backpack")
-            end
+            coroutine.resume(touchFlingThread)
+            notify("AxoAdmin", "Touch fling enabled")
         end
-    elseif cmd == "clonetool" or cmd == "ctool" then
-        local tool = player.Character:FindFirstChildOfClass("Tool") or player.Backpack:FindFirstChildOfClass("Tool")
-        if tool then
-            local clone = tool:Clone()
-            clone.Parent = player.Backpack
-            notify("CloneTool", "Cloned " .. tool.Name)
-        else
-            notify("Error", "No tool found")
+    elseif command == "untouchfling" or command == "untfling" then
+        touchFlingActive = false
+        touchFlingThread = nil
+        notify("AxoAdmin", "Touch fling disabled")
+    elseif command == "walkonwalls" or command == "wallwalk" then
+        if not walkOnWallsActive then
+            walkOnWallsActive = true
+            walkOnWallsConnection = RunService.Heartbeat:Connect(function()
+                if walkOnWallsActive and player.Character and player.Character:FindFirstChild("Humanoid") then
+                    player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Climbing)
+                end
+            end)
+            notify("AxoAdmin", "Walk on walls enabled")
         end
-    elseif cmd == "copyavatar" or cmd == "copyoutfit" or cmd == "be" or cmd == "morph" or cmd == "char" then
-        if value then
-            local target = getPlayer(value)
-            if target then
-                local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
-                if humanoid then
-                    local description = Players:GetHumanoidDescriptionFromUserId(target.UserId)
-                    humanoid:ApplyDescription(description)
-                    notify("CopyAvatar", "Copied " .. target.DisplayName .. "'s outfit")
+    elseif command == "unwalkonwalls" or command == "unwallwalk" then
+        walkOnWallsActive = false
+        if walkOnWallsConnection then walkOnWallsConnection:Disconnect() walkOnWallsConnection = nil end
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Running)
+        end
+        notify("AxoAdmin", "Walk on walls disabled")
+    elseif command == "hk" or command == "handlekill" then
+        if not handleKillActive then
+            handleKillActive = true
+            if player.Character then
+                for _, part in pairs(player.Character:GetDescendants()) do
+                    if part.Name == "Handle" and part:IsA("BasePart") then
+                        local conn = part.Touched:Connect(function(hit)
+                            if handleKillActive and hit.Parent and hit.Parent:FindFirstChild("Humanoid") and hit.Parent ~= player.Character then
+                                hit.Parent.Humanoid.Health = 0
+                            end
+                        end)
+                        table.insert(handleKillConnections, conn)
+                    end
                 end
             end
+            notify("AxoAdmin", "Handle kill enabled")
         end
-    elseif cmd == "boostfps" or cmd == "antilag" then
-        if not boostFpsOn then
-            boostFpsOn = true
-            settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-            Lighting.Brightness = 1
-            Lighting.FogEnd = 1000000
-            Lighting.GlobalShadows = false
-            for _, obj in pairs(Workspace:GetDescendants()) do
-                if obj:IsA("BasePart") then obj.CastShadow = false end
-                if obj:IsA("ParticleEmitter") or obj:IsA("Trail") then obj.Enabled = false end
+    elseif command == "unhk" or command == "unhandlekill" then
+        handleKillActive = false
+        for _, conn in pairs(handleKillConnections) do
+            pcall(function() conn:Disconnect() end)
+        end
+        handleKillConnections = {}
+        notify("AxoAdmin", "Handle kill disabled")
+    elseif command == "jerk" or command == "jerkoff" or command == "jerktool" then
+        local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            local anim = Instance.new("Animation")
+            if humanoid.RigType == Enum.HumanoidRigType.R15 then
+                anim.AnimationId = "rbxassetid://698251653"
+            else
+                anim.AnimationId = "rbxassetid://72042024"
             end
-            notify("BoostFPS", "Enabled")
+            jerkAnim = humanoid:LoadAnimation(anim)
+            jerkAnim:Play()
+            jerkAnim:AdjustSpeed(0.7)
+            notify("AxoAdmin", "Jerk animation playing")
         end
-    elseif cmd == "unboostfps" or cmd == "unantilag" then
-        boostFpsOn = false
-        settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic
-        Lighting.GlobalShadows = true
-        notify("BoostFPS", "Disabled")
-    elseif cmd == "aimbot" then
-        aimbotEnabled = true
+    elseif command == "tptool" or command == "teleporttool" then
+        local tool = Instance.new("Tool")
+        tool.Name = "Teleport Tool"
+        tool.CanBeDropped = false
+        local handle = Instance.new("Part")
+        handle.Size = Vector3.new(1, 1, 1)
+        handle.Name = "Handle"
+        handle.Parent = tool
+        tool.Activated:Connect(function()
+            if player.Character and getRoot(player.Character) then
+                local root = getRoot(player.Character)
+                root.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 5, 0))
+            end
+        end)
+        tool.Parent = player.Backpack
+        notify("AxoAdmin", "Teleport tool added to backpack")
+    elseif command == "anim" or command == "animation" or command == "emote" then
+        if arg1 and player.Character and player.Character:FindFirstChild("Humanoid") then
+            local speed = tonumber(arg2) or 1
+            local animation = Instance.new("Animation")
+            animation.AnimationId = "rbxassetid://" .. arg1
+            local track = player.Character.Humanoid:LoadAnimation(animation)
+            track:AdjustSpeed(speed)
+            track:Play()
+            notify("AxoAdmin", "Playing animation " .. arg1)
+        end
+    elseif command == "stopanim" or command == "stopemote" then
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid:StopAllAnimations()
+            notify("AxoAdmin", "Stopped all animations")
+        end
+    elseif command == "walkonwater" then
+        walkOnWaterActive = true
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
+            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        end
+        notify("AxoAdmin", "Walk on water enabled")
+    elseif command == "unwalkonwater" then
+        walkOnWaterActive = false
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, true)
+            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+        end
+        notify("AxoAdmin", "Walk on water disabled")
+    elseif command == "swim" or command == "float" then
+        if not swimActive then
+            swimActive = true
+            swimOriginalGravity = Workspace.Gravity
+            Workspace.Gravity = 0
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+            end
+            swimConnection = RunService.Heartbeat:Connect(function()
+                if swimActive and player.Character and getRoot(player.Character) then
+                    local root = getRoot(player.Character)
+                    local move = Vector3.new(0, 0, 0)
+                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0, 1, 0) end
+                    if move.Magnitude > 0 then
+                        root.CFrame = root.CFrame + move.Unit * 2
+                    end
+                end
+            end)
+            notify("AxoAdmin", "Swim mode enabled")
+        end
+    elseif command == "unswim" or command == "unfloat" then
+        swimActive = false
+        Workspace.Gravity = swimOriginalGravity
+        if swimConnection then swimConnection:Disconnect() swimConnection = nil end
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Running)
+        end
+        notify("AxoAdmin", "Swim mode disabled")
+    elseif command == "aimbot" or command == "lockon" then
+        aimbotActive = true
         aimbotConnection = RunService.Heartbeat:Connect(function()
-            if not aimbotEnabled then return end
+            if not aimbotActive then return end
             local closest = nil
             local closestDist = aimbotFOV
             for _, p in pairs(Players:GetPlayers()) do
@@ -759,42 +1129,570 @@ local function executeCommand(command)
                 end
             end
             if closest and closest.Character and closest.Character:FindFirstChild("Head") then
-                camera.CFrame = CFrame.lookAt(camera.CFrame.Position, closest.Character.Head.Position)
+                if not wallCheckActive or #camera:GetPartsObscuringTarget({closest.Character.Head.Position}, {player.Character}) == 0 then
+                    if silentAimActive then
+                        local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+                        if tool then
+                            for _, remote in pairs(tool:GetDescendants()) do
+                                if remote:IsA("RemoteEvent") then
+                                    remote:FireServer(unpack({Ray.new(camera.CFrame.Position, (closest.Character.Head.Position - camera.CFrame.Position).Unit * 1000)}))
+                                end
+                            end
+                        end
+                    else
+                        camera.CFrame = CFrame.lookAt(camera.CFrame.Position, closest.Character.Head.Position)
+                    end
+                    if triggerBotActive then
+                        mouse1press()
+                        task.wait(0.1)
+                        mouse1release()
+                    end
+                end
             end
         end)
-        notify("Aimbot", "Enabled")
-    elseif cmd == "unaimbot" then
-        aimbotEnabled = false
+        notify("AxoAdmin", "Aimbot enabled")
+    elseif command == "unaimbot" or command == "unlockon" then
+        aimbotActive = false
         if aimbotConnection then aimbotConnection:Disconnect() aimbotConnection = nil end
-        notify("Aimbot", "Disabled")
-    elseif cmd == "walkonwalls" then
-        if not walkOnWallsConnection then
-            walkOnWallsConnection = RunService.Heartbeat:Connect(function()
-                local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
-                if humanoid and humanoid.MoveDirection.Magnitude > 0 then
-                    humanoid:ChangeState(Enum.HumanoidStateType.Climbing)
+        notify("AxoAdmin", "Aimbot disabled")
+    elseif command == "silentaim" then
+        silentAimActive = true
+        notify("AxoAdmin", "Silent aim enabled")
+    elseif command == "unsilentaim" then
+        silentAimActive = false
+        notify("AxoAdmin", "Silent aim disabled")
+    elseif command == "triggerbot" or command == "tbot" then
+        triggerBotActive = true
+        notify("AxoAdmin", "Trigger bot enabled")
+    elseif command == "untriggerbot" then
+        triggerBotActive = false
+        notify("AxoAdmin", "Trigger bot disabled")
+    elseif command == "wallcheck" then
+        wallCheckActive = true
+        notify("AxoAdmin", "Wall check enabled")
+    elseif command == "unwallcheck" then
+        wallCheckActive = false
+        notify("AxoAdmin", "Wall check disabled")
+    elseif command == "fov" then
+        if arg1 then
+            local fov = tonumber(arg1)
+            if fov then
+                aimbotFOV = fov
+                notify("AxoAdmin", "Aimbot FOV set to " .. fov)
+            end
+        end
+    elseif command == "svhop" or command == "serverhop" then
+        local servers = {}
+        local req = game:HttpGet("https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+        local data = HttpService:JSONDecode(req)
+        for _, server in ipairs(data.data) do
+            if server.playing < server.maxPlayers and server.id ~= JobId then
+                table.insert(servers, server.id)
+            end
+        end
+        if #servers > 0 then
+            TeleportService:TeleportToPlaceInstance(PlaceId, servers[math.random(1, #servers)])
+        else
+            notify("AxoAdmin", "No servers found")
+        end
+    elseif command == "rj" or command == "rejoin" then
+        TeleportService:TeleportToPlaceInstance(PlaceId, JobId, player)
+        notify("AxoAdmin", "Rejoining...")
+    elseif command == "jobid" or command == "copyjobid" or command == "cjobid" then
+        setclipboard(JobId)
+        notify("AxoAdmin", "Job ID copied: " .. JobId)
+    elseif command == "antifling1" then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/AntiFling%20Script"))()
+        notify("AxoAdmin", "Anti fling v1 enabled")
+    elseif command == "unantifling1" then
+        notify("AxoAdmin", "Anti fling v1 disabled (rejoin to fully disable)")
+    elseif command == "antifling2" then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/AntiFling%20Script2"))()
+        notify("AxoAdmin", "Anti fling v2 enabled")
+    elseif command == "unantifling2" then
+        notify("AxoAdmin", "Anti fling v2 disabled (rejoin to fully disable)")
+    elseif command == "svtime" or command == "servertime" then
+        local time = math.floor(Workspace.DistributedGameTime)
+        local hours = math.floor(time / 3600)
+        local minutes = math.floor((time % 3600) / 60)
+        local seconds = time % 60
+        notify("Server Time", string.format("%02d:%02d:%02d", hours, minutes, seconds))
+    elseif command == "ginfo" or command == "gameinfo" then
+        local info = "Place ID: " .. PlaceId .. "\nJob ID: " .. JobId .. "\nPlayers: " .. #Players:GetPlayers()
+        notify("Game Info", info)
+    elseif command == "antilag" or command == "lowgraphics" or command == "boostfps" then
+        if not boostFpsActive then
+            boostFpsActive = true
+            settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+            Lighting.Brightness = 1
+            Lighting.FogEnd = 1000000
+            Lighting.GlobalShadows = false
+            for _, obj in pairs(Workspace:GetDescendants()) do
+                if obj:IsA("BasePart") then obj.CastShadow = false end
+                if obj:IsA("ParticleEmitter") or obj:IsA("Trail") then obj.Enabled = false end
+            end
+            notify("AxoAdmin", "Anti lag enabled")
+        end
+    elseif command == "httpspy" then
+        if not httpSpyActive then
+            httpSpyActive = true
+            local oldRequest = request or http_request or syn.request
+            if oldRequest then
+                request = function(...)
+                    local args = {...}
+                    print("HTTP Request - URL: " .. args[1].Url)
+                    if args[1].Body then print("Body: " .. args[1].Body) end
+                    return oldRequest(...)
+                end
+                notify("AxoAdmin", "HTTP spy enabled")
+            end
+        end
+    elseif command == "unhttpspy" then
+        httpSpyActive = false
+        notify("AxoAdmin", "HTTP spy disabled")
+    elseif command == "rspy" or command == "remotespy" then
+        if not remoteSpyActive then
+            remoteSpyActive = true
+            local oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+                local method = getnamecallmethod()
+                if remoteSpyActive and (method == "FireServer" or method == "InvokeServer") then
+                    print("Remote Fired: " .. tostring(self))
+                    print("Method: " .. method)
+                    print("Arguments: ", ...)
+                end
+                return oldNamecall(self, ...)
+            end)
+            notify("AxoAdmin", "Remote spy enabled (check console)")
+        end
+    elseif command == "unrspy" then
+        remoteSpyActive = false
+        notify("AxoAdmin", "Remote spy disabled")
+    elseif command == "webhookspy" then
+        if not webhookSpyActive then
+            webhookSpyActive = true
+            local oldRequest = request or http_request or syn.request
+            if oldRequest then
+                request = function(...)
+                    local args = {...}
+                    if webhookSpyActive and args[1].Url and args[1].Url:find("discord.com/api/webhooks") then
+                        print("WEBHOOK DETECTED: " .. args[1].Url)
+                        if args[1].Body then print("Webhook Data: " .. args[1].Body) end
+                        setclipboard("Webhook URL: " .. args[1].Url)
+                        notify("AxoAdmin", "Webhook detected! Check console")
+                    end
+                    return oldRequest(...)
+                end
+                notify("AxoAdmin", "Webhook spy enabled")
+            end
+        end
+    elseif command == "unwebhookspy" then
+        webhookSpyActive = false
+        notify("AxoAdmin", "Webhook spy disabled")
+    elseif command == "discord" then
+        setclipboard("https://discord.gg/FgR3MXqZy9")
+        notify("AxoAdmin", "Discord link copied")
+    elseif command == "tiktok" or command == "tk" then
+        setclipboard("https://tiktok.com/@axos002")
+        notify("AxoAdmin", "TikTok link copied")
+    elseif command == "youtube" or command == "yt" then
+        setclipboard("https://youtube.com/@axos0022")
+        notify("AxoAdmin", "YouTube link copied")
+    elseif command == "goto" or command == "to" or command == "tp" or command == "teleport" then
+        if arg1 then
+            local target = getSinglePlayer(arg1)
+            if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
+                getRoot(player.Character).CFrame = getRoot(target.Character).CFrame
+                notify("AxoAdmin", "Teleported to " .. target.Name)
+            end
+        end
+    elseif command == "fling" then
+        if arg1 then
+            local targets = getPlayers(arg1)
+            for _, target in pairs(targets) do
+                if target and target.Character and getRoot(target.Character) then
+                    local root = getRoot(target.Character)
+                    local bv = Instance.new("BodyVelocity")
+                    bv.MaxForce = Vector3.new(4000, 4000, 4000)
+                    bv.Velocity = Vector3.new(10000, 10000, 10000)
+                    bv.Parent = root
+                    task.wait(0.5)
+                    bv:Destroy()
+                    notify("AxoAdmin", "Flinged " .. target.Name)
+                end
+            end
+        end
+    elseif command == "unfling" then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and getRoot(p.Character) then
+                local root = getRoot(p.Character)
+                for _, v in pairs(root:GetChildren()) do
+                    if v:IsA("BodyVelocity") then v:Destroy() end
+                end
+            end
+        end
+        notify("AxoAdmin", "Stopped flinging")
+    elseif command == "orbit" then
+        if arg1 then
+            local target = getSinglePlayer(arg1)
+            if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
+                if orbitConnection then orbitConnection:Disconnect() end
+                local angle = 0
+                orbitConnection = RunService.Heartbeat:Connect(function()
+                    if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
+                        angle = angle + 0.1
+                        local radius = 5
+                        local x = getRoot(target.Character).Position.X + math.cos(angle) * radius
+                        local z = getRoot(target.Character).Position.Z + math.sin(angle) * radius
+                        getRoot(player.Character).CFrame = CFrame.new(x, getRoot(target.Character).Position.Y + 2, z)
+                    end
+                end)
+                notify("AxoAdmin", "Orbiting " .. target.Name)
+            end
+        end
+    elseif command == "unorbit" then
+        if orbitConnection then orbitConnection:Disconnect() orbitConnection = nil end
+        notify("AxoAdmin", "Orbit disabled")
+    elseif command == "bang" then
+        if arg1 then
+            local target = getSinglePlayer(arg1)
+            if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
+                if bangConnection then bangConnection:Disconnect() end
+                local humanoid = player.Character:FindFirstChild("Humanoid")
+                if humanoid then
+                    local anim = Instance.new("Animation")
+                    if humanoid.RigType == Enum.HumanoidRigType.R15 then
+                        anim.AnimationId = "rbxassetid://5918726674"
+                    else
+                        anim.AnimationId = "rbxassetid://148840371"
+                    end
+                    bangAnim = humanoid:LoadAnimation(anim)
+                    bangAnim:Play()
+                    bangAnim:AdjustSpeed(3)
+                end
+                bangConnection = RunService.Heartbeat:Connect(function()
+                    if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
+                        getRoot(player.Character).CFrame = getRoot(target.Character).CFrame * CFrame.new(0, 0, 1.5)
+                    end
+                end)
+                notify("AxoAdmin", "Banging " .. target.Name)
+            end
+        end
+    elseif command == "unbang" then
+        if bangConnection then bangConnection:Disconnect() bangConnection = nil end
+        if bangAnim then bangAnim:Stop() bangAnim = nil end
+        notify("AxoAdmin", "Bang disabled")
+    elseif command == "bhop" or command == "bunnyhop" then
+        if not bunnyHopActive then
+            bunnyHopActive = true
+            bunnyHopConnection = RunService.Heartbeat:Connect(function()
+                if bunnyHopActive and player.Character and player.Character:FindFirstChild("Humanoid") then
+                    player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
                 end
             end)
-            notify("WalkOnWalls", "Enabled")
+            notify("AxoAdmin", "Bunny hop enabled")
         end
-    elseif cmd == "unwalkonwalls" or cmd == "unwow" then
-        if walkOnWallsConnection then walkOnWallsConnection:Disconnect() walkOnWallsConnection = nil end
-        notify("WalkOnWalls", "Disabled")
+    elseif command == "unbhop" or command == "unbunnyhop" then
+        bunnyHopActive = false
+        if bunnyHopConnection then bunnyHopConnection:Disconnect() bunnyHopConnection = nil end
+        notify("AxoAdmin", "Bunny hop disabled")
+    elseif command == "headless" then
+        if player.Character and player.Character:FindFirstChild("Head") then
+            player.Character.Head.Size = Vector3.new(0.1, 0.1, 0.1)
+            player.Character.Head.Transparency = 1
+            for _, v in pairs(player.Character.Head:GetChildren()) do
+                if v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 1 end
+            end
+            notify("AxoAdmin", "Headless enabled")
+        end
+    elseif command == "unheadless" or command == "head" then
+        if player.Character and player.Character:FindFirstChild("Head") then
+            player.Character.Head.Size = Vector3.new(2, 1, 1)
+            player.Character.Head.Transparency = 0
+            for _, v in pairs(player.Character.Head:GetChildren()) do
+                if v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 0 end
+            end
+            notify("AxoAdmin", "Head restored")
+        end
+    elseif command == "naked" or command == "bold" then
+        if player.Character then
+            for _, v in pairs(player.Character:GetDescendants()) do
+                if v:IsA("Clothing") or v:IsA("Shirt") or v:IsA("Pants") or v:IsA("ShirtGraphic") then
+                    v:Destroy()
+                end
+            end
+            notify("AxoAdmin", "Naked mode enabled")
+        end
+    elseif command == "unnaked" then
+        notify("AxoAdmin", "Naked mode disabled (rejoin to restore)")
+    elseif command == "invis" or command == "invisible" then
+        if player.Character then
+            for _, v in pairs(player.Character:GetDescendants()) do
+                if v:IsA("BasePart") then v.Transparency = 1 end
+            end
+            notify("AxoAdmin", "Invisible enabled")
+        end
+    elseif command == "vis" or command == "visible" or command == "uninvisible" then
+        if player.Character then
+            for _, v in pairs(player.Character:GetDescendants()) do
+                if v:IsA("BasePart") then v.Transparency = 0 end
+            end
+            notify("AxoAdmin", "Visible enabled")
+        end
+    elseif command == "firstp" or command == "firstperson" or command == "1stp" then
+        player.CameraMode = Enum.CameraMode.LockFirstPerson
+        notify("AxoAdmin", "First person enabled")
+    elseif command == "thirdp" or command == "thirdperson" or command == "3rdp" then
+        player.CameraMode = Enum.CameraMode.Classic
+        notify("AxoAdmin", "Third person enabled")
+    elseif command == "view" or command == "spectate" then
+        if arg1 then
+            local target = getSinglePlayer(arg1)
+            if target and target.Character and target.Character:FindFirstChild("Humanoid") then
+                viewTarget = target
+                camera.CameraSubject = target.Character:FindFirstChild("Humanoid")
+                notify("AxoAdmin", "Viewing " .. target.Name)
+            end
+        end
+    elseif command == "unview" or command == "unspectate" then
+        viewTarget = nil
+        camera.CameraSubject = player.Character and player.Character:FindFirstChild("Humanoid")
+        notify("AxoAdmin", "Stopped viewing")
+    elseif command == "resetfov" then
+        camera.FieldOfView = 70
+        notify("AxoAdmin", "FOV reset to 70")
+    elseif command == "resetcam" or command == "resetcamera" then
+        camera.CameraType = Enum.CameraType.Custom
+        camera.CameraSubject = player.Character and player.Character:FindFirstChild("Humanoid")
+        camera.FieldOfView = 70
+        player.CameraMode = Enum.CameraMode.Classic
+        notify("AxoAdmin", "Camera reset")
+    elseif command == "playaudio" or command == "audio" or command == "sound" or command == "playsound" then
+        if arg1 then
+            local cleanId = arg1:gsub("rbxassetid://", "")
+            local volume = tonumber(arg2) or 1
+            if Workspace:FindFirstChild("AxoAudio") then Workspace.AxoAudio:Destroy() end
+            local sound = Instance.new("Sound")
+            sound.Name = "AxoAudio"
+            sound.SoundId = "rbxassetid://" .. cleanId
+            sound.Volume = volume
+            sound.Looped = true
+            sound.Parent = Workspace
+            sound:Play()
+            notify("AxoAdmin", "Playing audio " .. cleanId)
+        end
+    elseif command == "stopaudio" or command == "unplayaudio" then
+        if Workspace:FindFirstChild("AxoAudio") then Workspace.AxoAudio:Destroy() end
+        notify("AxoAdmin", "Audio stopped")
+    elseif command == "btools" or command == "buildingtools" or command == "f3x" then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/refs/heads/main/f3x.lua"))()
+        notify("AxoAdmin", "Building tools loaded")
+    elseif command == "gear" then
+        if arg1 then
+            local cleanId = arg1:gsub("rbxassetid://", "")
+            local success, result = pcall(function()
+                return game:GetObjects("rbxassetid://" .. cleanId)[1]
+            end)
+            if success and result then
+                result.Parent = player.Backpack
+                notify("AxoAdmin", "Gear added to backpack")
+            end
+        end
+    elseif command == "ctool" or command == "clonetool" then
+        local tool = player.Character:FindFirstChildOfClass("Tool") or player.Backpack:FindFirstChildOfClass("Tool")
+        if tool then
+            local clone = tool:Clone()
+            clone.Parent = player.Backpack
+            notify("AxoAdmin", "Cloned " .. tool.Name)
+        else
+            notify("AxoAdmin", "No tool found")
+        end
+    elseif command == "morph" or command == "char" or command == "be" or command == "copyoutfit" or command == "copyavatar" then
+        if arg1 then
+            local target = getSinglePlayer(arg1)
+            if target then
+                local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+                if humanoid then
+                    local description = Players:GetHumanoidDescriptionFromUserId(target.UserId)
+                    humanoid:ApplyDescription(description)
+                    notify("AxoAdmin", "Copied " .. target.Name .. "'s outfit")
+                end
+            end
+        end
+    elseif command == "age" or command == "accountage" then
+        if arg1 then
+            local target = getSinglePlayer(arg1)
+            if target then
+                local age = target.AccountAge
+                notify("Account Age", target.DisplayName .. " is " .. age .. " days old")
+            else
+                notify("AxoAdmin", "Player not found")
+            end
+        end
+    elseif command == "copypos" or command == "copyposition" or command == "copycords" or command == "copycoordinates" then
+        if player.Character and getRoot(player.Character) then
+            local pos = getRoot(player.Character).Position
+            local posStr = string.format("%.1f, %.1f, %.1f", pos.X, pos.Y, pos.Z)
+            setclipboard(posStr)
+            notify("AxoAdmin", "Position copied: " .. posStr)
+        end
+    elseif command == "tweento" or command == "tweentpto" then
+        if arg1 then
+            local target = getSinglePlayer(arg1)
+            if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
+                local tween = TweenService:Create(getRoot(player.Character), TweenInfo.new(2, Enum.EasingStyle.Linear), {CFrame = getRoot(target.Character).CFrame})
+                tween:Play()
+                notify("AxoAdmin", "Tweening to " .. target.Name)
+            end
+        end
+    elseif command == "antikick" or command == "anticlientkick" then
+        if not antiKickActive then
+            antiKickActive = true
+            local oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+                local method = getnamecallmethod()
+                if method == "Kick" then return end
+                return oldNamecall(self, ...)
+            end)
+            notify("AxoAdmin", "Anti kick enabled")
+        end
+    elseif command == "chat" or command == "message" then
+        if arg1 then
+            local msg = table.concat(args, " ", 2)
+            if msg ~= "" then
+                local success = pcall(function()
+                    ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(msg, "All")
+                end)
+                if not success then
+                    pcall(function()
+                        game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync(msg)
+                    end)
+                end
+            end
+        end
+    elseif command == "fixcam" or command == "fix" then
+        camera.CameraType = Enum.CameraType.Custom
+        camera.CameraSubject = player.Character and player.Character:FindFirstChild("Humanoid")
+        camera.FieldOfView = 70
+        player.CameraMode = Enum.CameraMode.Classic
+        notify("AxoAdmin", "Camera fixed")
+    elseif command == "dex" or command == "explorer" then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"))()
+        notify("AxoAdmin", "Dex explorer loaded")
+    elseif command == "console" then
+        StarterGui:SetCore("DevConsoleVisible", true)
+        notify("AxoAdmin", "Console opened")
+    elseif command == "ping" then
+        local ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
+        notify("Ping", ping)
+    elseif command == "fps" then
+        local fps = game:GetService("Stats").PerformanceStats.FPS:GetValueString()
+        notify("FPS", fps)
+    elseif command == "joke" then
+        local HttpService = game:GetService("HttpService")
+        local data = game:HttpGet("https://official-joke-api.appspot.com/jokes/programming/random")
+        local decoded = HttpService:JSONDecode(data)
+        if decoded and decoded[1] then
+            ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(decoded[1].setup, "All")
+            task.wait(2)
+            ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(decoded[1].punchline, "All")
+        end
+    elseif command == "kanye" then
+        local data = game:HttpGet("https://api.kanye.rest/")
+        local decoded = HttpService:JSONDecode(data)
+        if decoded and decoded.quote then
+            ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(decoded.quote .. " - Kanye West", "All")
+        end
+    elseif command == "hitbox" or command == "hbox" then
+        if arg1 then
+            local targets = getPlayers(arg1)
+            local size = tonumber(arg2) or 5
+            for _, target in pairs(targets) do
+                if target and target.Character and getRoot(target.Character) then
+                    local root = getRoot(target.Character)
+                    root.Size = Vector3.new(size, size, size)
+                    root.Transparency = 0.7
+                    root.Material = Enum.Material.Neon
+                    notify("AxoAdmin", "Hitbox set for " .. target.Name)
+                end
+            end
+        end
+    elseif command == "unhitbox" or command == "unhbox" then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and getRoot(p.Character) then
+                local root = getRoot(p.Character)
+                root.Size = Vector3.new(2, 2, 1)
+                root.Transparency = 0
+            end
+        end
+        notify("AxoAdmin", "Hitboxes removed")
+    elseif command == "fullbright" or command == "fullb" then
+        Lighting.Brightness = 2
+        Lighting.ClockTime = 14
+        Lighting.FogEnd = 100000
+        Lighting.GlobalShadows = false
+        Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+        notify("AxoAdmin", "Fullbright enabled")
+    elseif command == "nofog" then
+        Lighting.FogEnd = 100000
+        for _, v in pairs(Lighting:GetDescendants()) do
+            if v:IsA("Atmosphere") then v:Destroy() end
+        end
+        notify("AxoAdmin", "Fog removed")
+    elseif command == "day" then
+        Lighting.ClockTime = 14
+        notify("AxoAdmin", "Daytime set")
+    elseif command == "night" then
+        Lighting.ClockTime = 0
+        notify("AxoAdmin", "Nighttime set")
+    elseif command == "r6" then
+        local avs = game:GetService("AvatarEditorService")
+        avs:PromptSaveAvatar(player.Character.Humanoid.HumanoidDescription, Enum.HumanoidRigType.R6)
+        notify("AxoAdmin", "Press allow to change to R6")
+    elseif command == "r15" then
+        local avs = game:GetService("AvatarEditorService")
+        avs:PromptSaveAvatar(player.Character.Humanoid.HumanoidDescription, Enum.HumanoidRigType.R15)
+        notify("AxoAdmin", "Press allow to change to R15")
+    elseif command == "tpwalk" then
+        if arg1 then
+            local speed = tonumber(arg1) or 16
+            local tpwalkConnection = RunService.Heartbeat:Connect(function()
+                if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.MoveDirection.Magnitude > 0 then
+                    player.Character:TranslateBy(player.Character.Humanoid.MoveDirection * speed * 0.016)
+                end
+            end)
+            notify("AxoAdmin", "Tween walk enabled")
+        end
+    elseif command == "untpwalk" then
+        notify("AxoAdmin", "Tween walk disabled")
+    elseif command == "cmds" or command == "commands" or command == "cmdlist" then
+        local cmdStr = ""
+        for _, cmd in pairs(commandsTable) do
+            cmdStr = cmdStr .. cmd.name .. ", "
+        end
+        notify("AxoAdmin", "Type a command to see usage")
+    else
+        notify("AxoAdmin", "Unknown command: " .. command)
     end
 end
 
-local function executeFromBox()
+CommandBox:GetPropertyChangedSignal("Text"):Connect(function()
+    updateSuggestions(CommandBox.Text)
+end)
+
+CommandBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed and CommandBox.Text ~= "" then
+        executeCommand(CommandBox.Text)
+        CommandBox.Text = ""
+    end
+    SuggestionFrame.Visible = false
+end)
+
+ExecuteButton.MouseButton1Click:Connect(function()
     if CommandBox.Text ~= "" then
         executeCommand(CommandBox.Text)
         CommandBox.Text = ""
     end
-end
-
-CommandBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then executeFromBox() end
+    SuggestionFrame.Visible = false
 end)
-
-ExecuteButton.MouseButton1Click:Connect(executeFromBox)
 
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.F5 then
@@ -802,4 +1700,6 @@ UserInputService.InputBegan:Connect(function(input)
     end
 end)
 
-notify("Axomic CMD", "Press F5 to toggle UI | Type commands")
+updateCommandDisplay("")
+
+notify("AxoAdmin", "Press F5 to toggle UI | Type 'cmds' for commands")
