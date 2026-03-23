@@ -1,3 +1,18 @@
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local TopBar = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local CloseButton = Instance.new("TextButton")
+local Credits = Instance.new("TextLabel")
+local CommandBox = Instance.new("TextBox")
+local ExecuteButton = Instance.new("TextButton")
+local CommandList = Instance.new("ScrollingFrame")
+local ListLayout = Instance.new("UIListLayout")
+local ThemeDropdown = Instance.new("Frame")
+local DropdownButton = Instance.new("TextButton")
+local DropdownList = Instance.new("ScrollingFrame")
+local ThemeLayout = Instance.new("UIListLayout")
+
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -7,6 +22,8 @@ local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local StarterGui = game:GetService("StarterGui")
 local VirtualUser = game:GetService("VirtualUser")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
@@ -35,6 +52,8 @@ local walkOnWater = false
 local swimActive = false
 local rspyActive = false
 local webhookSpyActive = false
+local hiddenfling = false
+local boostFpsOn = false
 local spinSpeed = 10
 local aimbotFOV = 90
 local originalCFrame = nil
@@ -46,10 +65,69 @@ local walkFlingConnection = nil
 local aimbotConnection = nil
 local waterConnection = nil
 local swimConnection = nil
+local flingThread = nil
+local originalGravity = 196.2
+local originalFOV = 70
+local originalCameraSubject = nil
+local orbitConnection = nil
+local bangConnection = nil
+local bangAnim = nil
+local jerkConnection = nil
+local jerkAnim = nil
+local bunnyHopConnection = nil
+local walkOnWallsConnection = nil
 local espParts = {}
 local xrayParts = {}
 local espConnections = {}
 local currentColor = Color3.fromRGB(0, 170, 255)
+
+local themes = {
+    Midnight = {
+        Main = Color3.fromRGB(20, 20, 20),
+        TopBar = Color3.fromRGB(30, 30, 30),
+        Accent = Color3.fromRGB(0, 170, 255),
+        Button = Color3.fromRGB(40, 40, 40),
+        ButtonText = Color3.fromRGB(255, 255, 255),
+        Text = Color3.fromRGB(255, 255, 255),
+        Dropdown = Color3.fromRGB(35, 35, 35)
+    },
+    Cyber = {
+        Main = Color3.fromRGB(0, 20, 40),
+        TopBar = Color3.fromRGB(0, 40, 80),
+        Accent = Color3.fromRGB(0, 255, 200),
+        Button = Color3.fromRGB(0, 60, 120),
+        ButtonText = Color3.fromRGB(0, 255, 200),
+        Text = Color3.fromRGB(0, 255, 200),
+        Dropdown = Color3.fromRGB(0, 30, 60)
+    },
+    Sunset = {
+        Main = Color3.fromRGB(40, 20, 30),
+        TopBar = Color3.fromRGB(80, 30, 40),
+        Accent = Color3.fromRGB(255, 120, 100),
+        Button = Color3.fromRGB(120, 40, 50),
+        ButtonText = Color3.fromRGB(255, 200, 150),
+        Text = Color3.fromRGB(255, 200, 150),
+        Dropdown = Color3.fromRGB(60, 30, 40)
+    },
+    Kawaii = {
+        Main = Color3.fromRGB(255, 200, 220),
+        TopBar = Color3.fromRGB(255, 150, 200),
+        Accent = Color3.fromRGB(255, 100, 150),
+        Button = Color3.fromRGB(255, 180, 200),
+        ButtonText = Color3.fromRGB(255, 50, 100),
+        Text = Color3.fromRGB(255, 50, 100),
+        Dropdown = Color3.fromRGB(255, 170, 200)
+    },
+    Axomic = {
+        Main = Color3.fromRGB(40, 0, 0),
+        TopBar = Color3.fromRGB(80, 0, 0),
+        Accent = Color3.fromRGB(255, 0, 0),
+        Button = Color3.fromRGB(100, 0, 0),
+        ButtonText = Color3.fromRGB(255, 100, 100),
+        Text = Color3.fromRGB(255, 200, 200),
+        Dropdown = Color3.fromRGB(60, 0, 0)
+    }
+}
 
 local function notify(title, text)
     StarterGui:SetCore("SendNotification", {
@@ -63,152 +141,143 @@ local function getRoot(char)
     return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
 end
 
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "screengui"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = CoreGui
+local function getPlayer(input)
+    if not input then return nil end
+    local lowerInput = input:lower()
+    if lowerInput == "me" then return player end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p.Name:lower() == lowerInput or p.DisplayName:lower() == lowerInput then
+            return p
+        end
+    end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p.Name:lower():sub(1, #lowerInput) == lowerInput or p.DisplayName:lower():sub(1, #lowerInput) == lowerInput then
+            return p
+        end
+    end
+    return nil
+end
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 350, 0, 500)
-MainFrame.Position = UDim2.new(0.5, -175, 0.5, -250)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+ScreenGui.Parent = player:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
+
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = themes.Midnight.Main
+MainFrame.BackgroundTransparency = 0.6
 MainFrame.BorderSizePixel = 2
-MainFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+MainFrame.BorderColor3 = themes.Midnight.Accent
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -250)
+MainFrame.Size = UDim2.new(0, 400, 0, 500)
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.Parent = ScreenGui
 
-local TopBar = Instance.new("Frame")
-TopBar.Name = "TopBar"
-TopBar.Size = UDim2.new(1, 0, 0, 35)
-TopBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-TopBar.BorderSizePixel = 0
 TopBar.Parent = MainFrame
+TopBar.BackgroundColor3 = themes.Midnight.TopBar
+TopBar.BackgroundTransparency = 0.6
+TopBar.BorderSizePixel = 0
+TopBar.Size = UDim2.new(1, 0, 0, 35)
 
-local Title = Instance.new("TextLabel")
-Title.Name = "Title"
+Title.Parent = TopBar
+Title.BackgroundTransparency = 1
 Title.Size = UDim2.new(1, -35, 1, 0)
 Title.Position = UDim2.new(0, 10, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "Axomic CMD"
-Title.TextColor3 = Color3.fromRGB(0, 170, 255)
-Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Font = Enum.Font.GothamBold
+Title.Text = "Axomic CMD"
+Title.TextColor3 = themes.Midnight.Accent
 Title.TextSize = 18
-Title.Parent = TopBar
+Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local CloseButton = Instance.new("TextButton")
-CloseButton.Name = "CloseButton"
-CloseButton.Size = UDim2.new(0, 30, 0, 30)
-CloseButton.Position = UDim2.new(1, -35, 0, 2.5)
-CloseButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-CloseButton.Text = "✕"
-CloseButton.TextColor3 = Color3.fromRGB(255, 80, 80)
-CloseButton.TextScaled = true
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.BorderSizePixel = 0
 CloseButton.Parent = TopBar
+CloseButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+CloseButton.BackgroundTransparency = 0.6
+CloseButton.BorderSizePixel = 0
+CloseButton.Position = UDim2.new(1, -30, 0, 5)
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.Text = "✕"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 16
 
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
+Credits.Parent = MainFrame
+Credits.BackgroundTransparency = 1
+Credits.Position = UDim2.new(0, 0, 1, -25)
+Credits.Size = UDim2.new(1, 0, 0, 25)
+Credits.Font = Enum.Font.Gotham
+Credits.Text = "Made By Axom"
+Credits.TextColor3 = themes.Midnight.Accent
+Credits.TextSize = 14
 
-local CommandList = Instance.new("ScrollingFrame")
-CommandList.Name = "CommandList"
-CommandList.Size = UDim2.new(1, -20, 1, -90)
-CommandList.Position = UDim2.new(0, 10, 0, 45)
-CommandList.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-CommandList.BorderSizePixel = 0
-CommandList.ScrollBarThickness = 6
-CommandList.ScrollBarImageColor3 = Color3.fromRGB(0, 170, 255)
-CommandList.CanvasSize = UDim2.new(0, 0, 0, 0)
+ThemeDropdown.Parent = MainFrame
+ThemeDropdown.BackgroundColor3 = themes.Midnight.Dropdown
+ThemeDropdown.BackgroundTransparency = 0.6
+ThemeDropdown.BorderSizePixel = 1
+ThemeDropdown.BorderColor3 = themes.Midnight.Accent
+ThemeDropdown.Position = UDim2.new(0.5, -75, 0.05, 0)
+ThemeDropdown.Size = UDim2.new(0, 150, 0, 30)
+
+DropdownButton.Parent = ThemeDropdown
+DropdownButton.BackgroundColor3 = themes.Midnight.Dropdown
+DropdownButton.BackgroundTransparency = 0.6
+DropdownButton.BorderSizePixel = 0
+DropdownButton.Size = UDim2.new(1, 0, 1, 0)
+DropdownButton.Font = Enum.Font.Gotham
+DropdownButton.Text = "Theme: Midnight ▼"
+DropdownButton.TextColor3 = themes.Midnight.Accent
+DropdownButton.TextSize = 14
+
+DropdownList.Parent = ThemeDropdown
+DropdownList.BackgroundColor3 = themes.Midnight.Dropdown
+DropdownList.BackgroundTransparency = 0.6
+DropdownList.BorderSizePixel = 1
+DropdownList.BorderColor3 = themes.Midnight.Accent
+DropdownList.Position = UDim2.new(0, 0, 1, 2)
+DropdownList.Size = UDim2.new(1, 0, 0, 120)
+DropdownList.Visible = false
+DropdownList.ScrollBarThickness = 5
+DropdownList.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+ThemeLayout.Parent = DropdownList
+ThemeLayout.Padding = UDim.new(0, 2)
+
 CommandList.Parent = MainFrame
+CommandList.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+CommandList.BackgroundTransparency = 0.6
+CommandList.BorderSizePixel = 1
+CommandList.BorderColor3 = themes.Midnight.Accent
+CommandList.Position = UDim2.new(0, 10, 0.15, 0)
+CommandList.Size = UDim2.new(1, -20, 0, 300)
+CommandList.ScrollBarThickness = 6
+CommandList.CanvasSize = UDim2.new(0, 0, 0, 0)
 
-local ListLayout = Instance.new("UIListLayout")
-ListLayout.Padding = UDim.new(0, 2)
 ListLayout.Parent = CommandList
+ListLayout.Padding = UDim.new(0, 2)
 
 local commands = {
-    "fly",
-    "unfly",
-    "vehiclefly / vfly",
-    "unvehiclefly",
-    "walkspeed <value>",
-    "jumppower <value>",
-    "noclip",
-    "unnoclip / clip",
-    "infinitejump / infjump",
-    "uninfinitejump / uninfjump",
-    "nofalldamage / nfd",
-    "unnofalldamage / unnfd",
-    "antiafk",
-    "unantiafk",
-    "reset",
-    "respawn",
-    "sit",
-    "unsit / stand",
-    "ragdoll",
-    "unragdoll",
-    "esp",
-    "unesp",
-    "xray",
-    "unxray",
-    "freecamera / freecam",
-    "unfreecam / resetcam / unfreecamera",
-    "hipheight <value>",
-    "gravity <value>",
-    "spin <speed>",
-    "unspin",
-    "walkfling",
-    "unwalkfling",
-    "walkonwalls",
-    "unwalkonwalls",
-    "handlekill / hk",
-    "unhandlekill / unhk",
-    "jerk",
-    "teleporttool / tptool",
-    "animation / emote <id> <speed>",
-    "stopanim / stopemote",
-    "walkonwater",
-    "unwalkonwater",
-    "swim",
-    "unswim",
-    "aimbot",
-    "unaimbot",
-    "silentaim",
-    "unsilentaim",
-    "triggerbot",
-    "untriggerbot",
-    "wallcheck",
-    "unwallcheck",
-    "fov <value>",
-    "serverhop / svhop",
-    "rejoin / rj",
-    "copyjobid / jobid / cjobid",
-    "antifling1",
-    "unantifling1",
-    "antifling2",
-    "unantifling2",
-    "servertime / svtime",
-    "gameinfo / ginfo",
-    "lowgraphics / antilag",
-    "httpspy",
-    "unhttpspy",
-    "rspy",
-    "unrspy",
-    "webhookspy",
-    "unwebhookspy",
-    "discordsv / discord",
-    "tiktok / tk",
-    "youtube / yt"
+    "audiologger / soundlogger", "console", "fly", "unfly",
+    "invisible", "visible / uninvisible", "naked", "unnaked",
+    "headless", "unheadless / head", "age <username>",
+    "copyposition / copypos / copycords / copycoordinates",
+    "tweentpto / tweento <username>", "orbit <username>", "unorbit",
+    "bang <username>", "unbang", "jerk / jerkoff / jerktool",
+    "bunnyhop / bhop", "unbunnyhop / unbhop",
+    "walkfling / touchfling", "unwalkfling / untouchfling",
+    "antifling1", "swim", "firstperson / firstp / 1stperson",
+    "thirdperson / 3rdperson / 3rdp / unfirstperon / un1stperson / un1stp",
+    "view / spectate <username>", "unview / unspectate",
+    "fov <value>", "resetfov", "resetcam / resetcamera",
+    "audio / playaudio / sound / playsound <id>",
+    "btools / buildingtools", "gear <id>",
+    "clonetool / ctool", "copyavatar / copyoutfit / be / morph / char <username>",
+    "boostfps / antilag", "unboostfps / unantilag",
+    "aimbot", "unaimbot", "walkonwalls", "unwalkonwalls / unwow"
 }
 
-for i, cmd in ipairs(commands) do
+for _, cmd in ipairs(commands) do
     local CommandFrame = Instance.new("Frame")
-    CommandFrame.Size = UDim2.new(1, -5, 0, 28)
+    CommandFrame.Size = UDim2.new(1, -5, 0, 25)
     CommandFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    CommandFrame.BackgroundTransparency = 0.6
     CommandFrame.BorderSizePixel = 0
     CommandFrame.Parent = CommandList
     
@@ -219,7 +288,7 @@ for i, cmd in ipairs(commands) do
     CommandLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
     CommandLabel.TextXAlignment = Enum.TextXAlignment.Left
     CommandLabel.Font = Enum.Font.Code
-    CommandLabel.TextSize = 14
+    CommandLabel.TextSize = 13
     CommandLabel.Parent = CommandFrame
     
     if cmd:find("<") then
@@ -234,64 +303,90 @@ ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 end)
 
 local BottomBar = Instance.new("Frame")
-BottomBar.Name = "BottomBar"
-BottomBar.Size = UDim2.new(1, 0, 0, 45)
-BottomBar.Position = UDim2.new(0, 0, 1, -45)
-BottomBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-BottomBar.BorderSizePixel = 0
 BottomBar.Parent = MainFrame
+BottomBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+BottomBar.BackgroundTransparency = 0.6
+BottomBar.BorderSizePixel = 1
+BottomBar.BorderColor3 = themes.Midnight.Accent
+BottomBar.Position = UDim2.new(0, 0, 1, -60)
+BottomBar.Size = UDim2.new(1, 0, 0, 60)
 
-local CommandBox = Instance.new("TextBox")
-CommandBox.Name = "CommandBox"
-CommandBox.Size = UDim2.new(1, -20, 0, 35)
-CommandBox.Position = UDim2.new(0, 10, 0, 5)
+CommandBox = Instance.new("TextBox")
+CommandBox.Parent = BottomBar
+CommandBox.Size = UDim2.new(1, -90, 0, 35)
+CommandBox.Position = UDim2.new(0, 10, 0, 12)
 CommandBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-CommandBox.TextColor3 = Color3.fromRGB(0, 170, 255)
-CommandBox.PlaceholderText = "Enter command here..."
+CommandBox.BackgroundTransparency = 0.6
+CommandBox.TextColor3 = themes.Midnight.Accent
+CommandBox.PlaceholderText = "Enter command..."
 CommandBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
 CommandBox.Text = ""
 CommandBox.Font = Enum.Font.Code
 CommandBox.TextSize = 16
 CommandBox.ClearTextOnFocus = false
 CommandBox.BorderSizePixel = 1
-CommandBox.BorderColor3 = Color3.fromRGB(0, 170, 255)
-CommandBox.Parent = BottomBar
+CommandBox.BorderColor3 = themes.Midnight.Accent
 
-local ExecuteButton = Instance.new("TextButton")
-ExecuteButton.Name = "ExecuteButton"
-ExecuteButton.Size = UDim2.new(0, 60, 0, 35)
-ExecuteButton.Position = UDim2.new(1, -70, 0, 5)
-ExecuteButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+ExecuteButton = Instance.new("TextButton")
+ExecuteButton.Parent = BottomBar
+ExecuteButton.Size = UDim2.new(0, 70, 0, 35)
+ExecuteButton.Position = UDim2.new(1, -80, 0, 12)
+ExecuteButton.BackgroundColor3 = themes.Midnight.Accent
+ExecuteButton.BackgroundTransparency = 0.6
 ExecuteButton.Text = "EXEC"
 ExecuteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ExecuteButton.TextScaled = true
 ExecuteButton.Font = Enum.Font.GothamBold
 ExecuteButton.BorderSizePixel = 0
-ExecuteButton.Parent = BottomBar
 
-RunService.Stepped:Connect(function()
-    if isNoclipping and player.Character then
-        for _, part in pairs(player.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
+for themeName, _ in pairs(themes) do
+    local themeButton = Instance.new("TextButton")
+    themeButton.Parent = DropdownList
+    themeButton.BackgroundColor3 = themes.Midnight.Dropdown
+    themeButton.BackgroundTransparency = 0.6
+    themeButton.BorderSizePixel = 0
+    themeButton.Size = UDim2.new(1, 0, 0, 25)
+    themeButton.Font = Enum.Font.Gotham
+    themeButton.Text = themeName
+    themeButton.TextColor3 = themes.Midnight.Accent
+    themeButton.TextSize = 14
+    
+    themeButton.MouseButton1Click:Connect(function()
+        local theme = themes[themeName]
+        DropdownButton.Text = "Theme: " .. themeName .. " ▼"
+        DropdownList.Visible = false
+        MainFrame.BackgroundColor3 = theme.Main
+        MainFrame.BorderColor3 = theme.Accent
+        TopBar.BackgroundColor3 = theme.TopBar
+        Title.TextColor3 = theme.Accent
+        Credits.TextColor3 = theme.Accent
+        CommandBox.BorderColor3 = theme.Accent
+        CommandBox.TextColor3 = theme.Accent
+        ExecuteButton.BackgroundColor3 = theme.Accent
+        ThemeDropdown.BackgroundColor3 = theme.Dropdown
+        ThemeDropdown.BorderColor3 = theme.Accent
+        DropdownButton.BackgroundColor3 = theme.Dropdown
+        DropdownButton.TextColor3 = theme.Accent
+        DropdownList.BackgroundColor3 = theme.Dropdown
+        DropdownList.BorderColor3 = theme.Accent
+        BottomBar.BorderColor3 = theme.Accent
+        CommandList.BorderColor3 = theme.Accent
+        for _, button in pairs(DropdownList:GetChildren()) do
+            if button:IsA("TextButton") then
+                button.BackgroundColor3 = theme.Dropdown
+                button.TextColor3 = theme.Accent
             end
         end
-    end
-    if walkOnWalls and player.Character and player.Character:FindFirstChild("Humanoid") then
-        player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Climbing)
-    end
-    if walkOnWater and player.Character and getRoot(player.Character) then
-        local root = getRoot(player.Character)
-        if root.Position.Y < 0 then
-            root.CFrame = root.CFrame + Vector3.new(0, 5, 0)
-        end
-    end
+    end)
+end
+
+DropdownButton.MouseButton1Click:Connect(function()
+    DropdownList.Visible = not DropdownList.Visible
+    DropdownList.CanvasSize = UDim2.new(0, 0, 0, ThemeLayout.AbsoluteContentSize.Y)
 end)
 
-UserInputService.JumpRequest:Connect(function()
-    if infiniteJump and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
-        player.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
-    end
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
 end)
 
 local function executeCommand(command)
@@ -299,8 +394,15 @@ local function executeCommand(command)
     local cmd = args[1]:lower()
     local value = args[2]
     local value2 = args[3]
+    local value3 = args[4]
     
-    if cmd == "fly" then
+    if cmd == "audiologger" or cmd == "soundlogger" then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/audiologger.lua"))()
+        notify("AudioLogger", "Loaded")
+    elseif cmd == "console" then
+        StarterGui:SetCore("DevConsoleVisible", true)
+        notify("Console", "Opened")
+    elseif cmd == "fly" then
         if not flyActive then
             flyActive = true
             local char = player.Character
@@ -319,31 +421,15 @@ local function executeCommand(command)
                     bodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
                     bodyVelocity.Velocity = Vector3.new(0, 0, 0)
                     flyConnection = RunService.Heartbeat:Connect(function()
-                        if not flyActive or not char or not root then
-                            return
-                        end
+                        if not flyActive or not char or not root then return end
                         local moveDirection = Vector3.new(0, 0, 0)
-                        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                            moveDirection = moveDirection + camera.CFrame.LookVector
-                        end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                            moveDirection = moveDirection - camera.CFrame.LookVector
-                        end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                            moveDirection = moveDirection - camera.CFrame.RightVector
-                        end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                            moveDirection = moveDirection + camera.CFrame.RightVector
-                        end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                            moveDirection = moveDirection + Vector3.new(0, 1, 0)
-                        end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-                            moveDirection = moveDirection - Vector3.new(0, 1, 0)
-                        end
-                        if moveDirection.Magnitude > 0 then
-                            moveDirection = moveDirection.Unit * 50
-                        end
+                        if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDirection = moveDirection + camera.CFrame.LookVector end
+                        if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDirection = moveDirection - camera.CFrame.LookVector end
+                        if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDirection = moveDirection - camera.CFrame.RightVector end
+                        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDirection = moveDirection + camera.CFrame.RightVector end
+                        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDirection = moveDirection + Vector3.new(0, 1, 0) end
+                        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDirection = moveDirection - Vector3.new(0, 1, 0) end
+                        if moveDirection.Magnitude > 0 then moveDirection = moveDirection.Unit * 50 end
                         bodyVelocity.Velocity = moveDirection
                         bodyGyro.CFrame = camera.CFrame
                     end)
@@ -354,10 +440,7 @@ local function executeCommand(command)
     elseif cmd == "unfly" then
         if flyActive then
             flyActive = false
-            if flyConnection then
-                flyConnection:Disconnect()
-                flyConnection = nil
-            end
+            if flyConnection then flyConnection:Disconnect() flyConnection = nil end
             local char = player.Character
             if char then
                 local humanoid = char:FindFirstChild("Humanoid")
@@ -365,671 +448,338 @@ local function executeCommand(command)
                 if humanoid and root then
                     humanoid.PlatformStand = false
                     for _, v in pairs(root:GetChildren()) do
-                        if v:IsA("BodyGyro") or v:IsA("BodyVelocity") then
-                            v:Destroy()
-                        end
+                        if v:IsA("BodyGyro") or v:IsA("BodyVelocity") then v:Destroy() end
                     end
                 end
             end
             notify("Fly", "Disabled")
         end
-    elseif cmd == "vehiclefly" or cmd == "vfly" then
-        if not isVehicleFlying then
-            isVehicleFlying = true
-            local vehicle = nil
-            if player.Character and player.Character:FindFirstChild("Humanoid") then
-                vehicle = player.Character.Humanoid.SeatPart
+    elseif cmd == "invisible" then
+        if player.Character then
+            for _, v in pairs(player.Character:GetDescendants()) do
+                if v:IsA("BasePart") then v.Transparency = 1 end
             end
-            if vehicle and vehicle.Parent then
-                local bodyVelocity = Instance.new("BodyVelocity")
-                bodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
-                bodyVelocity.Parent = vehicle
-                vehicleFlyConnection = RunService.Heartbeat:Connect(function()
-                    if not isVehicleFlying or not vehicle or not vehicle.Parent then
-                        return
+            notify("Invisible", "Enabled")
+        end
+    elseif cmd == "visible" or cmd == "uninvisible" then
+        if player.Character then
+            for _, v in pairs(player.Character:GetDescendants()) do
+                if v:IsA("BasePart") then v.Transparency = 0 end
+            end
+            notify("Visible", "Enabled")
+        end
+    elseif cmd == "naked" then
+        if player.Character then
+            for _, v in pairs(player.Character:GetDescendants()) do
+                if v:IsA("Clothing") or v:IsA("Shirt") or v:IsA("Pants") or v:IsA("ShirtGraphic") then
+                    v:Destroy()
+                end
+            end
+            notify("Naked", "Applied")
+        end
+    elseif cmd == "unnaked" then
+        notify("UnNaked", "Rejoin to restore clothes")
+    elseif cmd == "headless" then
+        if player.Character and player.Character:FindFirstChild("Head") then
+            player.Character.Head.Size = Vector3.new(0.1, 0.1, 0.1)
+            player.Character.Head.Transparency = 1
+            for _, v in pairs(player.Character.Head:GetChildren()) do
+                if v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 1 end
+            end
+            notify("Headless", "Enabled")
+        end
+    elseif cmd == "unheadless" or cmd == "head" then
+        if player.Character and player.Character:FindFirstChild("Head") then
+            player.Character.Head.Size = Vector3.new(2, 1, 1)
+            player.Character.Head.Transparency = 0
+            for _, v in pairs(player.Character.Head:GetChildren()) do
+                if v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 0 end
+            end
+            notify("Head", "Restored")
+        end
+    elseif cmd == "age" then
+        if value then
+            local target = getPlayer(value)
+            if target then
+                local age = target.AccountAge
+                notify("Age", target.DisplayName .. " is " .. age .. " days old")
+            else
+                notify("Error", "Player not found")
+            end
+        end
+    elseif cmd == "copyposition" or cmd == "copypos" or cmd == "copycords" or cmd == "copycoordinates" then
+        if player.Character and getRoot(player.Character) then
+            local pos = getRoot(player.Character).Position
+            local posStr = string.format("%.1f, %.1f, %.1f", pos.X, pos.Y, pos.Z)
+            setclipboard(posStr)
+            notify("Position", "Copied: " .. posStr)
+        end
+    elseif cmd == "tweentpto" or cmd == "tweento" then
+        if value then
+            local target = getPlayer(value)
+            if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
+                local tween = TweenService:Create(getRoot(player.Character), TweenInfo.new(2, Enum.EasingStyle.Linear), {CFrame = getRoot(target.Character).CFrame})
+                tween:Play()
+                notify("Tween", "Moving to " .. target.DisplayName)
+            else
+                notify("Error", "Player not found")
+            end
+        end
+    elseif cmd == "orbit" then
+        if value then
+            local target = getPlayer(value)
+            if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
+                if orbitConnection then orbitConnection:Disconnect() end
+                local angle = 0
+                orbitConnection = RunService.Heartbeat:Connect(function()
+                    if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
+                        angle = angle + 0.1
+                        local radius = 5
+                        local x = getRoot(target.Character).Position.X + math.cos(angle) * radius
+                        local z = getRoot(target.Character).Position.Z + math.sin(angle) * radius
+                        getRoot(player.Character).CFrame = CFrame.new(x, getRoot(target.Character).Position.Y + 2, z)
                     end
-                    local moveDirection = Vector3.new(0, 0, 0)
-                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                        moveDirection = moveDirection + camera.CFrame.LookVector
-                    end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                        moveDirection = moveDirection - camera.CFrame.LookVector
-                    end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                        moveDirection = moveDirection - camera.CFrame.RightVector
-                    end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                        moveDirection = moveDirection + camera.CFrame.RightVector
-                    end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                        moveDirection = moveDirection + Vector3.new(0, 1, 0)
-                    end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-                        moveDirection = moveDirection - Vector3.new(0, 1, 0)
-                    end
-                    if moveDirection.Magnitude > 0 then
-                        moveDirection = moveDirection.Unit * 100
-                    end
-                    bodyVelocity.Velocity = moveDirection
                 end)
-            end
-            notify("VehicleFly", "Enabled")
-        end
-    elseif cmd == "unvehiclefly" then
-        if isVehicleFlying then
-            isVehicleFlying = false
-            if vehicleFlyConnection then
-                vehicleFlyConnection:Disconnect()
-                vehicleFlyConnection = nil
-            end
-            notify("VehicleFly", "Disabled")
-        end
-    elseif cmd == "walkspeed" then
-        if value and player.Character and player.Character:FindFirstChild("Humanoid") then
-            local speed = tonumber(value)
-            if speed then
-                player.Character.Humanoid.WalkSpeed = speed
-                notify("Walkspeed", "Set to "..speed)
+                notify("Orbit", "Orbiting " .. target.DisplayName)
             end
         end
-    elseif cmd == "jumppower" then
-        if value and player.Character and player.Character:FindFirstChild("Humanoid") then
-            local power = tonumber(value)
-            if power then
-                player.Character.Humanoid.JumpPower = power
-                notify("JumpPower", "Set to "..power)
-            end
-        end
-    elseif cmd == "noclip" then
-        isNoclipping = true
-        if player.Character then
-            for _, part in pairs(player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
+    elseif cmd == "unorbit" then
+        if orbitConnection then orbitConnection:Disconnect() orbitConnection = nil end
+        notify("Orbit", "Disabled")
+    elseif cmd == "bang" then
+        if value then
+            local target = getPlayer(value)
+            if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
+                if bangConnection then bangConnection:Disconnect() end
+                local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
+                if humanoid then
+                    local anim = Instance.new("Animation")
+                    anim.AnimationId = "rbxassetid://5918726674"
+                    bangAnim = humanoid:LoadAnimation(anim)
+                    bangAnim:Play()
                 end
+                bangConnection = RunService.Heartbeat:Connect(function()
+                    if target and target.Character and getRoot(target.Character) and player.Character and getRoot(player.Character) then
+                        getRoot(player.Character).CFrame = getRoot(target.Character).CFrame * CFrame.new(0, 0, 1.5)
+                    end
+                end)
+                notify("Bang", "Banging " .. target.DisplayName)
             end
         end
-        notify("Noclip", "Enabled")
-    elseif cmd == "unnoclip" or cmd == "clip" then
-        isNoclipping = false
-        if player.Character then
-            for _, part in pairs(player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
+    elseif cmd == "unbang" then
+        if bangConnection then bangConnection:Disconnect() bangConnection = nil end
+        if bangAnim then bangAnim:Stop() bangAnim = nil end
+        notify("Bang", "Disabled")
+    elseif cmd == "jerk" or cmd == "jerkoff" or cmd == "jerktool" then
+        local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
+        if humanoid then
+            local anim = Instance.new("Animation")
+            anim.AnimationId = "rbxassetid://698251653"
+            jerkAnim = humanoid:LoadAnimation(anim)
+            jerkAnim:Play()
+            jerkAnim:AdjustSpeed(0.7)
+            notify("Jerk", "Enabled")
         end
-        notify("Noclip", "Disabled")
-    elseif cmd == "infinitejump" or cmd == "infjump" then
-        infiniteJump = true
-        notify("InfiniteJump", "Enabled")
-    elseif cmd == "uninfinitejump" or cmd == "uninfjump" then
-        infiniteJump = false
-        notify("InfiniteJump", "Disabled")
-    elseif cmd == "nofalldamage" or cmd == "nfd" then
-        noFallDamage = true
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-        end
-        notify("NoFallDamage", "Enabled")
-    elseif cmd == "unnofalldamage" or cmd == "unnfd" then
-        noFallDamage = false
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
-            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
-        end
-        notify("NoFallDamage", "Disabled")
-    elseif cmd == "antiafk" then
-        antiAfk = true
-        afkConnection = RunService.Heartbeat:Connect(function()
-            if antiAfk then
-                VirtualUser:CaptureController()
-                VirtualUser:ClickButton2(Vector2.new())
+    elseif cmd == "bunnyhop" or cmd == "bhop" then
+        if bunnyHopConnection then bunnyHopConnection:Disconnect() end
+        bunnyHopConnection = RunService.Heartbeat:Connect(function()
+            local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
+            if humanoid and humanoid.MoveDirection.Magnitude > 0 then
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
             end
         end)
-        notify("AntiAFK", "Enabled")
-    elseif cmd == "unantiafk" then
-        antiAfk = false
-        if afkConnection then
-            afkConnection:Disconnect()
-            afkConnection = nil
-        end
-        notify("AntiAFK", "Disabled")
-    elseif cmd == "reset" then
-        if player.Character then
-            player.Character:BreakJoints()
-            notify("Reset", "Character reset")
-        end
-    elseif cmd == "respawn" then
-        player:LoadCharacter()
-        notify("Respawn", "Character respawned")
-    elseif cmd == "sit" then
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid.Sit = true
-            notify("Sit", "Sitting")
-        end
-    elseif cmd == "unsit" or cmd == "stand" then
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid.Sit = false
-            notify("Stand", "Standing")
-        end
-    elseif cmd == "ragdoll" then
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid.PlatformStand = true
-            notify("Ragdoll", "Enabled")
-        end
-    elseif cmd == "unragdoll" then
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid.PlatformStand = false
-            notify("Ragdoll", "Disabled")
-        end
-    elseif cmd == "esp" then
-        if not isESP then
-            isESP = true
-            local function createESP(target)
-                local espBox = Instance.new("BoxHandleAdornment")
-                espBox.Size = Vector3.new(4, 5, 4)
-                espBox.Transparency = 0.5
-                espBox.Color3 = currentColor
-                espBox.ZIndex = 5
-                espBox.AlwaysOnTop = true
-                espBox.Adornee = target.Character or target
-                espBox.Parent = CoreGui
-                table.insert(espParts, espBox)
-            end
-            for _, plr in pairs(Players:GetPlayers()) do
-                if plr ~= player then
-                    createESP(plr)
-                end
-            end
-            local conn = Players.PlayerAdded:Connect(createESP)
-            table.insert(espConnections, conn)
-            notify("ESP", "Enabled")
-        end
-    elseif cmd == "unesp" then
-        if isESP then
-            isESP = false
-            for _, part in pairs(espParts) do
-                if part then
-                    part:Destroy()
-                end
-            end
-            espParts = {}
-            for _, conn in pairs(espConnections) do
-                conn:Disconnect()
-            end
-            espConnections = {}
-            notify("ESP", "Disabled")
-        end
-    elseif cmd == "xray" then
-        if not isXray then
-            for _, part in pairs(Workspace:GetDescendants()) do
-                if part:IsA("BasePart") and part.Transparency < 1 then
-                    table.insert(xrayParts, part)
-                    part.LocalTransparencyModifier = 0.5
-                end
-            end
-            isXray = true
-            notify("Xray", "Enabled")
-        end
-    elseif cmd == "unxray" then
-        if isXray then
-            for _, part in pairs(xrayParts) do
-                if part then
-                    part.LocalTransparencyModifier = 0
-                end
-            end
-            xrayParts = {}
-            isXray = false
-            notify("Xray", "Disabled")
-        end
-    elseif cmd == "freecamera" or cmd == "freecam" then
-        if not freecamActive then
-            freecamActive = true
-            originalCFrame = camera.CFrame
-            camera.CameraType = Enum.CameraType.Scriptable
-            local freecamPos = camera.CFrame.Position
-            local freecamSpeed = 5
-            local freecamConnection = RunService.Heartbeat:Connect(function()
-                if not freecamActive then
-                    freecamConnection:Disconnect()
-                    return
-                end
-                local moveDirection = Vector3.new(0, 0, 0)
-                if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                    moveDirection = moveDirection + camera.CFrame.LookVector
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                    moveDirection = moveDirection - camera.CFrame.LookVector
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                    moveDirection = moveDirection - camera.CFrame.RightVector
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                    moveDirection = moveDirection + camera.CFrame.RightVector
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                    moveDirection = moveDirection + Vector3.new(0, 1, 0)
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-                    moveDirection = moveDirection - Vector3.new(0, 1, 0)
-                end
-                if moveDirection.Magnitude > 0 then
-                    moveDirection = moveDirection.Unit * freecamSpeed
-                    freecamPos = freecamPos + moveDirection
-                end
-                camera.CFrame = CFrame.lookAt(freecamPos, freecamPos + camera.CFrame.LookVector)
-            end)
-            table.insert(espConnections, freecamConnection)
-            notify("Freecam", "Enabled")
-        end
-    elseif cmd == "unfreecam" or cmd == "resetcam" or cmd == "unfreecamera" then
-        if freecamActive then
-            freecamActive = false
-            camera.CameraType = Enum.CameraType.Custom
-            if originalCFrame then
-                camera.CFrame = originalCFrame
-            end
-            notify("Freecam", "Disabled")
-        end
-    elseif cmd == "hipheight" then
-        if value and player.Character and player.Character:FindFirstChild("Humanoid") then
-            local height = tonumber(value)
-            if height then
-                player.Character.Humanoid.HipHeight = height
-                notify("HipHeight", "Set to "..height)
-            end
-        end
-    elseif cmd == "gravity" then
-        if value then
-            local grav = tonumber(value)
-            if grav then
-                Workspace.Gravity = grav
-                notify("Gravity", "Set to "..grav)
-            end
-        end
-    elseif cmd == "spin" then
-        if value then
-            spinSpeed = tonumber(value) or 10
-        else
-            spinSpeed = 10
-        end
-        spinActive = true
-        if spinConnection then
-            spinConnection:Disconnect()
-        end
-        spinConnection = RunService.Stepped:Connect(function()
-            if spinActive and player.Character and getRoot(player.Character) then
-                local root = getRoot(player.Character)
-                root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(spinSpeed), 0)
-            end
-        end)
-        notify("Spin", "Enabled at "..spinSpeed)
-    elseif cmd == "unspin" then
-        spinActive = false
-        if spinConnection then
-            spinConnection:Disconnect()
-            spinConnection = nil
-        end
-        notify("Spin", "Disabled")
-    elseif cmd == "walkfling" then
+        notify("BunnyHop", "Enabled")
+    elseif cmd == "unbunnyhop" or cmd == "unbhop" then
+        if bunnyHopConnection then bunnyHopConnection:Disconnect() bunnyHopConnection = nil end
+        notify("BunnyHop", "Disabled")
+    elseif cmd == "walkfling" or cmd == "touchfling" then
         if not walkFlingEnabled then
             walkFlingEnabled = true
-            local char = player.Character
-            if char then
+            task.spawn(function()
+                local char = player.Character
                 local root = getRoot(char)
-                if root then
-                    local bodyVelocity = Instance.new("BodyVelocity")
-                    bodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
-                    bodyVelocity.Parent = root
-                    walkFlingConnection = RunService.Heartbeat:Connect(function()
-                        if not walkFlingEnabled or not char or not root then
-                            return
-                        end
-                        local moveDirection = Vector3.new(0, 0, 0)
-                        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                            moveDirection = moveDirection + camera.CFrame.LookVector
-                        end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                            moveDirection = moveDirection - camera.CFrame.LookVector
-                        end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                            moveDirection = moveDirection - camera.CFrame.RightVector
-                        end
-                        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                            moveDirection = moveDirection + camera.CFrame.RightVector
-                        end
-                        if moveDirection.Magnitude > 0 then
-                            moveDirection = moveDirection.Unit * 100
-                            bodyVelocity.Velocity = moveDirection
-                        else
-                            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-                        end
-                    end)
-                end
-            end
-            notify("WalkFling", "Enabled")
-        end
-    elseif cmd == "unwalkfling" then
-        if walkFlingEnabled then
-            walkFlingEnabled = false
-            if walkFlingConnection then
-                walkFlingConnection:Disconnect()
-                walkFlingConnection = nil
-            end
-            local char = player.Character
-            if char then
-                local root = getRoot(char)
-                if root then
-                    for _, v in pairs(root:GetChildren()) do
-                        if v:IsA("BodyVelocity") then
-                            v:Destroy()
-                        end
-                    end
-                end
-            end
-            notify("WalkFling", "Disabled")
-        end
-    elseif cmd == "walkonwalls" then
-        walkOnWalls = true
-        notify("WalkOnWalls", "Enabled")
-    elseif cmd == "unwalkonwalls" then
-        walkOnWalls = false
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Running)
-        end
-        notify("WalkOnWalls", "Disabled")
-    elseif cmd == "handlekill" or cmd == "hk" then
-        if not handleKillEnabled then
-            handleKillEnabled = true
-            if player.Character then
-                for _, part in pairs(player.Character:GetDescendants()) do
-                    if part.Name == "Handle" and part:IsA("BasePart") then
-                        part.Touched:Connect(function(hit)
-                            if handleKillEnabled and hit.Parent and hit.Parent:FindFirstChild("Humanoid") and hit.Parent ~= player.Character then
-                                hit.Parent.Humanoid.Health = 0
-                            end
-                        end)
-                    end
-                end
-            end
-            notify("HandleKill", "Enabled")
-        end
-    elseif cmd == "unhandlekill" or cmd == "unhk" then
-        handleKillEnabled = false
-        notify("HandleKill", "Disabled")
-    elseif cmd == "jerk" then
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            for i = 1, 50 do
-                player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                task.wait(0.05)
-            end
-            notify("Jerk", "Activated")
-        end
-    elseif cmd == "teleporttool" or cmd == "tptool" then
-        local tool = Instance.new("Tool")
-        tool.Name = "Teleport Tool"
-        tool.CanBeDropped = false
-        local handle = Instance.new("Part")
-        handle.Size = Vector3.new(1, 1, 1)
-        handle.Name = "Handle"
-        handle.Parent = tool
-        tool.Activated:Connect(function()
-            if player.Character and getRoot(player.Character) then
-                local root = getRoot(player.Character)
-                root.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 5, 0))
-            end
-        end)
-        tool.Parent = player.Backpack
-        notify("TPTool", "Added to backpack")
-    elseif cmd == "animation" or cmd == "emote" then
-        if value and player.Character and player.Character:FindFirstChild("Humanoid") then
-            local animSpeed = tonumber(value2) or 1
-            local animation = Instance.new("Animation")
-            animation.AnimationId = "rbxassetid://"..value
-            local animationTrack = player.Character.Humanoid:LoadAnimation(animation)
-            animationTrack:AdjustSpeed(animSpeed)
-            animationTrack:Play()
-            notify("Animation", "Playing ID: "..value)
-        end
-    elseif cmd == "stopanim" or cmd == "stopemote" then
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid:StopAllAnimations()
-            notify("Animation", "Stopped")
-        end
-    elseif cmd == "walkonwater" then
-        walkOnWater = true
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
-            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-        end
-        notify("WalkOnWater", "Enabled")
-    elseif cmd == "unwalkonwater" then
-        walkOnWater = false
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, true)
-            player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
-        end
-        notify("WalkOnWater", "Disabled")
-    elseif cmd == "swim" then
-        swimActive = true
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
-            swimConnection = RunService.Heartbeat:Connect(function()
-                if swimActive and player.Character and getRoot(player.Character) then
-                    local root = getRoot(player.Character)
-                    local moveDirection = Vector3.new(0, 0, 0)
-                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                        moveDirection = moveDirection + Vector3.new(0, 1, 0)
-                    end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-                        moveDirection = moveDirection - Vector3.new(0, 1, 0)
-                    end
-                    if moveDirection.Magnitude > 0 then
-                        root.CFrame = root.CFrame + moveDirection.Unit * 2
+                local vel, movel = nil, 0.1
+                while walkFlingEnabled do
+                    RunService.Heartbeat:Wait()
+                    char = player.Character
+                    root = getRoot(char)
+                    if root then
+                        vel = root.Velocity
+                        root.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+                        RunService.RenderStepped:Wait()
+                        if root then root.Velocity = vel end
+                        RunService.Stepped:Wait()
+                        if root then root.Velocity = vel + Vector3.new(0, movel, 0) end
+                        movel = -movel
                     end
                 end
             end)
+            notify("WalkFling", "Enabled")
         end
-        notify("Swim", "Enabled")
-    elseif cmd == "unswim" then
-        swimActive = false
-        if swimConnection then
-            swimConnection:Disconnect()
-            swimConnection = nil
+    elseif cmd == "unwalkfling" or cmd == "untouchfling" then
+        walkFlingEnabled = false
+        notify("WalkFling", "Disabled")
+    elseif cmd == "antifling1" then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/AntiFling%20Script"))()
+        notify("AntiFling1", "Enabled")
+    elseif cmd == "swim" then
+        local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
+        if humanoid then
+            originalGravity = Workspace.Gravity
+            Workspace.Gravity = 0
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, true)
+            humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+            notify("Swim", "Enabled")
         end
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Running)
+    elseif cmd == "firstperson" or cmd == "firstp" or cmd == "1stperson" then
+        player.CameraMode = Enum.CameraMode.LockFirstPerson
+        notify("FirstPerson", "Enabled")
+    elseif cmd == "thirdperson" or cmd == "3rdperson" or cmd == "3rdp" or cmd == "unfirstperon" or cmd == "un1stperson" or cmd == "un1stp" then
+        player.CameraMode = Enum.CameraMode.Classic
+        notify("ThirdPerson", "Enabled")
+    elseif cmd == "view" or cmd == "spectate" then
+        if value then
+            local target = getPlayer(value)
+            if target and target.Character and target.Character:FindFirstChildWhichIsA("Humanoid") then
+                originalCameraSubject = camera.CameraSubject
+                camera.CameraSubject = target.Character:FindFirstChildWhichIsA("Humanoid")
+                notify("View", "Viewing " .. target.DisplayName)
+            end
         end
-        notify("Swim", "Disabled")
+    elseif cmd == "unview" or cmd == "unspectate" then
+        if originalCameraSubject then
+            camera.CameraSubject = originalCameraSubject
+            originalCameraSubject = nil
+        else
+            camera.CameraSubject = player.Character:FindFirstChildWhichIsA("Humanoid")
+        end
+        notify("View", "Disabled")
+    elseif cmd == "fov" then
+        if value then
+            local fov = tonumber(value)
+            if fov then
+                originalFOV = camera.FieldOfView
+                camera.FieldOfView = fov
+                notify("FOV", "Set to " .. fov)
+            end
+        end
+    elseif cmd == "resetfov" then
+        camera.FieldOfView = 70
+        notify("FOV", "Reset to 70")
+    elseif cmd == "resetcam" or cmd == "resetcamera" then
+        camera.CameraType = Enum.CameraType.Custom
+        camera.CameraSubject = player.Character:FindFirstChildWhichIsA("Humanoid")
+        camera.FieldOfView = 70
+        player.CameraMode = Enum.CameraMode.Classic
+        notify("Camera", "Reset")
+    elseif cmd == "audio" or cmd == "playaudio" or cmd == "sound" or cmd == "playsound" then
+        if value then
+            local cleanId = value:gsub("rbxassetid://", "")
+            local volume = tonumber(value2) or 1
+            if Workspace:FindFirstChild("AxomicAudio") then Workspace.AxomicAudio:Destroy() end
+            local sound = Instance.new("Sound")
+            sound.Name = "AxomicAudio"
+            sound.SoundId = "rbxassetid://" .. cleanId
+            sound.Volume = volume
+            sound.Looped = true
+            sound.Parent = Workspace
+            sound:Play()
+            notify("Audio", "Playing ID: " .. cleanId)
+        end
+    elseif cmd == "btools" or cmd == "buildingtools" then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/refs/heads/main/f3x.lua"))()
+        notify("BuildingTools", "Loaded")
+    elseif cmd == "gear" then
+        if value then
+            local cleanId = value:gsub("rbxassetid://", "")
+            local success, result = pcall(function()
+                return game:GetObjects("rbxassetid://" .. cleanId)[1]
+            end)
+            if success and result then
+                result.Parent = player.Backpack
+                notify("Gear", "Added to backpack")
+            end
+        end
+    elseif cmd == "clonetool" or cmd == "ctool" then
+        local tool = player.Character:FindFirstChildOfClass("Tool") or player.Backpack:FindFirstChildOfClass("Tool")
+        if tool then
+            local clone = tool:Clone()
+            clone.Parent = player.Backpack
+            notify("CloneTool", "Cloned " .. tool.Name)
+        else
+            notify("Error", "No tool found")
+        end
+    elseif cmd == "copyavatar" or cmd == "copyoutfit" or cmd == "be" or cmd == "morph" or cmd == "char" then
+        if value then
+            local target = getPlayer(value)
+            if target then
+                local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
+                if humanoid then
+                    local description = Players:GetHumanoidDescriptionFromUserId(target.UserId)
+                    humanoid:ApplyDescription(description)
+                    notify("CopyAvatar", "Copied " .. target.DisplayName .. "'s outfit")
+                end
+            end
+        end
+    elseif cmd == "boostfps" or cmd == "antilag" then
+        if not boostFpsOn then
+            boostFpsOn = true
+            settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+            Lighting.Brightness = 1
+            Lighting.FogEnd = 1000000
+            Lighting.GlobalShadows = false
+            for _, obj in pairs(Workspace:GetDescendants()) do
+                if obj:IsA("BasePart") then obj.CastShadow = false end
+                if obj:IsA("ParticleEmitter") or obj:IsA("Trail") then obj.Enabled = false end
+            end
+            notify("BoostFPS", "Enabled")
+        end
+    elseif cmd == "unboostfps" or cmd == "unantilag" then
+        boostFpsOn = false
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic
+        Lighting.GlobalShadows = true
+        notify("BoostFPS", "Disabled")
     elseif cmd == "aimbot" then
         aimbotEnabled = true
         aimbotConnection = RunService.Heartbeat:Connect(function()
-            if not aimbotEnabled then
-                return
-            end
-            local closestPlayer = nil
-            local closestDistance = aimbotFOV
-            for _, plr in pairs(Players:GetPlayers()) do
-                if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character.Humanoid.Health > 0 then
-                    local screenPos, onScreen = camera:WorldToScreenPoint(plr.Character.HumanoidRootPart.Position)
+            if not aimbotEnabled then return end
+            local closest = nil
+            local closestDist = aimbotFOV
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= player and p.Character and p.Character:FindFirstChild("Head") then
+                    local headPos = p.Character.Head.Position
+                    local screenPos, onScreen = camera:WorldToScreenPoint(headPos)
                     if onScreen then
-                        local distance = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
-                        if distance < closestDistance then
-                            closestDistance = distance
-                            closestPlayer = plr
+                        local dist = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+                        if dist < closestDist then
+                            closestDist = dist
+                            closest = p
                         end
                     end
                 end
             end
-            if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                if not wallCheck or #camera:GetPartsObscuringTarget({closestPlayer.Character.HumanoidRootPart.Position}, {player.Character}) == 0 then
-                    if silentAim then
-                        local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
-                        if tool then
-                            for _, remote in pairs(tool:GetDescendants()) do
-                                if remote:IsA("RemoteEvent") then
-                                    remote:FireServer(unpack({["RayObject"] = Ray.new(camera.CFrame.Position, (closestPlayer.Character.HumanoidRootPart.Position - camera.CFrame.Position).Unit * 1000)}))
-                                end
-                            end
-                        end
-                    else
-                        camera.CFrame = CFrame.lookAt(camera.CFrame.Position, closestPlayer.Character.HumanoidRootPart.Position)
-                    end
-                    if triggerBot then
-                        mouse1press()
-                        task.wait(0.1)
-                        mouse1release()
-                    end
-                end
+            if closest and closest.Character and closest.Character:FindFirstChild("Head") then
+                camera.CFrame = CFrame.lookAt(camera.CFrame.Position, closest.Character.Head.Position)
             end
         end)
         notify("Aimbot", "Enabled")
     elseif cmd == "unaimbot" then
         aimbotEnabled = false
-        if aimbotConnection then
-            aimbotConnection:Disconnect()
-            aimbotConnection = nil
-        end
+        if aimbotConnection then aimbotConnection:Disconnect() aimbotConnection = nil end
         notify("Aimbot", "Disabled")
-    elseif cmd == "silentaim" then
-        silentAim = true
-        notify("SilentAim", "Enabled")
-    elseif cmd == "unsilentaim" then
-        silentAim = false
-        notify("SilentAim", "Disabled")
-    elseif cmd == "triggerbot" then
-        triggerBot = true
-        notify("TriggerBot", "Enabled")
-    elseif cmd == "untriggerbot" then
-        triggerBot = false
-        notify("TriggerBot", "Disabled")
-    elseif cmd == "wallcheck" then
-        wallCheck = true
-        notify("WallCheck", "Enabled")
-    elseif cmd == "unwallcheck" then
-        wallCheck = false
-        notify("WallCheck", "Disabled")
-    elseif cmd == "fov" then
-        if value then
-            local fov = tonumber(value)
-            if fov then
-                aimbotFOV = fov
-                notify("FOV", "Set to "..fov)
-            end
-        end
-    elseif cmd == "serverhop" or cmd == "svhop" then
-        local servers = {}
-        local req = game:HttpGet("https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Asc&limit=100")
-        local data = HttpService:JSONDecode(req)
-        for _, server in ipairs(data.data) do
-            if server.playing < server.maxPlayers and server.id ~= JobId then
-                table.insert(servers, server.id)
-            end
-        end
-        if #servers > 0 then
-            TeleportService:TeleportToPlaceInstance(PlaceId, servers[math.random(1, #servers)])
-        else
-            notify("ServerHop", "No servers found")
-        end
-    elseif cmd == "rejoin" or cmd == "rj" then
-        TeleportService:TeleportToPlaceInstance(PlaceId, JobId, player)
-        notify("Rejoin", "Rejoining...")
-    elseif cmd == "copyjobid" or cmd == "jobid" or cmd == "cjobid" then
-        setclipboard(JobId)
-        notify("JobID", "Copied: "..JobId)
-    elseif cmd == "antifling1" then
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/AntiFling%20Script"))()
-        notify("AntiFling1", "Enabled")
-    elseif cmd == "unantifling1" then
-        notify("AntiFling1", "Disabled (Rejoin to fully disable)")
-    elseif cmd == "antifling2" then
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/AntiFling%20Script2"))()
-        notify("AntiFling2", "Enabled")
-    elseif cmd == "unantifling2" then
-        notify("AntiFling2", "Disabled (Rejoin to fully disable)")
-    elseif cmd == "servertime" or cmd == "svtime" then
-        local time = math.floor(workspace.DistributedGameTime)
-        local hours = math.floor(time / 3600)
-        local minutes = math.floor((time % 3600) / 60)
-        local seconds = time % 60
-        notify("Server Time", string.format("%02d:%02d:%02d", hours, minutes, seconds))
-    elseif cmd == "gameinfo" or cmd == "ginfo" then
-        local info = "Place ID: "..PlaceId.."\nJob ID: "..JobId.."\nPlayers: "..#Players:GetPlayers()
-        notify("Game Info", info)
-    elseif cmd == "lowgraphics" or cmd == "antilag" then
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and not obj.Anchored then
-                obj.Anchored = true
-            end
-            if obj:IsA("Decal") or obj:IsA("Texture") then
-                obj.Transparency = 1
-            end
-        end
-        workspace.CurrentCamera.FieldOfView = 70
-        notify("LowGraphics", "Enabled")
-    elseif cmd == "httpspy" then
-        local oldrequest = request or http_request or syn.request
-        if oldrequest then
-            request = function(...)
-                local args = {...}
-                print("HTTP Request - URL: "..args[1].Url)
-                if args[1].Body then print("Body: "..args[1].Body) end
-                return oldrequest(...)
-            end
-            notify("HTTPSpy", "Enabled")
-        end
-    elseif cmd == "unhttpspy" then
-        notify("HTTPSpy", "Disabled (Re-execute to enable)")
-    elseif cmd == "rspy" then
-        rspyActive = true
-        local oldNamecall
-        oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-            local method = getnamecallmethod()
-            local args = {...}
-            if rspyActive and (method == "FireServer" or method == "InvokeServer") then
-                print("Remote Fired: "..tostring(self))
-                print("Method: "..method)
-                print("Arguments: ", ...)
-                print("Parent: "..tostring(self.Parent))
-            end
-            return oldNamecall(self, ...)
-        end)
-        notify("RSpy", "Enabled (Check console)")
-    elseif cmd == "unrspy" then
-        rspyActive = false
-        notify("RSpy", "Disabled")
-    elseif cmd == "webhookspy" then
-        webhookSpyActive = true
-        local oldrequest = request or http_request or syn.request
-        if oldrequest then
-            request = function(...)
-                local args = {...}
-                if webhookSpyActive and args[1].Url and args[1].Url:find("discord.com/api/webhooks") then
-                    print("WEBHOOK DETECTED: "..args[1].Url)
-                    if args[1].Body then
-                        print("Webhook Data: "..args[1].Body)
-                    end
-                    setclipboard("Webhook URL: "..args[1].Url)
-                    notify("Webhook", "Detected! Check console")
+    elseif cmd == "walkonwalls" then
+        if not walkOnWallsConnection then
+            walkOnWallsConnection = RunService.Heartbeat:Connect(function()
+                local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
+                if humanoid and humanoid.MoveDirection.Magnitude > 0 then
+                    humanoid:ChangeState(Enum.HumanoidStateType.Climbing)
                 end
-                return oldrequest(...)
-            end
-            notify("WebhookSpy", "Enabled")
+            end)
+            notify("WalkOnWalls", "Enabled")
         end
-    elseif cmd == "unwebhookspy" then
-        webhookSpyActive = false
-        notify("WebhookSpy", "Disabled")
-    elseif cmd == "discordsv" or cmd == "discord" then
-        setclipboard("https://discord.gg/FgR3MXqZy9")
-        notify("Discord", "Link copied")
-    elseif cmd == "tiktok" or cmd == "tk" then
-        setclipboard("https://tiktok.com/@axos002")
-        notify("TikTok", "Link copied")
-    elseif cmd == "youtube" or cmd == "yt" then
-        setclipboard("https://youtube.com/@axos0022")
-        notify("YouTube", "Link copied")
+    elseif cmd == "unwalkonwalls" or cmd == "unwow" then
+        if walkOnWallsConnection then walkOnWallsConnection:Disconnect() walkOnWallsConnection = nil end
+        notify("WalkOnWalls", "Disabled")
     end
 end
 
@@ -1041,9 +791,7 @@ local function executeFromBox()
 end
 
 CommandBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then
-        executeFromBox()
-    end
+    if enterPressed then executeFromBox() end
 end)
 
 ExecuteButton.MouseButton1Click:Connect(executeFromBox)
@@ -1054,8 +802,4 @@ UserInputService.InputBegan:Connect(function(input)
     end
 end)
 
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Axomic CMD",
-    Text = "Press F5 to toggle UI | Type commands in box",
-    Duration = 5
-})
+notify("Axomic CMD", "Press F5 to toggle UI | Type commands")
