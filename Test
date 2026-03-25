@@ -1,476 +1,432 @@
-local Player=game:GetService("Players").LocalPlayer
-local Character=Player.Character
-local Mouse=Player:GetMouse()
-local RunService=game:GetService("RunService")
-local TweenService=game:GetService("TweenService")
-local Debris=game:GetService("Debris")
-local Camera=workspace.CurrentCamera
-local RootPart=Character.HumanoidRootPart
-local Torso=Character.Torso
-local Head=Character.Head
-local RightArm=Character["Right Arm"]
-local LeftArm=Character["Left Arm"]
-local RightLeg=Character["Right Leg"]
-local LeftLeg=Character["Left Leg"]
-local Humanoid=Character.Humanoid
-local RootJoint=RootPart.RootJoint
-local Neck=Torso.Neck
-local RightShoulder=Torso["Right Shoulder"]
-local LeftShoulder=Torso["Left Shoulder"]
-local RightHip=Torso["Right Hip"]
-local LeftHip=Torso["Left Hip"]
-local Effects=Instance.new("Folder",Character)
-Effects.Name="Effects"
-local STUFF=Instance.new("Folder",Character)
-local Animation_Speed=3
-local Frame_Speed=1/60
-local Sine=0
-local Attack=false
-local KeyHold=false
-local Rooted=false
-local Speed=100
-local ROOTC0=CFrame.new(0,0,0)*CFrame.Angles(math.rad(-90),0,math.rad(180))
-local ArtificialHB=Instance.new("BindableEvent",script)
-ArtificialHB.Name="ArtificialHB"
-local frame=Frame_Speed
-local tf=0
-script.ArtificialHB:Fire()
-RunService.Heartbeat:connect(function(s,p)tf=tf+s if tf>=frame then for i=1,math.floor(tf/frame)do script.ArtificialHB:Fire()end lastframe=tick()tf=tf-frame*math.floor(tf/frame)end end)
-local function Swait(n)if n==0 or n==nil then ArtificialHB.Event:wait()else for i=1,n do ArtificialHB.Event:wait()end end end
-local function GetTools()
-return Character:WaitForChild("Building Tools"):WaitForChild("SyncAPI"):WaitForChild("ServerEndpoint")
+local Players, UserInputService, TweenService = game:GetService("Players"), game:GetService("UserInputService"), game:GetService("TweenService")
+local LocalPlayer, Mouse = Players.LocalPlayer, LocalPlayer:GetMouse()
+local Themes = {
+    Ocean = {Bg = Color3.fromRGB(15, 30, 50), Top = Color3.fromRGB(20, 40, 70), Text = Color3.fromRGB(255, 255, 255), Accent = Color3.fromRGB(0, 150, 255), Stroke = Color3.fromRGB(0, 100, 200)},
+    Midnight = {Bg = Color3.fromRGB(20, 20, 35), Top = Color3.fromRGB(30, 30, 50), Text = Color3.fromRGB(220, 220, 255), Accent = Color3.fromRGB(150, 50, 255), Stroke = Color3.fromRGB(100, 0, 200)},
+    Cyber = {Bg = Color3.fromRGB(10, 10, 10), Top = Color3.fromRGB(20, 20, 20), Text = Color3.fromRGB(0, 255, 100), Accent = Color3.fromRGB(255, 0, 150), Stroke = Color3.fromRGB(0, 255, 200)},
+    Kawaii = {Bg = Color3.fromRGB(255, 230, 240), Top = Color3.fromRGB(255, 200, 220), Text = Color3.fromRGB(100, 50, 80), Accent = Color3.fromRGB(255, 100, 150), Stroke = Color3.fromRGB(255, 150, 180)}
+}
+local CurrentTheme = "Ocean"
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.new(0.5, 0, 0.6, 0)
+Main.Position = UDim2.new(0.5, -250, 0.5, -180)
+Main.BackgroundColor3 = Themes[CurrentTheme].Bg
+Main.BorderSizePixel = 0
+Main.Parent = ScreenGui
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = Main
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Themes[CurrentTheme].Stroke
+MainStroke.Thickness = 2
+MainStroke.Parent = Main
+local Top = Instance.new("Frame")
+Top.Size = UDim2.new(1, 0, 0.08, 0)
+Top.BackgroundColor3 = Themes[CurrentTheme].Top
+Top.BorderSizePixel = 0
+Top.Parent = Main
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 10)
+TopCorner.Parent = Top
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0.5, 0, 1, 0)
+Title.Position = UDim2.new(0.05, 0, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "ULTIMATE HUB"
+Title.TextColor3 = Themes[CurrentTheme].Text
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 20
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Top
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.new(0.1, 0, 0.6, 0)
+Close.Position = UDim2.new(0.88, 0, 0.2, 0)
+Close.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+Close.Text = "X"Close.TextColor3 = Color3.fromRGB(255, 255, 255)
+Close.Font = Enum.Font.GothamBold
+Close.Parent = Top
+local Min = Instance.new("TextButton")
+Min.Size = UDim2.new(0.1, 0, 0.6, 0)
+Min.Position = UDim2.new(0.76, 0, 0.2, 0)
+Min.BackgroundColor3 = Color3.fromRGB(200, 200, 50)
+Min.Text = "-"
+Min.TextColor3 = Color3.fromRGB(255, 255, 255)
+Min.Font = Enum.Font.GothamBold
+Min.Parent = Top
+local TabBar = Instance.new("Frame")
+TabBar.Size = UDim2.new(1, 0, 0.1, 0)
+TabBar.Position = UDim2.new(0, 0, 0.08, 0)
+TabBar.BackgroundColor3 = Themes[CurrentTheme].Bg
+TabBar.BorderSizePixel = 0
+TabBar.Parent = Main
+local TabLayout = Instance.new("UIListLayout")
+TabLayout.FillDirection = Enum.FillDirection.Horizontal
+TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+TabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+TabLayout.Padding = UDim.new(0, 5)
+TabLayout.Parent = TabBar
+local Content = Instance.new("ScrollingFrame")
+Content.Size = UDim2.new(1, -10, 0.82, 0)
+Content.Position = UDim2.new(0, 5, 0.18, 0)
+Content.BackgroundColor3 = Themes[CurrentTheme].Bg
+Content.BorderSizePixel = 0
+Content.ScrollBarThickness = 5
+Content.ScrollBarImageColor3 = Themes[CurrentTheme].Accent
+Content.Parent = Main
+local ContentLayout = Instance.new("UIListLayout")
+ContentLayout.Padding = UDim.new(0, 10)
+ContentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+ContentLayout.Parent = Content
+local function ApplyTheme()
+    local T = Themes[CurrentTheme]
+    Main.BackgroundColor3 = T.Bg
+    Top.BackgroundColor3 = T.Top
+    Title.TextColor3 = T.Text
+    MainStroke.Color = T.Stroke
+    Content.BackgroundColor3 = T.Bg
+    Content.ScrollBarImageColor3 = T.Accent
+    for _, obj in ipairs(Main:GetDescendants()) do
+        if obj:IsA("TextLabel") or obj:IsA("TextBox") then obj.TextColor3 = T.Text end
+        if obj:IsA("Frame") and obj ~= Main and obj ~= Top and obj ~= TabBar then
+            if obj.BackgroundTransparency == 0 then obj.BackgroundColor3 = T.Bg end
+        end
+        if obj:IsA("UIStroke") then obj.Color = T.Stroke end
+    endend
+local function CreateTab(name)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0, 80, 0.8, 0)
+    Btn.BackgroundColor3 = Themes[CurrentTheme].Top
+    Btn.Text = name
+    Btn.TextColor3 = Themes[CurrentTheme].Text
+    Btn.Font = Enum.Font.Gotham
+    Btn.Parent = TabBar
+    local Page = Instance.new("Frame")
+    Page.Name = name
+    Page.Size = UDim2.new(0.95, 0, 0, 0)
+    Page.BackgroundColor3 = Themes[CurrentTheme].Bg
+    Page.BorderSizePixel = 0
+    Page.Visible = false
+    Page.Parent = Content
+    local Layout = Instance.new("UIListLayout")
+    Layout.Padding = UDim.new(0, 10)
+    Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    Layout.Parent = Page
+    local Padding = Instance.new("UIPadding")
+    Padding.PaddingTop = UDim.new(0, 10)
+    Padding.PaddingBottom = UDim.new(0, 10)
+    Padding.Parent = Page
+    Btn.MouseButton1Click:Connect(function()
+        for _, c in ipairs(Content:GetChildren()) do if c:IsA("Frame") then c.Visible = false end end
+        for _, c in ipairs(TabBar:GetChildren()) do if c:IsA("TextButton") then c.BackgroundColor3 = Themes[CurrentTheme].Top end end
+        Page.Visible = true
+        Btn.BackgroundColor3 = Themes[CurrentTheme].Accent
+        Btn.TextColor3 = Color3.fromRGB(255,255,255)
+    end)
+    if #TabBar:GetChildren() == 1 then Btn.MouseButton1Click:Fire() end
+    return Page
 end
-local function QuaternionFromCFrame(cf)
-local mx,my,mz,m00,m01,m02,m10,m11,m12,m20,m21,m22=cf:components()
-local trace=m00+m11+m22
-if trace>0 then
-local s=math.sqrt(1+trace)
-local recip=0.5/s
-return (m21-m12)*recip,(m02-m20)*recip,(m10-m01)*recip,s*0.5
-else
-local i=0
-if m00<m11 then i=1 end
-if m22>(i==0 and m00 or m11)then i=2 end
-if i==0 then
-local s=math.sqrt(m00-m11-m22+1)
-local recip=0.5/s
-return 0.5*s,(m10+m01)*recip,(m20+m02)*recip,(m21-m12)*recip
-elseif i==1 then
-local s=math.sqrt(m11-m22-m00+1)
-local recip=0.5/s
-return (m01+m10)*recip,0.5*s,(m21+m12)*recip,(m02-m20)*recip
-elseif i==2 then
-local s=math.sqrt(m22-m00-m11+1)
-local recip=0.5/s
-return (m02+m20)*recip,(m12+m21)*recip,0.5*s,(m10-m01)*recip
+local function CreateSection(parent, title)
+    local Sec = Instance.new("Frame")
+    Sec.Size = UDim2.new(0.95, 0, 0, 0)
+    Sec.BackgroundColor3 = Themes[CurrentTheme].Top
+    Sec.BorderSizePixel = 0
+    Sec.Parent = parent
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.Parent = Sec
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = Themes[CurrentTheme].Stroke
+    Stroke.Thickness = 1
+    Stroke.Parent = Sec
+    local Tit = Instance.new("TextLabel")
+    Tit.Size = UDim2.new(1, 0, 0.15, 0)
+    Tit.BackgroundTransparency = 1    Tit.Text = title
+    Tit.TextColor3 = Themes[CurrentTheme].Accent
+    Tit.Font = Enum.Font.GothamBold
+    Tit.TextSize = 16
+    Tit.Parent = Sec
+    local Holder = Instance.new("Frame")
+    Holder.Name = "Holder"
+    Holder.Size = UDim2.new(1, -10, 1, -30)
+    Holder.Position = UDim2.new(0, 5, 0.15, 0)
+    Holder.BackgroundTransparency = 1
+    Holder.Parent = Sec
+    local HLayout = Instance.new("UIListLayout")
+    HLayout.Padding = UDim.new(0, 5)
+    HLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    HLayout.Parent = Holder
+    local function Update()
+        local H = 30
+        for _, o in ipairs(Holder:GetChildren()) do if o:IsA("Frame") or o:IsA("TextButton") then H = H + o.AbsoluteSize.Y + 5 end end
+        Sec.Size = UDim2.new(0.95, 0, 0, H)
+    end
+    task.spawn(Update)
+    Holder.ChildAdded:Connect(Update)
+    Holder.ChildRemoved:Connect(Update)
+    return Holder
 end
+local function CreateButton(parent, text, cb)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0.9, 0, 0, 40)
+    Btn.BackgroundColor3 = Themes[CurrentTheme].Accent
+    Btn.Text = text
+    Btn.TextColor3 = Color3.fromRGB(255,255,255)
+    Btn.Font = Enum.Font.GothamBold
+    Btn.Parent = parent
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = Btn
+    Btn.MouseButton1Click:Connect(cb)
+    return Btn
 end
+local function CreateToggle(parent, text, def, cb)
+    local F = Instance.new("Frame")
+    F.Size = UDim2.new(0.9, 0, 0, 30)
+    F.BackgroundTransparency = 1
+    F.Parent = parent
+    local L = Instance.new("TextLabel")
+    L.Size = UDim2.new(0.7, 0, 1, 0)
+    L.BackgroundTransparency = 1
+    L.Text = text
+    L.TextColor3 = Themes[CurrentTheme].Text
+    L.Font = Enum.Font.Gotham    L.TextXAlignment = Enum.TextXAlignment.Left
+    L.Parent = F
+    local Sw = Instance.new("TextButton")
+    Sw.Size = UDim2.new(0.25, 0, 0.8, 0)
+    Sw.Position = UDim2.new(0.75, 0, 0.1, 0)
+    Sw.BackgroundColor3 = def and Themes[CurrentTheme].Accent or Color3.fromRGB(100,100,100)
+    Sw.Text = ""
+    Sw.Parent = F
+    local SC = Instance.new("UICorner")
+    SC.CornerRadius = UDim.new(1, 0)
+    SC.Parent = Sw
+    local Cir = Instance.new("Frame")
+    Cir.Size = UDim2.new(0.8, 0, 0.8, 0)
+    Cir.Position = UDim2.new(def and 0.2, 0, 0.1, 0)
+    Cir.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    Cir.Parent = Sw
+    local CC = Instance.new("UICorner")
+    CC.CornerRadius = UDim.new(1, 0)
+    CC.Parent = Cir
+    local St = def
+    Sw.MouseButton1Click:Connect(function()
+        St = not St
+        Sw.BackgroundColor3 = St and Themes[CurrentTheme].Accent or Color3.fromRGB(100,100,100)
+        Cir.Position = UDim2.new(St and 0.2, 0, 0.1, 0)
+        cb(St)
+    end)
+    return F
 end
-local function QuaternionToCFrame(px,py,pz,x,y,z,w)
-local xs,ys,zs=x+x,y+y,z+z
-local wx,wy,wz=w*xs,w*ys,w*zs
-local xx=x*xs
-local xy=x*ys
-local xz=x*zs
-local yy=y*ys
-local yz=y*zs
-local zz=z*zs
-return CFrame.new(px,py,pz,1-(yy+zz),xy-wz,xz+wy,xy+wz,1-(xx+zz),yz-wx,xz-wy,yz+wx,1-(xx+yy))
+local function CreateSlider(parent, text, min, max, def, cb)
+    local F = Instance.new("Frame")
+    F.Size = UDim2.new(0.9, 0, 0, 50)
+    F.BackgroundTransparency = 1
+    F.Parent = parent
+    local L = Instance.new("TextLabel")
+    L.Size = UDim2.new(1, 0, 0.4, 0)
+    L.BackgroundTransparency = 1
+    L.Text = text .. ": " .. def
+    L.TextColor3 = Themes[CurrentTheme].Text
+    L.Font = Enum.Font.Gotham
+    L.TextXAlignment = Enum.TextXAlignment.Left
+    L.Parent = F
+    local Tr = Instance.new("Frame")
+    Tr.Size = UDim2.new(1, 0, 0.3, 0)
+    Tr.Position = UDim2.new(0, 0, 0.6, 0)
+    Tr.BackgroundColor3 = Themes[CurrentTheme].Top
+    Tr.Parent = F
+    local TC = Instance.new("UICorner")
+    TC.CornerRadius = UDim.new(1, 0)
+    TC.Parent = Tr
+    local Fil = Instance.new("Frame")    Fil.Size = UDim2.new((def - min) / (max - min), 0, 1, 0)
+    Fil.BackgroundColor3 = Themes[CurrentTheme].Accent
+    Fil.Parent = Tr
+    local FC = Instance.new("UICorner")
+    FC.CornerRadius = UDim.new(1, 0)
+    FC.Parent = Fil
+    local Kn = Instance.new("Frame")
+    Kn.Size = UDim2.new(0, 15, 0, 15)
+    Kn.Position = UDim2.new((def - min) / (max - min), -7.5, 0.5, -7.5)
+    Kn.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    Kn.Parent = Tr
+    local KC = Instance.new("UICorner")
+    KC.CornerRadius = UDim.new(1, 0)
+    KC.Parent = Kn
+    local Drag = false
+    local function Up(inp)
+        local Pos = UDim2.new(math.clamp((inp.Position.X - Tr.AbsolutePosition.X) / Tr.AbsoluteSize.X, 0, 1), 0, 0.5, -7.5)
+        Kn.Position = Pos
+        Fil.Size = UDim2.new(Pos.X.Scale, 0, 1, 0)
+        local Val = math.floor(min + (max - min) * Pos.X.Scale)
+        L.Text = text .. ": " .. Val
+        cb(Val)
+    end
+    Kn.InputBegan:Connect(function(inp) if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then Drag = true end end)
+    Kn.InputEnded:Connect(function(inp) if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then Drag = false end end)
+    UserInputService.InputChanged:Connect(function(inp) if Drag and (inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch) then Up(inp) end end)
+    return F
 end
-local function QuaternionSlerp(a,b,t)
-local cosTheta=a[1]*b[1]+a[2]*b[2]+a[3]*b[3]+a[4]*b[4]
-local startInterp,finishInterp
-if cosTheta>=1.0E-4 then
-if 1-cosTheta>1.0E-4 then
-local theta=math.acos(cosTheta)
-local invSinTheta=1/math.sin(theta)
-startInterp=math.sin((1-t)*theta)*invSinTheta
-finishInterp=math.sin(t*theta)*invSinTheta
-else
-startInterp=1-t
-finishInterp=t
+local function CreateDropdown(parent, text, opts, cb)
+    local F = Instance.new("Frame")
+    F.Size = UDim2.new(0.9, 0, 0, 40)
+    F.BackgroundColor3 = Themes[CurrentTheme].Top
+    F.Parent = parent
+    local C = Instance.new("UICorner")
+    C.CornerRadius = UDim.new(0, 6)
+    C.Parent = F
+    local B = Instance.new("TextButton")
+    B.Size = UDim2.new(1, 0, 1, 0)
+    B.BackgroundTransparency = 1
+    B.Text = text
+    B.TextColor3 = Themes[CurrentTheme].Text
+    B.Font = Enum.Font.Gotham
+    B.Parent = F
+    local L = Instance.new("ScrollingFrame")
+    L.Size = UDim2.new(1, 0, 0, 0)
+    L.Position = UDim2.new(0, 0, 1, 0)
+    L.BackgroundColor3 = Themes[CurrentTheme].Bg
+    L.BorderSizePixel = 0
+    L.Visible = false
+    L.ZIndex = 10    L.Parent = F
+    local LL = Instance.new("UIListLayout")
+    LL.Parent = L
+    local Op = false
+    B.MouseButton1Click:Connect(function()
+        Op = not Op
+        L.Visible = Op
+        F.Size = UDim2.new(0.9, 0, 0, Op and 40 + (#opts * 30) or 40)
+    end)
+    for _, o in ipairs(opts) do
+        local OB = Instance.new("TextButton")
+        OB.Size = UDim2.new(1, 0, 0, 30)
+        OB.BackgroundColor3 = Themes[CurrentTheme].Top
+        OB.Text = o
+        OB.TextColor3 = Themes[CurrentTheme].Text
+        OB.Parent = L
+        OB.MouseButton1Click:Connect(function()
+            B.Text = text .. ": " .. o
+            cb(o)
+            Op = false
+            L.Visible = false
+            F.Size = UDim2.new(0.9, 0, 0, 40)
+        end)
+    end
+    return F
 end
-elseif 1+cosTheta>1.0E-4 then
-local theta=math.acos(-cosTheta)
-local invSinTheta=1/math.sin(theta)
-startInterp=math.sin((t-1)*theta)*invSinTheta
-finishInterp=math.sin(t*theta)*invSinTheta
-else
-startInterp=t-1
-finishInterp=t
+local function CreateColorPicker(parent, text, def, cb)
+    local F = Instance.new("Frame")
+    F.Size = UDim2.new(0.9, 0, 0, 40)
+    F.BackgroundColor3 = Themes[CurrentTheme].Top
+    F.Parent = parent
+    local C = Instance.new("UICorner")
+    C.CornerRadius = UDim.new(0, 6)
+    C.Parent = F
+    local L = Instance.new("TextLabel")
+    L.Size = UDim2.new(0.7, 0, 1, 0)
+    L.BackgroundTransparency = 1
+    L.Text = text
+    L.TextColor3 = Themes[CurrentTheme].Text
+    L.Font = Enum.Font.Gotham
+    L.TextXAlignment = Enum.TextXAlignment.Left
+    L.Parent = F
+    local Box = Instance.new("Frame")
+    Box.Size = UDim2.new(0.2, 0, 0.6, 0)
+    Box.Position = UDim2.new(0.75, 0, 0.2, 0)
+    Box.BackgroundColor3 = def
+    Box.Parent = F
+    local BC = Instance.new("UICorner")
+    BC.CornerRadius = UDim.new(0, 4)
+    BC.Parent = Box    Box.MouseButton1Click:Connect(function()
+        local r, g, b = def.R, def.G, def.B
+        cb(Color3.fromRGB(r, g, b))
+    end)
+    return F
 end
-return a[1]*startInterp+b[1]*finishInterp,a[2]*startInterp+b[2]*finishInterp,a[3]*startInterp+b[3]*finishInterp,a[4]*startInterp+b[4]*finishInterp
+local function CreateImage(parent, id)
+    local I = Instance.new("ImageLabel")
+    I.Size = UDim2.new(0.9, 0, 0, 100)
+    I.BackgroundColor3 = Themes[CurrentTheme].Top
+    I.Image = id
+    I.ScaleType = Enum.ScaleType.Crop
+    I.Parent = parent
+    local C = Instance.new("UICorner")
+    C.CornerRadius = UDim.new(0, 6)
+    C.Parent = I
+    return I
 end
-local function Clerp(a,b,t)
-local qa={QuaternionFromCFrame(a)}
-local qb={QuaternionFromCFrame(b)}
-local ax,ay,az=a.x,a.y,a.z
-local bx,by,bz=b.x,b.y,b.z
-local _t=1-t
-return QuaternionToCFrame(_t*ax+t*bx,_t*ay+t*by,_t*az+t*bz,QuaternionSlerp(qa,qb,t))
+local function CreateSearch(parent, cb)
+    local F = Instance.new("Frame")
+    F.Size = UDim2.new(0.9, 0, 0, 40)
+    F.BackgroundColor3 = Themes[CurrentTheme].Top
+    F.Parent = parent
+    local C = Instance.new("UICorner")
+    C.CornerRadius = UDim.new(0, 6)
+    C.Parent = F
+    local I = Instance.new("TextBox")
+    I.Size = UDim2.new(1, 0, 1, 0)
+    I.BackgroundTransparency = 1
+    I.PlaceholderText = "Search..."
+    I.TextColor3 = Themes[CurrentTheme].Text
+    I.Font = Enum.Font.Gotham
+    I.Parent = F
+    I.FocusLost:Connect(function() cb(I.Text) end)
+    return F
 end
-local function Raycast(pos,dir,range,ignore)
-return workspace:FindPartOnRay(Ray.new(pos,dir.unit*range),ignore)
-end
-local function weldBetween(a,b)
-local weld=Instance.new("Weld")
-weld.Part0=a
-weld.Part1=b
-weld.C0=CFrame.new()
-weld.C1=b.CFrame:inverse()*a.CFrame
-weld.Parent=a
-return weld
-end
-local function OBLITERATE(model)
-local endpoint=GetTools()
-local hum=model:FindFirstChildOfClass("Humanoid")
-if hum then
-hum.Health=0
-end
-local args={"Remove",{model}}
-endpoint:InvokeServer(unpack(args))
-end
-local function AOETime(pos,range)
-local endpoint=GetTools()
-for _,v in pairs(workspace:GetChildren())do
-if v:IsA("Model")and v~=Character then
-local hum=v:FindFirstChildOfClass("Humanoid")
-if hum then
-local root=v:FindFirstChild("HumanoidRootPart")or v:FindFirstChild("Torso")
-if root and(root.Position-pos).Magnitude<=range then
-hum.Health=0
-local args={"Remove",{v}}
-endpoint:InvokeServer(unpack(args))
-end
-end
-end
-end
-end
-Head.Transparency=1
-Torso.Transparency=1
-RightArm.Transparency=1
-LeftArm.Transparency=1
-LeftLeg.Transparency=1
-RightLeg.Transparency=1
-local hand=script["The Hand"]
-for _,v in pairs(hand:GetDescendants())do if v:IsA("BasePart")then v.Anchored=false v.Massless=true end end
-local bottomindex=hand.IndexParts.BottomIndex.joint2.mw
-local topindex=hand.IndexParts.TopIndex.joint2.mw
-local bottommiddle=hand.MiddleParts.BottomMid.joint2.mw
-local topmiddle=hand.MiddleParts.TopMid.joint2.mw
-local bottompinkie=hand.PinkieParts.BottomPinkie.joint2.mw
-local toppinkie=hand.PinkieParts.TopPinkie.joint2.mw
-local ringbottom=hand.RingParts.BottomRing.joint2.mw
-local ringtop=hand.RingParts.TopRing.joint2.mw
-local bottomthumb=hand.ThumbParts.BottomThumb.joint2.mw
-local topthumb=hand.ThumbParts.TopThumb.joint2.mw
-local handw=Instance.new("Weld",Torso)
-handw.Part0=Torso
-handw.Part1=hand.BaseHandParts.BaseHand.BH
-handw.C0=CFrame.new()*CFrame.Angles(math.rad(90),0,math.rad(-90))
-handw.C1=CFrame.new()
-local MainHand=hand.BaseHandParts.BaseHand
-MainHand.Parent=Character
-local BI=hand.IndexParts.BottomIndex
-BI.Parent=Character
-local TI=hand.IndexParts.TopIndex
-TI.Parent=Character
-local BM=hand.MiddleParts.BottomMid
-BM.Parent=Character
-local TM=hand.MiddleParts.TopMid
-TM.Parent=Character
-local BP=hand.PinkieParts.BottomPinkie
-BP.Parent=Character
-local TP=hand.PinkieParts.TopPinkie
-TP.Parent=Character
-local BR=hand.RingParts.BottomRing
-BR.Parent=Character
-local TR=hand.RingParts.TopRing
-TR.Parent=Character
-local BT=hand.ThumbParts.BottomThumb
-BT.Parent=Character
-local TT=hand.ThumbParts.TopThumb
-TT.Parent=Character
-local function animatefingers(tab,alpha)
-bottomindex.C0=bottomindex.C0:lerp(tab[1],alpha)
-topindex.C0=topindex.C0:lerp(tab[2],alpha)
-bottommiddle.C0=bottommiddle.C0:lerp(tab[3],alpha)
-topmiddle.C0=topmiddle.C0:lerp(tab[4],alpha)
-ringbottom.C0=ringbottom.C0:lerp(tab[5],alpha)
-ringtop.C0=ringtop.C0:lerp(tab[6],alpha)
-bottompinkie.C0=bottompinkie.C0:lerp(tab[7],alpha)
-toppinkie.C0=toppinkie.C0:lerp(tab[8],alpha)
-bottomthumb.C0=bottomthumb.C0:lerp(tab[9],alpha)
-topthumb.C0=topthumb.C0:lerp(tab[10],alpha)
-end
-local function Taunts()
-Attack=true
-for i=0,3.25,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0-10*math.cos(Sine/6),0,0+0.045*math.cos(Sine/32))*CFrame.Angles(0,math.rad(-10+65*math.sin(Sine/6)),0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-animatefingers({CFrame.new()*CFrame.Angles(0,0,math.rad(-15)),CFrame.new()*CFrame.Angles(math.rad(-15),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(-15)),CFrame.new()*CFrame.Angles(math.rad(-15),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(-15)),CFrame.new()*CFrame.Angles(math.rad(-15),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(-15)),CFrame.new()*CFrame.Angles(math.rad(-15),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(-15)),CFrame.new()*CFrame.Angles(0,0,math.rad(-15))},0.1)
-end
-Attack=false
-end
-local function BirdFlip()
-Attack=true
-for i=0,5.25,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,0+0.045*math.cos(Sine/32))*CFrame.Angles(0,0,math.rad(180))*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-animatefingers({CFrame.new()*CFrame.Angles(0,0,math.rad(85)),CFrame.new(0,-5,3.5)*CFrame.Angles(math.rad(85),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(-15)),CFrame.new()*CFrame.Angles(math.rad(-15),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(85)),CFrame.new(0,-5,3.5)*CFrame.Angles(math.rad(85),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(85)),CFrame.new(0,-5,3.5)*CFrame.Angles(math.rad(85),0,0),CFrame.new()*CFrame.Angles(math.rad(35),0,math.rad(85)),CFrame.new(0,0,-1.5)*CFrame.Angles(math.rad(35),0,math.rad(85))},0.1)
-end
-Attack=false
-end
-local function FingerGun()
-Attack=true
-local endpoint=GetTools()
-local shootPart1=TI.TI.FingerModel.ShootPart
-local shootPart2=TM.TM.Part1.ShootPart
-local args1={"CreatePart","Normal",shootPart1.CFrame,workspace}
-local bullet1=endpoint:InvokeServer(unpack(args1))
-local args2={"CreatePart","Normal",shootPart2.CFrame,workspace}
-local bullet2=endpoint:InvokeServer(unpack(args2))
-local args3={"SyncColor",{{Part=bullet1,UnionColoring=true,Color=Color3.new(0,1,0)}}}
-endpoint:InvokeServer(unpack(args3))
-local args4={"SyncColor",{{Part=bullet2,UnionColoring=true,Color=Color3.new(0,1,0)}}}
-endpoint:InvokeServer(unpack(args4))
-local args5={"SyncMaterial",{{Part=bullet1,Material=Enum.Material.Neon,Transparency=0.25}}}
-endpoint:InvokeServer(unpack(args5))
-local args6={"SyncMaterial",{{Part=bullet2,Material=Enum.Material.Neon,Transparency=0.25}}}
-endpoint:InvokeServer(unpack(args6))
-CreateSound("905731845",STUFF,5,0.8,false)
-coroutine.wrap(function()
-for i=1,200 do
-Swait()
-local hit,pos=Raycast(bullet1.Position,bullet1.CFrame.lookVector,5,Character)
-if hit then
-CreateSound("2381523614",STUFF,9,1,false)
-AOETime(bullet1.Position,110)
-local args7={"Remove",{bullet1}}
-endpoint:InvokeServer(unpack(args7))
-break
-else
-local args8={"SyncResize",{{Part=bullet1,CFrame=CFrame.new(bullet1.Position,Mouse.Hit.p)*CFrame.new(0,0,-5),Size=Vector3.new(1,1,1)}}}
-endpoint:InvokeServer(unpack(args8))
-AOETime(bullet1.Position,35)
-end
-end
-end)()
-coroutine.wrap(function()
-for i=1,200 do
-Swait()
-local hit,pos=Raycast(bullet2.Position,bullet2.CFrame.lookVector,5,Character)
-if hit then
-CreateSound("2381523614",STUFF,9,1,false)
-AOETime(bullet2.Position,145)
-local args7={"Remove",{bullet2}}
-endpoint:InvokeServer(unpack(args7))
-break
-else
-local args8={"SyncResize",{{Part=bullet2,CFrame=CFrame.new(bullet2.Position,Mouse.Hit.p)*CFrame.new(0,0,-4),Size=Vector3.new(1,1,1)}}}
-endpoint:InvokeServer(unpack(args8))
-AOETime(bullet2.Position,35)
-end
-end
-end)()
-for i=0,0.5,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,0+0.045*math.cos(Sine/32))*CFrame.Angles(math.rad(275),math.rad(-10),math.rad(90))*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-animatefingers({CFrame.new()*CFrame.Angles(0,0,0),CFrame.new(0,5.5,0)*CFrame.Angles(math.rad(-50),0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new(0,5.5,0)*CFrame.Angles(math.rad(-50),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(85)),CFrame.new(0,-5,3.5)*CFrame.Angles(math.rad(85),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(85)),CFrame.new(0,-5,3.5)*CFrame.Angles(math.rad(85),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(-15)),CFrame.new()*CFrame.Angles(0,0,math.rad(-15))},0.1)
-end
-Attack=false
-end
-local function PunishingSmash()
-Attack=true
-local endpoint=GetTools()
-for i=0,1,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,30+0.045*math.cos(Sine/32))*CFrame.Angles(math.rad(90),math.rad(-20),0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-animatefingers({CFrame.new()*CFrame.Angles(0,0,0),CFrame.new(0,0,0)*CFrame.Angles(math.rad(-75),0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new(0,0,0)*CFrame.Angles(math.rad(-75),0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new(0,0,0)*CFrame.Angles(math.rad(-75),0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new(0,0,0)*CFrame.Angles(math.rad(-75),0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(-75))},0.1)
-end
-for i=0,0.15,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,10+0.045*math.cos(Sine/32))*CFrame.Angles(math.rad(90),math.rad(-40),0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-end
-for i=0,0.15,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,-20+0.045*math.cos(Sine/32))*CFrame.Angles(math.rad(90),math.rad(-70),0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-end
-CreateSound("1606719431",STUFF,5,1.5,false)
-AOETime(RootPart.Position,80)
-for i=0,3,0.1/Animation_Speed do
-Swait()
-AOETime(RootPart.Position,90)
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,-45+5*math.cos(Sine/32))*CFrame.Angles(math.rad(90),math.rad(-70+80*math.cos(Sine/24)),0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-animatefingers({CFrame.new()*CFrame.Angles(0,0,0),CFrame.new(0,0,-1.5)*CFrame.Angles(math.rad(-55),0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new(0,0,-1.5)*CFrame.Angles(math.rad(-55),0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new(0,0,-1.5)*CFrame.Angles(math.rad(-55),0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new(0,0,-1.5)*CFrame.Angles(math.rad(-55),0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(-25))},0.1)
-end
-for i=0,0.25,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,-10+0.045*math.cos(Sine/32))*CFrame.Angles(math.rad(90),math.rad(-40),0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-animatefingers({CFrame.new()*CFrame.Angles(0,0,0),CFrame.new(0,0,0)*CFrame.Angles(math.rad(-35),0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new(0,0,0)*CFrame.Angles(math.rad(-35),0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new(0,0,0)*CFrame.Angles(math.rad(-35),0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new(0,0,0)*CFrame.Angles(math.rad(-35),0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(-35))},0.1)
-end
-for i=0,0.25,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,25+0.045*math.cos(Sine/32))*CFrame.Angles(math.rad(90),0,0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-animatefingers({CFrame.new()*CFrame.Angles(0,0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new()*CFrame.Angles(0,0,0),CFrame.new()*CFrame.Angles(0,0,0)},0.1)
-end
-Attack=false
-end
-local function TimeDispeller()
-Attack=true
-local endpoint=GetTools()
-for i=0,1,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,30+0.045*math.cos(Sine/32))*CFrame.Angles(math.rad(180),0,0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-animatefingers({CFrame.new()*CFrame.Angles(0,0,math.rad(85)),CFrame.new(0,-5,3.5)*CFrame.Angles(math.rad(85),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(85)),CFrame.new(0,-5,3.5)*CFrame.Angles(math.rad(85),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(85)),CFrame.new(0,-5,3.5)*CFrame.Angles(math.rad(85),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(85)),CFrame.new(0,-5,3.5)*CFrame.Angles(math.rad(85),0,0),CFrame.new()*CFrame.Angles(math.rad(35),0,math.rad(85)),CFrame.new(0,0,-1.5)*CFrame.Angles(math.rad(35),0,math.rad(85))},0.1)
-end
-for i=0,0.15,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,0+0.045*math.cos(Sine/32))*CFrame.Angles(math.rad(180),0,0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-end
-for i=0,0.15,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,-20+0.045*math.cos(Sine/32))*CFrame.Angles(math.rad(180),0,0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-end
-for i=0,0.15,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,-45+0.045*math.cos(Sine/32))*CFrame.Angles(math.rad(180),0,0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-end
-CreateSound("1098158115",RootPart,9,1.1,false)
-AOETime(Torso.Position,55)
-local pos=Mouse.Hit.p+Vector3.new(0,15,0)
-RootPart.CFrame=CFrame.new(pos)*CFrame.Angles(math.rad(RootPart.Orientation.x),math.rad(RootPart.Orientation.y),math.rad(RootPart.Orientation.z))
-CreateSound("1098158115",RootPart,9,1.1,false)
-AOETime(RootPart.Position,55)
-for i=0,2.5,0.1/Animation_Speed do
-Swait()
-AOETime(RootPart.Position,55)
-end
-Attack=false
-end
-local function FingerBeams()
-Attack=true
-KeyHold=true
-local endpoint=GetTools()
-coroutine.wrap(function()
-while KeyHold do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,25+0.045*math.cos(Sine/32))*CFrame.Angles(math.rad(55),math.rad(-10),0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-animatefingers({CFrame.new()*CFrame.Angles(0,math.rad(25-10*math.cos(Sine/30)),math.rad(45-15*math.cos(Sine/30))),CFrame.new()*CFrame.Angles(math.rad(-75-15*math.cos(Sine/30)),math.rad(25-10*math.cos(Sine/30)),0),CFrame.new()*CFrame.Angles(0,math.rad(10-5*math.cos(Sine/30)),math.rad(45-15*math.cos(Sine/30))),CFrame.new()*CFrame.Angles(math.rad(-75-15*math.cos(Sine/30)),math.rad(10-5*math.cos(Sine/30)),0),CFrame.new()*CFrame.Angles(0,math.rad(-10+5*math.cos(Sine/30)),math.rad(45-15*math.cos(Sine/30))),CFrame.new()*CFrame.Angles(math.rad(-75-15*math.cos(Sine/30)),math.rad(-10+5*math.cos(Sine/30)),0),CFrame.new()*CFrame.Angles(0,math.rad(-25+10*math.cos(Sine/30)),math.rad(45-15*math.cos(Sine/30))),CFrame.new()*CFrame.Angles(math.rad(-75-15*math.cos(Sine/30)),math.rad(-25+10*math.cos(Sine/30)),0),CFrame.new()*CFrame.Angles(math.rad(10),math.rad(15),0),CFrame.new()*CFrame.Angles(math.rad(10),math.rad(15),0)},0.1)
-AOETime(Mouse.Hit.p,35)
-end
-end)()
-while KeyHold do
-Swait()
-end
-Attack=false
-end
-local function TheDestroyer()
-Attack=true
-local endpoint=GetTools()
-local args1={"CreatePart","Normal",Torso.CFrame*CFrame.new(0,0,-55),workspace}
-local ball=endpoint:InvokeServer(unpack(args1))
-local args2={"SyncColor",{{Part=ball,UnionColoring=true,Color=Color3.new(0.5,1,0.5)}}}
-endpoint:InvokeServer(unpack(args2))
-CreateSound("306948842",STUFF,5,0.8,false)
-coroutine.wrap(function()
-for i=1,180 do
-Swait()
-local args3={"SyncResize",{{Part=ball,CFrame=ball.CFrame,Size=ball.Size+Vector3.new(0.5,0.5,0.5)}}}
-endpoint:InvokeServer(unpack(args3))
-end
-end)()
-for i=0,5.5,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,85+0.045*math.cos(Sine/32))*CFrame.Angles(math.rad(-80),math.rad(-60),0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-animatefingers({CFrame.new()*CFrame.Angles(0,0,math.rad(25-25*math.cos(Sine/30))),CFrame.new()*CFrame.Angles(math.rad(35-25*math.cos(Sine/30)),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(25-25*math.cos(Sine/30))),CFrame.new()*CFrame.Angles(math.rad(35-25*math.cos(Sine/30)),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(25-25*math.cos(Sine/30))),CFrame.new()*CFrame.Angles(math.rad(35-25*math.cos(Sine/30)),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(25-25*math.cos(Sine/30))),CFrame.new()*CFrame.Angles(math.rad(35-25*math.cos(Sine/30)),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(25-25*math.cos(Sine/30))),CFrame.new()*CFrame.Angles(0,0,math.rad(35-25*math.cos(Sine/30)))},0.1)
-end
-for i=0,1,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,85+0.045*math.cos(Sine/32))*CFrame.Angles(math.rad(-80),math.rad(-60),0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-end
-CreateSound("533636431",STUFF,10,1,false)
-for i=0,0.5,0.1/Animation_Speed do
-Swait()
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,85+0.045*math.cos(Sine/32))*CFrame.Angles(math.rad(120),math.rad(40),0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-animatefingers({CFrame.new()*CFrame.Angles(0,0,math.rad(25)),CFrame.new()*CFrame.Angles(math.rad(35),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(25)),CFrame.new()*CFrame.Angles(math.rad(35),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(25)),CFrame.new()*CFrame.Angles(math.rad(35),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(25)),CFrame.new()*CFrame.Angles(math.rad(35),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(25)),CFrame.new()*CFrame.Angles(0,0,math.rad(35))},0.1)
-end
-local args4={"SyncResize",{{Part=ball,CFrame=CFrame.new(ball.Position,Mouse.Hit.p)*CFrame.new(0,0,-5),Size=ball.Size}}}
-endpoint:InvokeServer(unpack(args4))
-coroutine.wrap(function()
-for i=1,1000 do
-Swait()
-local hit,pos=Raycast(ball.Position,ball.CFrame.lookVector,4,Character)
-if hit then
-CreateSound("541452480",STUFF,5,1,false)
-AOETime(ball.Position,15e15)
-local args5={"Remove",{ball}}
-endpoint:InvokeServer(unpack(args5))
-break
-else
-local args6={"SyncResize",{{Part=ball,CFrame=CFrame.new(ball.Position,Mouse.Hit.p)*CFrame.new(0,0,-2),Size=ball.Size}}}
-endpoint:InvokeServer(unpack(args6))
-end
-end
-end)()
-Attack=false
-end
-local function MouseDown()KeyHold=true end
-local function MouseUp()KeyHold=false end
-local function KeyDown(k)
-if Attack then return end
-if k=="z" then FingerGun() 
-elseif k=="x" then TheDestroyer()
-elseif k=="c" then TimeDispeller()
-elseif k=="v" then PunishingSmash()
-elseif k=="b" then FingerBeams()
-elseif k=="t" then Taunts()
-elseif k=="f" then BirdFlip()
-end
-end
-local function KeyUp(k)KeyHold=false end
-Mouse.Button1Down:connect(MouseDown)
-Mouse.Button1Up:connect(MouseUp)
-Mouse.KeyDown:connect(KeyDown)
-Mouse.KeyUp:connect(KeyUp)
-local function unanchor()
-for _,c in pairs(Character:GetChildren())do
-if c:IsA("BasePart")and c~=RootPart then
-c.Anchored=false
-end
-end
-end
-Humanoid.Changed:connect(function(j)
-if j=="Jump"then
-Humanoid.Jump=false
-end
+local T1 = CreateTab("Home")
+local S1 = CreateSection(T1, "General")
+CreateButton(S1, "Execute", function() print("Executed") end)
+CreateToggle(S1, "Auto Farm", false, function(s) print("Farm:", s) end)
+CreateSlider(S1, "Speed", 0, 500, 100, function(v) print("Speed:", v) end)
+CreateDropdown(S1, "World", {"Overworld", "Nether", "End"}, function(v) print("World:", v) end)
+CreateColorPicker(S1, "Color", Color3.fromRGB(255, 0, 0), function(c) print("Color:", c) end)
+CreateImage(S1, "rbxassetid://6031075073")
+local T2 = CreateTab("Players")
+local S2 = CreateSection(T2, "Selector")
+local PNames = {}
+for _, p in ipairs(Players:GetPlayers()) do if p ~= LocalPlayer then table.insert(PNames, p.Name) end end
+if #PNames == 0 then table.insert(PNames, "None") end
+CreateDropdown(S2, "Target", PNames, function(v) print("Target:", v) end)CreateSearch(S2, function(t) print("Search:", t) end)
+CreateButton(S2, "Teleport", function() print("TP") end)
+local T3 = CreateTab("Settings")
+local S3 = CreateSection(T3, "Theme")
+CreateDropdown(S3, "Select Theme", {"Ocean", "Midnight", "Cyber", "Kawaii"}, function(v)
+    CurrentTheme = v
+    ApplyTheme()
 end)
-Humanoid.HipHeight=25
-Humanoid.WalkSpeed=100
-Humanoid.MaxHealth=9e9
-Humanoid.Health=9e9
-Humanoid.Name="Being"
-while true do
-Swait()
-Sine=Sine+2/Animation_Speed
-local vel=(RootPart.Velocity*Vector3.new(1,0,1)).magnitude
-local hitFloor=Raycast(RootPart.Position,CFrame.new(RootPart.Position,RootPart.Position+Vector3.new(0,-1,0)).lookVector,4+Humanoid.HipHeight,Character)
-if vel<1 and hitFloor then
-if not Attack then
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,0+3.5*math.cos(Sine/44))*CFrame.Angles(math.rad(0-5.5*math.sin(Sine/45)),math.rad(-10),0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-animatefingers({CFrame.new()*CFrame.Angles(0,0,math.rad(15-25*math.cos(Sine/30))),CFrame.new()*CFrame.Angles(math.rad(15-25*math.cos(Sine/30)),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(15-25*math.cos(Sine/30))),CFrame.new()*CFrame.Angles(math.rad(15-25*math.cos(Sine/30)),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(15-25*math.cos(Sine/30))),CFrame.new()*CFrame.Angles(math.rad(15-25*math.cos(Sine/30)),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(15-25*math.cos(Sine/30))),CFrame.new()*CFrame.Angles(math.rad(15-25*math.cos(Sine/30)),0,0),CFrame.new()*CFrame.Angles(0,0,math.rad(15-25*math.cos(Sine/30))),CFrame.new()*CFrame.Angles(0,0,math.rad(15-25*math.cos(Sine/30)))},0.1)
+Close.MouseButton1Click:Connect(function() Main.Visible = false end)
+Min.MouseButton1Click:Connect(function()
+    local Exp = not Content.Visible
+    Content.Visible = Exp
+    TabBar.Visible = Exp
+    Main.Size = Exp and UDim2.new(0.5, 0, 0.6, 0) or UDim2.new(0.5, 0, 0.08, 0)
+end)
+local Dragging, DragInput, MousePos, FramePos
+Top.InputBegan:Connect(function(inp)
+    if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+        Dragging = true
+        MousePos = inp.Position
+        FramePos = Main.Position
+        inp.Changed:Connect(function() if inp.UserInputState == Enum.UserInputState.End then Dragging = false end end)
+    end
+end)
+Top.InputChanged:Connect(function(inp) if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then DragInput = inp end end)
+UserInputService.InputChanged:Connect(function(inp)
+    if inp == DragInput and Dragging then
+        local Delta = inp.Position - MousePos
+        Main.Position = UDim2.new(FramePos.X.Scale, FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)
+    end
+end)
+local function Resize()
+    local S = Main.Parent.AbsoluteSize
+    local Sc = math.min(S.X / 1920, S.Y / 1080)
+    local Bs = math.max(0.3, math.min(0.6, Sc * 1.5))
+    Main.Size = UDim2.new(Bs, 0, Bs * 1.2, 0)
 end
-elseif vel>1 and hitFloor then
-if not Attack then
-RootJoint.C0=Clerp(RootJoint.C0,ROOTC0*CFrame.new(0,0,0+3.5*math.cos(Sine/44))*CFrame.Angles(math.rad(45+6.5*math.sin(Sine/45)),math.rad(-10),0)*CFrame.Angles(0,0,0),0.15/Animation_Speed)
-animatefingers({CFrame.new()*CFrame.Angles(math.rad(10),math.rad(10),0),CFrame.new()*CFrame.Angles(math.rad(10),math.rad(10),0),CFrame.new()*CFrame.Angles(math.rad(5),math.rad(5),0),CFrame.new()*CFrame.Angles(math.rad(5),math.rad(5),0),CFrame.new()*CFrame.Angles(math.rad(-5),math.rad(-5),0),CFrame.new()*CFrame.Angles(math.rad(-5),math.rad(-5),0),CFrame.new()*CFrame.Angles(math.rad(-10),math.rad(-10),0),CFrame.new()*CFrame.Angles(math.rad(-10),math.rad(-10),0),CFrame.new()*CFrame.Angles(math.rad(10),math.rad(15),0),CFrame.new()*CFrame.Angles(math.rad(10),math.rad(15),0)},0.1)
-end
-end
-unanchor()
-Humanoid.WalkSpeed=Speed
-Humanoid.HipHeight=25
-Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead,false)
-Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,false)
-Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown,false)
-Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated,false)
-end
+Resize()
+Main.Parent:GetPropertyChangedSignal("AbsoluteSize"):Connect(Resize)
+ApplyTheme() 
