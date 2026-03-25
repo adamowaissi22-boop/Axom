@@ -1,17 +1,19 @@
-
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
 local AxovocUI = {}
 local Themes = {
-	Default = {Background = Color3.fromRGB(18, 18, 22), Sidebar = Color3.fromRGB(13, 13, 16), Accent = Color3.fromRGB(88, 101, 242), Secondary = Color3.fromRGB(30, 30, 36), Text = Color3.fromRGB(220, 220, 230), TextDark = Color3.fromRGB(140, 140, 150), Border = Color3.fromRGB(35, 35, 42), Hover = Color3.fromRGB(45, 45, 55), Element = Color3.fromRGB(28, 28, 34), Success = Color3.fromRGB(59, 165, 93), Danger = Color3.fromRGB(237, 66, 69)},
-	Ocean = {Background = Color3.fromRGB(15, 23, 42), Sidebar = Color3.fromRGB(10, 15, 30), Accent = Color3.fromRGB(56, 189, 248), Secondary = Color3.fromRGB(30, 41, 59), Text = Color3.fromRGB(226, 232, 240), TextDark = Color3.fromRGB(148, 163, 184), Border = Color3.fromRGB(51, 65, 85), Hover = Color3.fromRGB(51, 65, 85), Element = Color3.fromRGB(30, 41, 59), Success = Color3.fromRGB(34, 197, 94), Danger = Color3.fromRGB(239, 68, 68)},
-	Midnight = {Background = Color3.fromRGB(12, 10, 18), Sidebar = Color3.fromRGB(8, 6, 12), Accent = Color3.fromRGB(139, 92, 246), Secondary = Color3.fromRGB(30, 27, 40), Text = Color3.fromRGB(237, 233, 254), TextDark = Color3.fromRGB(167, 139, 250), Border = Color3.fromRGB(50, 45, 65), Hover = Color3.fromRGB(60, 55, 80), Element = Color3.fromRGB(35, 30, 50), Success = Color3.fromRGB(52, 211, 153), Danger = Color3.fromRGB(248, 113, 113)},
-	Cyber = {Background = Color3.fromRGB(10, 10, 15), Sidebar = Color3.fromRGB(5, 5, 8), Accent = Color3.fromRGB(0, 255, 136), Secondary = Color3.fromRGB(20, 20, 30), Text = Color3.fromRGB(240, 240, 255), TextDark = Color3.fromRGB(150, 150, 170), Border = Color3.fromRGB(0, 255, 200), Hover = Color3.fromRGB(30, 30, 45), Element = Color3.fromRGB(25, 25, 35), Success = Color3.fromRGB(0, 255, 100), Danger = Color3.fromRGB(255, 0, 85)},
-	Kawaii = {Background = Color3.fromRGB(30, 25, 35), Sidebar = Color3.fromRGB(25, 20, 30), Accent = Color3.fromRGB(255, 105, 180), Secondary = Color3.fromRGB(45, 35, 50), Text = Color3.fromRGB(255, 230, 240), TextDark = Color3.fromRGB(200, 160, 180), Border = Color3.fromRGB(255, 20, 147), Hover = Color3.fromRGB(60, 45, 65), Element = Color3.fromRGB(50, 40, 55), Success = Color3.fromRGB(255, 182, 193), Danger = Color3.fromRGB(255, 100, 130)}
+	Default = {Background = Color3.fromRGB(18, 18, 22), Sidebar = Color3.fromRGB(13, 13, 16), Accent = Color3.fromRGB(88, 101, 242), Secondary = Color3.fromRGB(30, 30, 36), Text = Color3.fromRGB(220, 220, 230), TextDark = Color3.fromRGB(140, 140, 150), Border = Color3.fromRGB(35, 35, 42), Hover = Color3.fromRGB(45, 45, 55), Element = Color3.fromRGB(28, 28, 34), Success = Color3.fromRGB(59, 165, 93), Danger = Color3.fromRGB(237, 66, 69), Transparency = 0.65},
+	Ocean = {Background = Color3.fromRGB(15, 23, 42), Sidebar = Color3.fromRGB(10, 15, 30), Accent = Color3.fromRGB(56, 189, 248), Secondary = Color3.fromRGB(30, 41, 59), Text = Color3.fromRGB(226, 232, 240), TextDark = Color3.fromRGB(148, 163, 184), Border = Color3.fromRGB(51, 65, 85), Hover = Color3.fromRGB(51, 65, 85), Element = Color3.fromRGB(30, 41, 59), Success = Color3.fromRGB(34, 197, 94), Danger = Color3.fromRGB(239, 68, 68), Transparency = 0.65},
+	Midnight = {Background = Color3.fromRGB(12, 10, 18), Sidebar = Color3.fromRGB(8, 6, 12), Accent = Color3.fromRGB(139, 92, 246), Secondary = Color3.fromRGB(30, 27, 40), Text = Color3.fromRGB(237, 233, 254), TextDark = Color3.fromRGB(167, 139, 250), Border = Color3.fromRGB(50, 45, 65), Hover = Color3.fromRGB(60, 55, 80), Element = Color3.fromRGB(35, 30, 50), Success = Color3.fromRGB(52, 211, 153), Danger = Color3.fromRGB(248, 113, 113), Transparency = 0.65},
+	Cyber = {Background = Color3.fromRGB(10, 10, 15), Sidebar = Color3.fromRGB(5, 5, 8), Accent = Color3.fromRGB(0, 255, 136), Secondary = Color3.fromRGB(20, 20, 30), Text = Color3.fromRGB(240, 240, 255), TextDark = Color3.fromRGB(150, 150, 170), Border = Color3.fromRGB(0, 255, 200), Hover = Color3.fromRGB(30, 30, 45), Element = Color3.fromRGB(25, 25, 35), Success = Color3.fromRGB(0, 255, 100), Danger = Color3.fromRGB(255, 0, 85), Transparency = 0.65},
+	Kawaii = {Background = Color3.fromRGB(30, 25, 35), Sidebar = Color3.fromRGB(25, 20, 30), Accent = Color3.fromRGB(255, 105, 180), Secondary = Color3.fromRGB(45, 35, 50), Text = Color3.fromRGB(255, 230, 240), TextDark = Color3.fromRGB(200, 160, 180), Border = Color3.fromRGB(255, 20, 147), Hover = Color3.fromRGB(60, 45, 65), Element = Color3.fromRGB(50, 40, 55), Success = Color3.fromRGB(255, 182, 193), Danger = Color3.fromRGB(255, 100, 130), Transparency = 0.65},
+	Sunset = {Background = Color3.fromRGB(40, 20, 30), Sidebar = Color3.fromRGB(30, 15, 22), Accent = Color3.fromRGB(255, 140, 66), Secondary = Color3.fromRGB(60, 35, 45), Text = Color3.fromRGB(255, 235, 220), TextDark = Color3.fromRGB(200, 170, 150), Border = Color3.fromRGB(255, 100, 50), Hover = Color3.fromRGB(80, 45, 55), Element = Color3.fromRGB(55, 30, 40), Success = Color3.fromRGB(100, 255, 150), Danger = Color3.fromRGB(255, 80, 80), Transparency = 0.65},
+	Forest = {Background = Color3.fromRGB(15, 30, 20), Sidebar = Color3.fromRGB(10, 22, 15), Accent = Color3.fromRGB(100, 200, 100), Secondary = Color3.fromRGB(25, 50, 35), Text = Color3.fromRGB(220, 255, 230), TextDark = Color3.fromRGB(150, 180, 160), Border = Color3.fromRGB(50, 100, 60), Hover = Color3.fromRGB(40, 80, 50), Element = Color3.fromRGB(30, 55, 40), Success = Color3.fromRGB(120, 255, 120), Danger = Color3.fromRGB(255, 100, 100), Transparency = 0.65}
 }
 
 function AxovocUI:CreateWindow(config)
@@ -21,6 +23,8 @@ function AxovocUI:CreateWindow(config)
 	local title = config.Title or "Axovoc UI"
 	local key = config.Key
 	local scriptName = config.ScriptName or "Axovoc UI"
+	local configFolder = config.ConfigFolder or "AxovocConfigs"
+	local saveName = config.SaveName or "Default"
 	
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "AxovocUI"
@@ -31,9 +35,10 @@ function AxovocUI:CreateWindow(config)
 	local minimizedButton = Instance.new("TextButton")
 	minimizedButton.Name = "MinBtn"
 	minimizedButton.BackgroundColor3 = theme.Accent
+	minimizedButton.BackgroundTransparency = 0.3
 	minimizedButton.BorderSizePixel = 0
 	minimizedButton.Position = UDim2.new(0, 20, 0, 20)
-	minimizedButton.Size = UDim2.new(0, 140, 0, 40)
+	minimizedButton.Size = UDim2.new(0, 160, 0, 45)
 	minimizedButton.Font = Enum.Font.GothamBold
 	minimizedButton.Text = "Open " .. scriptName
 	minimizedButton.TextColor3 = Color3.new(1, 1, 1)
@@ -41,13 +46,19 @@ function AxovocUI:CreateWindow(config)
 	minimizedButton.Visible = false
 	minimizedButton.AutoButtonColor = false
 	minimizedButton.Parent = gui
-	Instance.new("UICorner", minimizedButton).CornerRadius = UDim.new(0, 8)
-	Instance.new("UIStroke", minimizedButton).Color = theme.Border
-	Instance.new("UIStroke", minimizedButton).Thickness = 2
+	Instance.new("UICorner", minimizedButton).CornerRadius = UDim.new(0, 10)
+	local minStroke = Instance.new("UIStroke", minimizedButton)
+	minStroke.Color = theme.Border
+	minStroke.Thickness = 2
+	
+	local blur = Instance.new("BlurEffect")
+	blur.Size = 20
+	blur.Parent = minimizedButton
 	
 	local main = Instance.new("Frame")
 	main.Name = "Main"
 	main.BackgroundColor3 = theme.Background
+	main.BackgroundTransparency = theme.Transparency
 	main.BorderSizePixel = 0
 	main.Position = UDim2.new(0.5, -350, 0.5, -225)
 	main.Size = UDim2.new(0, 700, 0, 450)
@@ -55,7 +66,9 @@ function AxovocUI:CreateWindow(config)
 	main.ClipsDescendants = true
 	main.Parent = gui
 	Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
-	Instance.new("UIStroke", main).Color = theme.Border
+	local mainStroke = Instance.new("UIStroke", main)
+	mainStroke.Color = theme.Border
+	mainStroke.Thickness = 1.5
 	
 	local resizeHandle = Instance.new("TextButton")
 	resizeHandle.Name = "Resize"
@@ -72,8 +85,8 @@ function AxovocUI:CreateWindow(config)
 	resizeHandle.Parent = main
 	Instance.new("UICorner", resizeHandle).CornerRadius = UDim.new(0, 6)
 	
-	local minWidth, minHeight = 500, 300
-	local maxWidth, maxHeight = 1200, 800
+	local minWidth, minHeight = 550, 350
+	local maxWidth, maxHeight = 1300, 850
 	
 	local resizing = false
 	resizeHandle.InputBegan:Connect(function(input)
@@ -99,61 +112,62 @@ function AxovocUI:CreateWindow(config)
 	if key then
 		local keyFrame = Instance.new("Frame")
 		keyFrame.BackgroundColor3 = theme.Background
+		keyFrame.BackgroundTransparency = theme.Transparency
 		keyFrame.BorderSizePixel = 0
-		keyFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
-		keyFrame.Size = UDim2.new(0, 300, 0, 200)
+		keyFrame.Position = UDim2.new(0.5, -175, 0.5, -120)
+		keyFrame.Size = UDim2.new(0, 350, 0, 240)
 		keyFrame.Parent = gui
 		Instance.new("UICorner", keyFrame).CornerRadius = UDim.new(0, 12)
 		Instance.new("UIStroke", keyFrame).Color = theme.Border
 		
 		local keyTitle = Instance.new("TextLabel")
 		keyTitle.BackgroundTransparency = 1
-		keyTitle.Position = UDim2.new(0, 0, 0, 20)
-		keyTitle.Size = UDim2.new(1, 0, 0, 30)
+		keyTitle.Position = UDim2.new(0, 0, 0, 25)
+		keyTitle.Size = UDim2.new(1, 0, 0, 35)
 		keyTitle.Font = Enum.Font.GothamBold
 		keyTitle.Text = "🔐 Key System"
 		keyTitle.TextColor3 = theme.Text
-		keyTitle.TextSize = 20
+		keyTitle.TextSize = 22
 		keyTitle.Parent = keyFrame
 		
 		local keyBox = Instance.new("TextBox")
 		keyBox.BackgroundColor3 = theme.Element
-		keyBox.Position = UDim2.new(0.5, -120, 0, 70)
-		keyBox.Size = UDim2.new(0, 240, 0, 40)
+		keyBox.Position = UDim2.new(0.5, -140, 0, 85)
+		keyBox.Size = UDim2.new(0, 280, 0, 45)
 		keyBox.Font = Enum.Font.Gotham
 		keyBox.PlaceholderText = "Enter Key..."
 		keyBox.Text = ""
 		keyBox.TextColor3 = theme.Text
-		keyBox.TextSize = 14
+		keyBox.TextSize = 15
 		keyBox.Parent = keyFrame
 		Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0, 8)
 		Instance.new("UIStroke", keyBox).Color = theme.Border
 		
 		local submitBtn = Instance.new("TextButton")
 		submitBtn.BackgroundColor3 = theme.Accent
-		submitBtn.Position = UDim2.new(0.5, -100, 0, 130)
-		submitBtn.Size = UDim2.new(0, 200, 0, 40)
+		submitBtn.Position = UDim2.new(0.5, -120, 0, 155)
+		submitBtn.Size = UDim2.new(0, 240, 0, 45)
 		submitBtn.Font = Enum.Font.GothamBold
 		submitBtn.Text = "Submit"
 		submitBtn.TextColor3 = Color3.new(1, 1, 1)
-		submitBtn.TextSize = 14
+		submitBtn.TextSize = 15
 		submitBtn.AutoButtonColor = false
 		submitBtn.Parent = keyFrame
 		Instance.new("UICorner", submitBtn).CornerRadius = UDim.new(0, 8)
 		
 		local errorLbl = Instance.new("TextLabel")
 		errorLbl.BackgroundTransparency = 1
-		errorLbl.Position = UDim2.new(0, 0, 0, 180)
-		errorLbl.Size = UDim2.new(1, 0, 0, 20)
+		errorLbl.Position = UDim2.new(0, 0, 0, 210)
+		errorLbl.Size = UDim2.new(1, 0, 0, 25)
 		errorLbl.Font = Enum.Font.Gotham
 		errorLbl.Text = ""
 		errorLbl.TextColor3 = theme.Danger
-		errorLbl.TextSize = 12
+		errorLbl.TextSize = 13
 		errorLbl.Parent = keyFrame
 		
 		submitBtn.MouseButton1Click:Connect(function()
 			if keyBox.Text == key then
-				TweenService:Create(keyFrame, TweenInfo.new(0.3), {Position = UDim2.new(0.5, -150, -0.5, -100)}):Play()
+				TweenService:Create(keyFrame, TweenInfo.new(0.3), {Position = UDim2.new(0.5, -175, -0.5, -120)}):Play()
 				task.wait(0.3)
 				keyFrame:Destroy()
 			else
@@ -163,20 +177,22 @@ function AxovocUI:CreateWindow(config)
 		end)
 	end
 	
-	return self:BuildMain(main, minimizedButton, theme, themeName, title, scriptName)
+	return self:BuildMain(main, minimizedButton, theme, themeName, title, scriptName, configFolder, saveName)
 end
 
-function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scriptName)
+function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scriptName, configFolder, saveName)
 	local titleBar = Instance.new("Frame")
 	titleBar.Name = "TitleBar"
 	titleBar.BackgroundColor3 = theme.Sidebar
+	titleBar.BackgroundTransparency = theme.Transparency
 	titleBar.BorderSizePixel = 0
-	titleBar.Size = UDim2.new(1, 0, 0, 45)
+	titleBar.Size = UDim2.new(1, 0, 0, 50)
 	titleBar.Parent = main
 	Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 	
 	local cornerFix = Instance.new("Frame")
 	cornerFix.BackgroundColor3 = theme.Sidebar
+	cornerFix.BackgroundTransparency = theme.Transparency
 	cornerFix.BorderSizePixel = 0
 	cornerFix.Position = UDim2.new(0, 0, 1, -10)
 	cornerFix.Size = UDim2.new(1, 0, 0, 10)
@@ -185,40 +201,40 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 	local titleLbl = Instance.new("TextLabel")
 	titleLbl.BackgroundTransparency = 1
 	titleLbl.Position = UDim2.new(0, 20, 0, 0)
-	titleLbl.Size = UDim2.new(0, 200, 1, 0)
+	titleLbl.Size = UDim2.new(0, 250, 1, 0)
 	titleLbl.Font = Enum.Font.GothamBold
 	titleLbl.Text = title
 	titleLbl.TextColor3 = theme.Text
-	titleLbl.TextSize = 18
+	titleLbl.TextSize = 20
 	titleLbl.TextXAlignment = Enum.TextXAlignment.Left
 	titleLbl.Parent = titleBar
 	
 	local btnHolder = Instance.new("Frame")
 	btnHolder.BackgroundTransparency = 1
-	btnHolder.Position = UDim2.new(1, -90, 0, 10)
-	btnHolder.Size = UDim2.new(0, 80, 0, 25)
+	btnHolder.Position = UDim2.new(1, -100, 0, 12)
+	btnHolder.Size = UDim2.new(0, 90, 0, 28)
 	btnHolder.Parent = titleBar
 	
 	local minBtn = Instance.new("TextButton")
 	minBtn.BackgroundColor3 = theme.Secondary
-	minBtn.Size = UDim2.new(0, 30, 0, 25)
+	minBtn.Size = UDim2.new(0, 35, 0, 28)
 	minBtn.Position = UDim2.new(0, 0, 0, 0)
 	minBtn.Font = Enum.Font.GothamBold
 	minBtn.Text = "−"
 	minBtn.TextColor3 = theme.Text
-	minBtn.TextSize = 16
+	minBtn.TextSize = 18
 	minBtn.AutoButtonColor = false
 	minBtn.Parent = btnHolder
 	Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 6)
 	
 	local closeBtn = Instance.new("TextButton")
 	closeBtn.BackgroundColor3 = theme.Danger
-	closeBtn.Size = UDim2.new(0, 30, 0, 25)
-	closeBtn.Position = UDim2.new(0, 40, 0, 0)
+	closeBtn.Size = UDim2.new(0, 35, 0, 28)
+	closeBtn.Position = UDim2.new(0, 45, 0, 0)
 	closeBtn.Font = Enum.Font.GothamBold
 	closeBtn.Text = "×"
 	closeBtn.TextColor3 = Color3.new(1, 1, 1)
-	closeBtn.TextSize = 16
+	closeBtn.TextSize = 18
 	closeBtn.AutoButtonColor = false
 	closeBtn.Parent = btnHolder
 	Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
@@ -226,9 +242,10 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 	local sidebar = Instance.new("Frame")
 	sidebar.Name = "Sidebar"
 	sidebar.BackgroundColor3 = theme.Sidebar
+	sidebar.BackgroundTransparency = theme.Transparency
 	sidebar.BorderSizePixel = 0
-	sidebar.Position = UDim2.new(0, 0, 0, 45)
-	sidebar.Size = UDim2.new(0, 200, 1, -45)
+	sidebar.Position = UDim2.new(0, 0, 0, 50)
+	sidebar.Size = UDim2.new(0, 200, 1, -50)
 	sidebar.Parent = main
 	
 	local tabList = Instance.new("ScrollingFrame")
@@ -240,13 +257,13 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 	tabList.Parent = sidebar
 	
 	local listLayout = Instance.new("UIListLayout", tabList)
-	listLayout.Padding = UDim.new(0, 4)
+	listLayout.Padding = UDim.new(0, 6)
 	
 	local content = Instance.new("Frame")
 	content.Name = "Content"
 	content.BackgroundTransparency = 1
-	content.Position = UDim2.new(0, 200, 0, 45)
-	content.Size = UDim2.new(1, -200, 1, -45)
+	content.Position = UDim2.new(0, 200, 0, 50)
+	content.Size = UDim2.new(1, -200, 1, -50)
 	content.Parent = main
 	
 	local pageHolder = Instance.new("Frame")
@@ -263,7 +280,7 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			main.Visible = false
 			minimizedButton.Visible = true
 			minimizedButton.Position = UDim2.new(0, math.clamp(main.AbsolutePosition.X, 20, 1000), 0, math.clamp(main.AbsolutePosition.Y, 20, 500))
-			TweenService:Create(minimizedButton, TweenInfo.new(0.3), {Size = UDim2.new(0, 140, 0, 40)}):Play()
+			TweenService:Create(minimizedButton, TweenInfo.new(0.3), {Size = UDim2.new(0, 160, 0, 45)}):Play()
 		end)
 	end)
 	
@@ -325,6 +342,28 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 		end
 	end)
 	
+	local configData = {}
+	local function saveConfig()
+		local success, err = pcall(function()
+			if not isfolder(configFolder) then makefolder(configFolder) end
+			writefile(configFolder .. "/" .. saveName .. ".json", HttpService:JSONEncode(configData))
+		end)
+	end
+	
+	local function loadConfig()
+		local success, data = pcall(function()
+			if isfile(configFolder .. "/" .. saveName .. ".json") then
+				return HttpService:JSONDecode(readfile(configFolder .. "/" .. saveName .. ".json"))
+			end
+			return nil
+		end)
+		if success and data then
+			configData = data
+			return data
+		end
+		return nil
+	end
+	
 	local window = {
 		Theme = theme,
 		ThemeName = themeName,
@@ -334,18 +373,42 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 		Tabs = {},
 		CurrentTab = nil,
 		Elements = {},
+		ConfigData = configData,
+		
+		SaveConfig = function(self)
+			saveConfig()
+		end,
+		
+		LoadConfig = function(self)
+			return loadConfig()
+		end,
+		
+		SetConfigValue = function(self, key, value)
+			configData[key] = value
+			saveConfig()
+		end,
+		
+		GetConfigValue = function(self, key)
+			return configData[key]
+		end,
 		
 		ApplyTheme = function(self, newThemeName)
 			local newTheme = Themes[newThemeName]
 			if not newTheme then return end
 			self.Theme = newTheme
 			self.ThemeName = newThemeName
+			self:SetConfigValue("Theme", newThemeName)
 			
 			main.BackgroundColor3 = newTheme.Background
+			main.BackgroundTransparency = newTheme.Transparency
 			titleBar.BackgroundColor3 = newTheme.Sidebar
+			titleBar.BackgroundTransparency = newTheme.Transparency
 			cornerFix.BackgroundColor3 = newTheme.Sidebar
+			cornerFix.BackgroundTransparency = newTheme.Transparency
 			sidebar.BackgroundColor3 = newTheme.Sidebar
+			sidebar.BackgroundTransparency = newTheme.Transparency
 			minimizedButton.BackgroundColor3 = newTheme.Accent
+			main:FindFirstChildOfClass("UIStroke").Color = newTheme.Border
 			
 			for _, tab in ipairs(self.Tabs) do
 				if tab.Page.Visible then
@@ -354,6 +417,9 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 					tab.Button.BackgroundColor3 = newTheme.Element
 				end
 				tab.Button.TextColor3 = newTheme.Text
+				if tab.Icon then
+					tab.Icon.ImageColor3 = newTheme.Text
+				end
 			end
 			
 			for _, element in ipairs(self.Elements) do
@@ -364,18 +430,51 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 		end,
 		
 		AddTab = function(self, name, icon)
-			local tabBtn = Instance.new("TextButton")
+			local tabBtn = Instance.new("Frame")
 			tabBtn.BackgroundColor3 = self.Theme.Element
-			tabBtn.Size = UDim2.new(1, 0, 0, 38)
-			tabBtn.Font = Enum.Font.Gotham
-			tabBtn.Text = (icon or "📄") .. "  " .. name
-			tabBtn.TextColor3 = self.Theme.Text
-			tabBtn.TextSize = 14
-			tabBtn.TextXAlignment = Enum.TextXAlignment.Left
-			tabBtn.AutoButtonColor = false
+			tabBtn.Size = UDim2.new(1, 0, 0, 42)
 			tabBtn.Parent = tabList
 			Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 8)
-			Instance.new("UIPadding", tabBtn).PaddingLeft = UDim.new(0, 12)
+			
+			local iconLabel
+			if icon then
+				if icon:sub(1, 11) == "rbxassetid:" then
+					iconLabel = Instance.new("ImageLabel")
+					iconLabel.Image = icon
+					iconLabel.BackgroundTransparency = 1
+					iconLabel.Position = UDim2.new(0, 12, 0.5, -10)
+					iconLabel.Size = UDim2.new(0, 20, 0, 20)
+					iconLabel.ImageColor3 = self.Theme.Text
+					iconLabel.Parent = tabBtn
+				else
+					iconLabel = Instance.new("TextLabel")
+					iconLabel.BackgroundTransparency = 1
+					iconLabel.Position = UDim2.new(0, 12, 0, 0)
+					iconLabel.Size = UDim2.new(0, 25, 1, 0)
+					iconLabel.Font = Enum.Font.Gotham
+					iconLabel.Text = icon
+					iconLabel.TextColor3 = self.Theme.Text
+					iconLabel.TextSize = 18
+					iconLabel.Parent = tabBtn
+				end
+			end
+			
+			local lbl = Instance.new("TextLabel")
+			lbl.BackgroundTransparency = 1
+			lbl.Position = icon and UDim2.new(0, 40, 0, 0) or UDim2.new(0, 15, 0, 0)
+			lbl.Size = UDim2.new(1, -50, 1, 0)
+			lbl.Font = Enum.Font.Gotham
+			lbl.Text = name
+			lbl.TextColor3 = self.Theme.Text
+			lbl.TextSize = 14
+			lbl.TextXAlignment = Enum.TextXAlignment.Left
+			lbl.Parent = tabBtn
+			
+			local hit = Instance.new("TextButton")
+			hit.BackgroundTransparency = 1
+			hit.Size = UDim2.new(1, 0, 1, 0)
+			hit.Text = ""
+			hit.Parent = tabBtn
 			
 			local page = Instance.new("ScrollingFrame")
 			page.BackgroundTransparency = 1
@@ -394,9 +493,9 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			pageLayout.Padding = UDim.new(0, 10)
 			pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
 			
-			table.insert(self.Tabs, {Button = tabBtn, Page = page, Name = name})
+			table.insert(self.Tabs, {Button = tabBtn, Page = page, Name = name, Icon = iconLabel})
 			
-			tabBtn.MouseButton1Click:Connect(function()
+			hit.MouseButton1Click:Connect(function()
 				for _, t in ipairs(self.Tabs) do
 					t.Page.Visible = false
 					TweenService:Create(t.Button, TweenInfo.new(0.2), {BackgroundColor3 = self.Theme.Element}):Play()
@@ -418,11 +517,11 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 		AddSection = function(self, parent, text)
 			local section = Instance.new("TextLabel")
 			section.BackgroundTransparency = 1
-			section.Size = UDim2.new(1, 0, 0, 25)
+			section.Size = UDim2.new(1, 0, 0, 28)
 			section.Font = Enum.Font.GothamBold
 			section.Text = text
 			section.TextColor3 = self.Theme.Accent
-			section.TextSize = 14
+			section.TextSize = 15
 			section.TextXAlignment = Enum.TextXAlignment.Left
 			section.Parent = parent
 			section.LayoutOrder = #parent:GetChildren()
@@ -432,7 +531,7 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 		AddButton = function(self, parent, text, callback)
 			local btn = Instance.new("TextButton")
 			btn.BackgroundColor3 = self.Theme.Element
-			btn.Size = UDim2.new(1, 0, 0, 40)
+			btn.Size = UDim2.new(1, 0, 0, 42)
 			btn.Font = Enum.Font.Gotham
 			btn.Text = text
 			btn.TextColor3 = self.Theme.Text
@@ -468,10 +567,10 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			return btn
 		end,
 		
-		AddToggle = function(self, parent, text, default, callback)
+		AddToggle = function(self, parent, text, default, callback, configKey)
 			local holder = Instance.new("Frame")
 			holder.BackgroundColor3 = self.Theme.Element
-			holder.Size = UDim2.new(1, 0, 0, 45)
+			holder.Size = UDim2.new(1, 0, 0, 48)
 			holder.Parent = parent
 			holder.LayoutOrder = #parent:GetChildren()
 			Instance.new("UICorner", holder).CornerRadius = UDim.new(0, 8)
@@ -489,16 +588,16 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			
 			local toggle = Instance.new("Frame")
 			toggle.BackgroundColor3 = default and self.Theme.Accent or self.Theme.Secondary
-			toggle.Position = UDim2.new(1, -60, 0.5, -12)
-			toggle.Size = UDim2.new(0, 50, 0, 24)
+			toggle.Position = UDim2.new(1, -65, 0.5, -13)
+			toggle.Size = UDim2.new(0, 55, 0, 26)
 			toggle.ClipsDescendants = true
 			toggle.Parent = holder
 			Instance.new("UICorner", toggle).CornerRadius = UDim.new(1, 0)
 			
 			local knob = Instance.new("Frame")
 			knob.BackgroundColor3 = Color3.new(1, 1, 1)
-			knob.Position = default and UDim2.new(1, -22, 0, 2) or UDim2.new(0, 2, 0, 2)
-			knob.Size = UDim2.new(0, 20, 0, 20)
+			knob.Position = default and UDim2.new(1, -24, 0, 2) or UDim2.new(0, 2, 0, 2)
+			knob.Size = UDim2.new(0, 22, 0, 22)
 			knob.Parent = toggle
 			Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
 			
@@ -514,12 +613,18 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 				end
 			})
 			
+			if configKey then
+				local saved = self:GetConfigValue(configKey)
+				if saved ~= nil then default = saved end
+			end
+			
 			local enabled = default
 			local function update()
 				enabled = not enabled
 				TweenService:Create(toggle, TweenInfo.new(0.2), {BackgroundColor3 = enabled and self.Theme.Accent or self.Theme.Secondary}):Play()
-				TweenService:Create(knob, TweenInfo.new(0.2), {Position = enabled and UDim2.new(1, -22, 0, 2) or UDim2.new(0, 2, 0, 2)}):Play()
+				TweenService:Create(knob, TweenInfo.new(0.2), {Position = enabled and UDim2.new(1, -24, 0, 2) or UDim2.new(0, 2, 0, 2)}):Play()
 				if callback then callback(enabled) end
+				if configKey then self:SetConfigValue(configKey, enabled) end
 			end
 			
 			local hit = Instance.new("TextButton")
@@ -540,18 +645,18 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			}
 		end,
 		
-		AddSlider = function(self, parent, text, min, max, default, callback)
+		AddSlider = function(self, parent, text, min, max, default, callback, configKey)
 			local holder = Instance.new("Frame")
 			holder.BackgroundColor3 = self.Theme.Element
-			holder.Size = UDim2.new(1, 0, 0, 60)
+			holder.Size = UDim2.new(1, 0, 0, 65)
 			holder.Parent = parent
 			holder.LayoutOrder = #parent:GetChildren()
 			Instance.new("UICorner", holder).CornerRadius = UDim.new(0, 8)
 			
 			local lbl = Instance.new("TextLabel")
 			lbl.BackgroundTransparency = 1
-			lbl.Position = UDim2.new(0, 15, 0, 8)
-			lbl.Size = UDim2.new(0.8, 0, 0, 20)
+			lbl.Position = UDim2.new(0, 15, 0, 10)
+			lbl.Size = UDim2.new(0.8, 0, 0, 22)
 			lbl.Font = Enum.Font.Gotham
 			lbl.Text = text .. ": " .. default
 			lbl.TextColor3 = self.Theme.Text
@@ -561,8 +666,8 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			
 			local valLbl = Instance.new("TextLabel")
 			valLbl.BackgroundTransparency = 1
-			valLbl.Position = UDim2.new(1, -50, 0, 8)
-			valLbl.Size = UDim2.new(0, 40, 0, 20)
+			valLbl.Position = UDim2.new(1, -55, 0, 10)
+			valLbl.Size = UDim2.new(0, 45, 0, 22)
 			valLbl.Font = Enum.Font.GothamBold
 			valLbl.Text = tostring(default)
 			valLbl.TextColor3 = self.Theme.Accent
@@ -571,7 +676,7 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			
 			local track = Instance.new("Frame")
 			track.BackgroundColor3 = self.Theme.Secondary
-			track.Position = UDim2.new(0, 15, 0, 38)
+			track.Position = UDim2.new(0, 15, 0, 42)
 			track.Size = UDim2.new(1, -30, 0, 6)
 			track.Parent = holder
 			Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
@@ -585,8 +690,8 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			
 			local knob = Instance.new("Frame")
 			knob.BackgroundColor3 = Color3.new(1, 1, 1)
-			knob.Position = UDim2.new((default - min) / (max - min), -8, 0.5, -8)
-			knob.Size = UDim2.new(0, 16, 0, 16)
+			knob.Position = UDim2.new((default - min) / (max - min), -9, 0.5, -9)
+			knob.Size = UDim2.new(0, 18, 0, 18)
 			knob.ZIndex = 2
 			knob.Parent = track
 			Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
@@ -604,15 +709,21 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 				end
 			})
 			
+			if configKey then
+				local saved = self:GetConfigValue(configKey)
+				if saved ~= nil then default = math.clamp(saved, min, max) end
+			end
+			
 			local dragging = false
 			local function update(input)
 				local pos = math.clamp((input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
 				local val = math.floor(min + (max - min) * pos)
-				knob.Position = UDim2.new(pos, -8, 0.5, -8)
+				knob.Position = UDim2.new(pos, -9, 0.5, -9)
 				fill.Size = UDim2.new(pos, 0, 1, 0)
 				lbl.Text = text .. ": " .. val
 				valLbl.Text = tostring(val)
 				if callback then callback(val) end
+				if configKey then self:SetConfigValue(configKey, val) end
 				return val
 			end
 			
@@ -639,7 +750,7 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 				Value = function() return math.floor(min + (max - min) * fill.Size.X.Scale) end,
 				Set = function(v)
 					local pos = math.clamp((v - min) / (max - min), 0, 1)
-					TweenService:Create(knob, TweenInfo.new(0.2), {Position = UDim2.new(pos, -8, 0.5, -8)}):Play()
+					TweenService:Create(knob, TweenInfo.new(0.2), {Position = UDim2.new(pos, -9, 0.5, -9)}):Play()
 					TweenService:Create(fill, TweenInfo.new(0.2), {Size = UDim2.new(pos, 0, 1, 0)}):Play()
 					lbl.Text = text .. ": " .. v
 					valLbl.Text = tostring(v)
@@ -647,17 +758,17 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			}
 		end,
 		
-		AddDropdown = function(self, parent, text, options, callback)
+		AddDropdown = function(self, parent, text, options, callback, configKey)
 			local holder = Instance.new("Frame")
 			holder.BackgroundTransparency = 1
-			holder.Size = UDim2.new(1, 0, 0, 45)
+			holder.Size = UDim2.new(1, 0, 0, 48)
 			holder.ClipsDescendants = true
 			holder.Parent = parent
 			holder.LayoutOrder = #parent:GetChildren()
 			
 			local btn = Instance.new("TextButton")
 			btn.BackgroundColor3 = self.Theme.Element
-			btn.Size = UDim2.new(1, 0, 0, 45)
+			btn.Size = UDim2.new(1, 0, 0, 48)
 			btn.Font = Enum.Font.Gotham
 			btn.Text = "  " .. text .. "  ▼"
 			btn.TextColor3 = self.Theme.Text
@@ -667,27 +778,31 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			btn.Parent = holder
 			Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
 			
-			local list = Instance.new("Frame")
+			local list = Instance.new("ScrollingFrame")
 			list.BackgroundColor3 = self.Theme.Secondary
-			list.Position = UDim2.new(0, 0, 0, 50)
-			list.Size = UDim2.new(1, 0, 0, 0)
+			list.Position = UDim2.new(0, 0, 0, 53)
+			list.Size = UDim2.new(1, 0, 0, 150)
 			list.Visible = false
 			list.ZIndex = 10
+			list.ScrollBarThickness = 4
+			list.ScrollBarImageColor3 = self.Theme.Accent
+			list.AutomaticCanvasSize = Enum.AutomaticSize.Y
 			list.Parent = holder
 			Instance.new("UICorner", list).CornerRadius = UDim.new(0, 8)
 			
 			local listLayout = Instance.new("UIListLayout", list)
-			listLayout.Padding = UDim.new(0, 2)
-			Instance.new("UIPadding", list).PaddingTop = UDim.new(0, 5)
-			Instance.new("UIPadding", list).PaddingBottom = UDim.new(0, 5)
-			Instance.new("UIPadding", list).PaddingLeft = UDim.new(0, 5)
-			Instance.new("UIPadding", list).PaddingRight = UDim.new(0, 5)
+			listLayout.Padding = UDim.new(0, 4)
+			Instance.new("UIPadding", list).PaddingTop = UDim.new(0, 8)
+			Instance.new("UIPadding", list).PaddingBottom = UDim.new(0, 8)
+			Instance.new("UIPadding", list).PaddingLeft = UDim.new(0, 8)
+			Instance.new("UIPadding", list).PaddingRight = UDim.new(0, 8)
 			
 			table.insert(self.Elements, {
 				UpdateTheme = function(_, newTheme)
 					btn.BackgroundColor3 = newTheme.Element
 					btn.TextColor3 = newTheme.Text
 					list.BackgroundColor3 = newTheme.Secondary
+					list.ScrollBarImageColor3 = newTheme.Accent
 				end
 			})
 			
@@ -695,7 +810,7 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			for _, opt in ipairs(options) do
 				local optBtn = Instance.new("TextButton")
 				optBtn.BackgroundColor3 = self.Theme.Element
-				optBtn.Size = UDim2.new(1, 0, 0, 35)
+				optBtn.Size = UDim2.new(1, 0, 0, 38)
 				optBtn.Font = Enum.Font.Gotham
 				optBtn.Text = "  " .. opt
 				optBtn.TextColor3 = self.Theme.Text
@@ -708,10 +823,11 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 				
 				optBtn.MouseButton1Click:Connect(function()
 					btn.Text = "  " .. text .. ": " .. opt .. "  ▼"
-					TweenService:Create(holder, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 45)}):Play()
+					TweenService:Create(holder, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 48)}):Play()
 					list.Visible = false
 					open = false
 					if callback then callback(opt) end
+					if configKey then self:SetConfigValue(configKey, opt) end
 				end)
 			end
 			
@@ -719,9 +835,9 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 				open = not open
 				if open then
 					list.Visible = true
-					TweenService:Create(holder, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 50 + listLayout.AbsoluteContentSize.Y + 10)}):Play()
+					TweenService:Create(holder, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 210)}):Play()
 				else
-					TweenService:Create(holder, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 45)}):Play()
+					TweenService:Create(holder, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 48)}):Play()
 					list.Visible = false
 				end
 			end)
@@ -733,18 +849,18 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			}
 		end,
 		
-		AddInput = function(self, parent, text, placeholder, callback)
+		AddInput = function(self, parent, text, placeholder, callback, configKey)
 			local holder = Instance.new("Frame")
 			holder.BackgroundColor3 = self.Theme.Element
-			holder.Size = UDim2.new(1, 0, 0, 75)
+			holder.Size = UDim2.new(1, 0, 0, 80)
 			holder.Parent = parent
 			holder.LayoutOrder = #parent:GetChildren()
 			Instance.new("UICorner", holder).CornerRadius = UDim.new(0, 8)
 			
 			local lbl = Instance.new("TextLabel")
 			lbl.BackgroundTransparency = 1
-			lbl.Position = UDim2.new(0, 15, 0, 10)
-			lbl.Size = UDim2.new(1, -30, 0, 20)
+			lbl.Position = UDim2.new(0, 15, 0, 12)
+			lbl.Size = UDim2.new(1, -30, 0, 22)
 			lbl.Font = Enum.Font.Gotham
 			lbl.Text = text
 			lbl.TextColor3 = self.Theme.Text
@@ -754,8 +870,8 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			
 			local box = Instance.new("TextBox")
 			box.BackgroundColor3 = self.Theme.Secondary
-			box.Position = UDim2.new(0, 15, 0, 35)
-			box.Size = UDim2.new(1, -30, 0, 30)
+			box.Position = UDim2.new(0, 15, 0, 38)
+			box.Size = UDim2.new(1, -30, 0, 32)
 			box.Font = Enum.Font.Gotham
 			box.PlaceholderText = placeholder or "..."
 			box.Text = ""
@@ -774,8 +890,14 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 				end
 			})
 			
+			if configKey then
+				local saved = self:GetConfigValue(configKey)
+				if saved ~= nil then box.Text = saved end
+			end
+			
 			box.FocusLost:Connect(function()
 				if callback then callback(box.Text) end
+				if configKey then self:SetConfigValue(configKey, box.Text) end
 			end)
 			
 			return {
@@ -784,10 +906,10 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			}
 		end,
 		
-		AddKeybind = function(self, parent, text, default, callback)
+		AddKeybind = function(self, parent, text, default, callback, configKey)
 			local holder = Instance.new("Frame")
 			holder.BackgroundColor3 = self.Theme.Element
-			holder.Size = UDim2.new(1, 0, 0, 45)
+			holder.Size = UDim2.new(1, 0, 0, 48)
 			holder.Parent = parent
 			holder.LayoutOrder = #parent:GetChildren()
 			Instance.new("UICorner", holder).CornerRadius = UDim.new(0, 8)
@@ -805,8 +927,8 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			
 			local btn = Instance.new("TextButton")
 			btn.BackgroundColor3 = self.Theme.Secondary
-			btn.Position = UDim2.new(1, -100, 0.5, -15)
-			btn.Size = UDim2.new(0, 90, 0, 30)
+			btn.Position = UDim2.new(1, -110, 0.5, -16)
+			btn.Size = UDim2.new(0, 100, 0, 32)
 			btn.Font = Enum.Font.GothamBold
 			btn.Text = default and default.Name or "None"
 			btn.TextColor3 = self.Theme.Text
@@ -827,6 +949,14 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			local listening = false
 			local current = default
 			
+			if configKey then
+				local saved = self:GetConfigValue(configKey)
+				if saved then
+					current = Enum.KeyCode[saved] or default
+					btn.Text = current and current.Name or "None"
+				end
+			end
+			
 			btn.MouseButton1Click:Connect(function()
 				listening = true
 				btn.Text = "..."
@@ -838,6 +968,7 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 					current = input.KeyCode
 					btn.Text = current.Name
 					if callback then callback(current) end
+					if configKey then self:SetConfigValue(configKey, current.Name) end
 				end
 			end)
 			
@@ -846,10 +977,10 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			}
 		end,
 		
-		AddColorPicker = function(self, parent, text, default, callback)
+		AddColorPicker = function(self, parent, text, default, callback, configKey)
 			local holder = Instance.new("Frame")
 			holder.BackgroundColor3 = self.Theme.Element
-			holder.Size = UDim2.new(1, 0, 0, 45)
+			holder.Size = UDim2.new(1, 0, 0, 48)
 			holder.ClipsDescendants = true
 			holder.Parent = parent
 			holder.LayoutOrder = #parent:GetChildren()
@@ -858,7 +989,7 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			local lbl = Instance.new("TextLabel")
 			lbl.BackgroundTransparency = 1
 			lbl.Position = UDim2.new(0, 15, 0, 0)
-			lbl.Size = UDim2.new(0.6, 0, 0, 45)
+			lbl.Size = UDim2.new(0.6, 0, 0, 48)
 			lbl.Font = Enum.Font.Gotham
 			lbl.Text = text
 			lbl.TextColor3 = self.Theme.Text
@@ -869,8 +1000,8 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			
 			local preview = Instance.new("TextButton")
 			preview.BackgroundColor3 = default
-			preview.Position = UDim2.new(1, -55, 0.5, -15)
-			preview.Size = UDim2.new(0, 40, 0, 30)
+			preview.Position = UDim2.new(1, -60, 0.5, -16)
+			preview.Size = UDim2.new(0, 45, 0, 32)
 			preview.Text = ""
 			preview.AutoButtonColor = false
 			preview.Parent = holder
@@ -879,8 +1010,8 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			
 			local picker = Instance.new("Frame")
 			picker.BackgroundColor3 = self.Theme.Secondary
-			picker.Position = UDim2.new(0, 15, 0, 55)
-			picker.Size = UDim2.new(1, -30, 0, 120)
+			picker.Position = UDim2.new(0, 15, 0, 58)
+			picker.Size = UDim2.new(1, -30, 0, 140)
 			picker.Visible = false
 			picker.Parent = holder
 			Instance.new("UICorner", picker).CornerRadius = UDim.new(0, 8)
@@ -930,13 +1061,16 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			preview.MouseButton1Click:Connect(function()
 				open = not open
 				picker.Visible = open
-				TweenService:Create(holder, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, open and 185 or 45)}):Play()
+				TweenService:Create(holder, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, open and 210 or 48)}):Play()
 			end)
 			
 			return {
 				Set = function(c)
 					preview.BackgroundColor3 = c
 					if callback then callback(c) end
+					if configKey then
+						self:SetConfigValue(configKey, {r = math.floor(c.R * 255), g = math.floor(c.G * 255), b = math.floor(c.B * 255)})
+					end
 				end
 			}
 		end,
@@ -944,15 +1078,15 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 		AddPlayerSelector = function(self, parent, callback)
 			local holder = Instance.new("Frame")
 			holder.BackgroundColor3 = self.Theme.Element
-			holder.Size = UDim2.new(1, 0, 0, 220)
+			holder.Size = UDim2.new(1, 0, 0, 240)
 			holder.Parent = parent
 			holder.LayoutOrder = #parent:GetChildren()
 			Instance.new("UICorner", holder).CornerRadius = UDim.new(0, 8)
 			
 			local search = Instance.new("TextBox")
 			search.BackgroundColor3 = self.Theme.Secondary
-			search.Position = UDim2.new(0, 15, 0, 10)
-			search.Size = UDim2.new(1, -30, 0, 35)
+			search.Position = UDim2.new(0, 15, 0, 12)
+			search.Size = UDim2.new(1, -30, 0, 38)
 			search.Font = Enum.Font.Gotham
 			search.PlaceholderText = "🔍 Search players..."
 			search.Text = ""
@@ -963,15 +1097,15 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			
 			local scroll = Instance.new("ScrollingFrame")
 			scroll.BackgroundTransparency = 1
-			scroll.Position = UDim2.new(0, 15, 0, 55)
-			scroll.Size = UDim2.new(1, -30, 1, -65)
+			scroll.Position = UDim2.new(0, 15, 0, 60)
+			scroll.Size = UDim2.new(1, -30, 1, -75)
 			scroll.ScrollBarThickness = 4
 			scroll.ScrollBarImageColor3 = self.Theme.Accent
 			scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 			scroll.Parent = holder
 			
 			local listLayout = Instance.new("UIListLayout", scroll)
-			listLayout.Padding = UDim.new(0, 4)
+			listLayout.Padding = UDim.new(0, 6)
 			
 			table.insert(self.Elements, {
 				UpdateTheme = function(_, newTheme)
@@ -990,7 +1124,7 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 					if not query or plr.Name:lower():find(query:lower()) then
 						local btn = Instance.new("TextButton")
 						btn.BackgroundColor3 = self.Theme.Secondary
-						btn.Size = UDim2.new(1, 0, 0, 35)
+						btn.Size = UDim2.new(1, 0, 0, 38)
 						btn.Font = Enum.Font.Gotham
 						btn.Text = "  👤 " .. plr.Name
 						btn.TextColor3 = self.Theme.Text
@@ -1019,7 +1153,7 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 		AddLabel = function(self, parent, text)
 			local lbl = Instance.new("TextLabel")
 			lbl.BackgroundTransparency = 1
-			lbl.Size = UDim2.new(1, 0, 0, 25)
+			lbl.Size = UDim2.new(1, 0, 0, 28)
 			lbl.Font = Enum.Font.Gotham
 			lbl.Text = text
 			lbl.TextColor3 = self.Theme.TextDark
@@ -1041,7 +1175,7 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 		AddParagraph = function(self, parent, text)
 			local lbl = Instance.new("TextLabel")
 			lbl.BackgroundTransparency = 1
-			lbl.Size = UDim2.new(1, 0, 0, 50)
+			lbl.Size = UDim2.new(1, 0, 0, 55)
 			lbl.Font = Enum.Font.Gotham
 			lbl.Text = text
 			lbl.TextColor3 = self.Theme.Text
@@ -1064,7 +1198,7 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 		AddImage = function(self, parent, imageId, size)
 			local img = Instance.new("ImageLabel")
 			img.BackgroundTransparency = 1
-			img.Size = size or UDim2.new(0, 100, 0, 100)
+			img.Size = size or UDim2.new(0, 120, 0, 120)
 			img.Image = imageId or ""
 			img.ScaleType = Enum.ScaleType.Fit
 			img.Parent = parent
@@ -1076,7 +1210,7 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 		AddSearch = function(self, parent, placeholder, callback)
 			local box = Instance.new("TextBox")
 			box.BackgroundColor3 = self.Theme.Secondary
-			box.Size = UDim2.new(1, 0, 0, 35)
+			box.Size = UDim2.new(1, 0, 0, 38)
 			box.Font = Enum.Font.Gotham
 			box.PlaceholderText = "🔍 " .. (placeholder or "Search...")
 			box.Text = ""
@@ -1100,23 +1234,72 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			return box
 		end,
 		
-		AddThemeSelector = function(self, parent)
+		AddSettings = function(self, parent)
+			local settingsTab = parent
+			
+			self:AddSection(settingsTab, "Appearance")
+			
 			local themeOptions = {}
 			for name, _ in pairs(Themes) do
 				table.insert(themeOptions, name)
 			end
 			
-			return self:AddDropdown(parent, "Theme", themeOptions, function(selectedTheme)
+			self:AddDropdown(settingsTab, "UI Theme", themeOptions, function(selectedTheme)
 				self:ApplyTheme(selectedTheme)
+			end, "Theme")
+			
+			self:AddSection(settingsTab, "Configuration")
+			
+			self:AddButton(settingsTab, "💾 Save Configuration", function()
+				self:SaveConfig()
+				self:Notify("Configuration saved!", 2)
 			end)
+			
+			self:AddButton(settingsTab, "📂 Load Configuration", function()
+				local data = self:LoadConfig()
+				if data then
+					self:Notify("Configuration loaded!", 2)
+					if data.Theme then
+						self:ApplyTheme(data.Theme)
+					end
+				else
+					self:Notify("No configuration found!", 2)
+				end
+			end)
+			
+			self:AddButton(settingsTab, "🗑️ Reset Configuration", function()
+				self.ConfigData = {}
+				self:SaveConfig()
+				self:Notify("Configuration reset!", 2)
+			end)
+			
+			self:AddSection(settingsTab, "UI Settings")
+			
+			self:AddToggle(settingsTab, "Show Notifications", true, function(v)
+				self:SetConfigValue("ShowNotifications", v)
+			end, "ShowNotifications")
+			
+			self:AddSlider(settingsTab, "UI Transparency", 0, 90, 35, function(v)
+				local trans = v / 100
+				main.BackgroundTransparency = trans
+				titleBar.BackgroundTransparency = trans
+				sidebar.BackgroundTransparency = trans
+				self:SetConfigValue("Transparency", v)
+			end, "Transparency")
+			
+			self:AddSection(settingsTab, "Info")
+			
+			self:AddParagraph(settingsTab, "Axovoc UI Library v2.0\nMade with ❤️ for Roblox scripting community.\nUse the config system to save your preferences.")
 		end,
 		
 		Notify = function(self, message, duration)
+			if self:GetConfigValue("ShowNotifications") == false then return end
 			local gui = main:FindFirstAncestorOfClass("ScreenGui")
 			local notif = Instance.new("Frame")
 			notif.BackgroundColor3 = self.Theme.Secondary
-			notif.Position = UDim2.new(0.5, -150, 0, -80)
-			notif.Size = UDim2.new(0, 300, 0, 70)
+			notif.BackgroundTransparency = 0.2
+			notif.Position = UDim2.new(0.5, -160, 0, -90)
+			notif.Size = UDim2.new(0, 320, 0, 75)
 			notif.ZIndex = 100
 			notif.Parent = gui
 			Instance.new("UICorner", notif).CornerRadius = UDim.new(0, 10)
@@ -1136,14 +1319,30 @@ function AxovocUI:BuildMain(main, minimizedButton, theme, themeName, title, scri
 			lbl.TextWrapped = true
 			lbl.Parent = notif
 			
-			TweenService:Create(notif, TweenInfo.new(0.3), {Position = UDim2.new(0.5, -150, 0, 20)}):Play()
+			TweenService:Create(notif, TweenInfo.new(0.3), {Position = UDim2.new(0.5, -160, 0, 25)}):Play()
 			task.delay(duration or 3, function()
-				TweenService:Create(notif, TweenInfo.new(0.3), {Position = UDim2.new(0.5, -150, 0, -80)}):Play()
+				TweenService:Create(notif, TweenInfo.new(0.3), {Position = UDim2.new(0.5, -160, 0, -90)}):Play()
 				task.wait(0.3)
 				notif:Destroy()
 			end)
 		end
 	}
+	
+	task.spawn(function()
+		task.wait(0.5)
+		local loaded = window:LoadConfig()
+		if loaded then
+			if loaded.Theme then
+				window:ApplyTheme(loaded.Theme)
+			end
+			if loaded.Transparency then
+				local trans = loaded.Transparency / 100
+				main.BackgroundTransparency = trans
+				titleBar.BackgroundTransparency = trans
+				sidebar.BackgroundTransparency = trans
+			end
+		end
+	end)
 	
 	return window
 end
