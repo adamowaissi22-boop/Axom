@@ -17,11 +17,6 @@ local camera = Workspace.CurrentCamera
 local PlaceId = game.PlaceId
 local JobId = game.JobId
 
-local commands = {}
-local commandHistory = {}
-local currentSuggestionIndex = 1
-local suggestions = {}
-
 local flyActive = false
 local flyConnection = nil
 local vehicleFlyActive = false
@@ -71,34 +66,10 @@ local jerkAnim = nil
 local bunnyHopActive = false
 local bunnyHopConnection = nil
 local boostFpsActive = false
-local loopWsActive = false
-local loopWsConnection = nil
-local loopWsSpeed = 16
-local loopJpActive = false
-local loopJpConnection = nil
-local loopJpPower = 50
 local loopGrabActive = false
 local loopGrabConnection = nil
 local loopMuteActive = false
 local loopMuteConnection = nil
-local loopVoidActive = false
-local loopVoidConnection = nil
-local loopKillActive = false
-local loopKillConnection = nil
-local loopBringActive = false
-local loopBringConnection = nil
-local loopBanActive = false
-local loopBanConnection = nil
-local loopTornadoActive = false
-local loopTornadoConnection = nil
-local loopCuffActive = false
-local loopCuffConnection = nil
-local loopStandActive = false
-local loopStandConnection = nil
-local loopWaveActive = false
-local loopWaveConnection = nil
-local loopSpookActive = false
-local loopSpookConnection = nil
 local annoyActive = false
 local annoyConnection = nil
 local spamActive = false
@@ -107,18 +78,13 @@ local spamText = ""
 local yellSpamActive = false
 local yellSpamConnection = nil
 local yellSpamText = ""
-local chatLoggerActive = false
-local chatLoggerGui = nil
-local chatSpyActive = false
 local remoteSpyActive = false
 local httpSpyActive = false
 local webhookSpyActive = false
 local antiKickActive = false
-local antiBanActive = false
 local antiFlingActive = false
 local antiFlingConnection = nil
 local antiVoidActive = false
-local antiVoidConnection = nil
 local antiSitActive = false
 local antiAttachActive = false
 local antiAttachConnection = nil
@@ -133,8 +99,7 @@ local fakeLagConnection = nil
 local invisActive = false
 local headlessActive = false
 local nakedActive = false
-local godModeActive = false
-local godModeConnection = nil
+local chatSpyActive = false
 
 local function getPlayers(input)
     local playersList = {}
@@ -191,9 +156,420 @@ local function getRoot(char)
     return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
 end
 
-local function getTorso(char)
-    return char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso") or char:FindFirstChild("LowerTorso")
+local themes = {
+    Midnight = {
+        Main = Color3.fromRGB(15, 15, 20),
+        TopBar = Color3.fromRGB(25, 25, 35),
+        Accent = Color3.fromRGB(0, 170, 255),
+        Button = Color3.fromRGB(35, 35, 45),
+        ButtonText = Color3.fromRGB(255, 255, 255),
+        Text = Color3.fromRGB(220, 220, 220),
+        Dropdown = Color3.fromRGB(30, 30, 40),
+        CmdBar = Color3.fromRGB(10, 10, 15)
+    },
+    Cyber = {
+        Main = Color3.fromRGB(0, 10, 25),
+        TopBar = Color3.fromRGB(0, 25, 55),
+        Accent = Color3.fromRGB(0, 255, 200),
+        Button = Color3.fromRGB(0, 40, 80),
+        ButtonText = Color3.fromRGB(0, 255, 200),
+        Text = Color3.fromRGB(0, 200, 180),
+        Dropdown = Color3.fromRGB(0, 20, 45),
+        CmdBar = Color3.fromRGB(0, 5, 15)
+    },
+    Axomic = {
+        Main = Color3.fromRGB(20, 0, 0),
+        TopBar = Color3.fromRGB(45, 0, 0),
+        Accent = Color3.fromRGB(255, 30, 30),
+        Button = Color3.fromRGB(60, 0, 0),
+        ButtonText = Color3.fromRGB(255, 80, 80),
+        Text = Color3.fromRGB(255, 150, 150),
+        Dropdown = Color3.fromRGB(35, 0, 0),
+        CmdBar = Color3.fromRGB(15, 0, 0)
+    },
+    Kawaii = {
+        Main = Color3.fromRGB(255, 210, 225),
+        TopBar = Color3.fromRGB(255, 170, 200),
+        Accent = Color3.fromRGB(255, 100, 150),
+        Button = Color3.fromRGB(255, 190, 210),
+        ButtonText = Color3.fromRGB(255, 60, 110),
+        Text = Color3.fromRGB(200, 80, 120),
+        Dropdown = Color3.fromRGB(255, 180, 210),
+        CmdBar = Color3.fromRGB(250, 180, 210)
+    },
+    Sunset = {
+        Main = Color3.fromRGB(45, 20, 30),
+        TopBar = Color3.fromRGB(85, 35, 45),
+        Accent = Color3.fromRGB(255, 140, 100),
+        Button = Color3.fromRGB(125, 45, 55),
+        ButtonText = Color3.fromRGB(255, 180, 140),
+        Text = Color3.fromRGB(255, 170, 130),
+        Dropdown = Color3.fromRGB(65, 30, 40),
+        CmdBar = Color3.fromRGB(35, 15, 25)
+    }
+}
+
+local currentTheme = "Midnight"
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AxoAdminGUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = CoreGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 350, 0, 480)
+MainFrame.Position = UDim2.new(0.5, -175, 0.5, -240)
+MainFrame.BackgroundColor3 = themes[currentTheme].Main
+MainFrame.BackgroundTransparency = 0.7
+MainFrame.BorderSizePixel = 2
+MainFrame.BorderColor3 = themes[currentTheme].Accent
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 35)
+TopBar.BackgroundColor3 = themes[currentTheme].TopBar
+TopBar.BackgroundTransparency = 0.7
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, -65, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "AxoAdmin Cmd"
+Title.TextColor3 = themes[currentTheme].Accent
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.Parent = TopBar
+
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
+MinimizeButton.Position = UDim2.new(1, -70, 0, 2.5)
+MinimizeButton.BackgroundColor3 = themes[currentTheme].Button
+MinimizeButton.BackgroundTransparency = 0.7
+MinimizeButton.Text = "−"
+MinimizeButton.TextColor3 = themes[currentTheme].Accent
+MinimizeButton.TextScaled = true
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.BorderSizePixel = 1
+MinimizeButton.BorderColor3 = themes[currentTheme].Accent
+MinimizeButton.Parent = TopBar
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 2.5)
+CloseButton.BackgroundColor3 = themes[currentTheme].Button
+CloseButton.BackgroundTransparency = 0.7
+CloseButton.Text = "✕"
+CloseButton.TextColor3 = Color3.fromRGB(255, 80, 80)
+CloseButton.TextScaled = true
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.BorderSizePixel = 1
+CloseButton.BorderColor3 = Color3.fromRGB(255, 80, 80)
+CloseButton.Parent = TopBar
+
+local Credits = Instance.new("TextLabel")
+Credits.Name = "Credits"
+Credits.Size = UDim2.new(1, 0, 0, 20)
+Credits.Position = UDim2.new(0, 0, 1, -22)
+Credits.BackgroundTransparency = 1
+Credits.Text = "Made By Axom"
+Credits.TextColor3 = themes[currentTheme].Text
+Credits.TextSize = 12
+Credits.Font = Enum.Font.Gotham
+Credits.Parent = MainFrame
+
+local ThemeDropdown = Instance.new("Frame")
+ThemeDropdown.Name = "ThemeDropdown"
+ThemeDropdown.Size = UDim2.new(0, 120, 0, 30)
+ThemeDropdown.Position = UDim2.new(1, -130, 0, 5)
+ThemeDropdown.BackgroundColor3 = themes[currentTheme].Dropdown
+ThemeDropdown.BackgroundTransparency = 0.7
+ThemeDropdown.BorderSizePixel = 1
+ThemeDropdown.BorderColor3 = themes[currentTheme].Accent
+ThemeDropdown.Parent = MainFrame
+
+local DropdownButton = Instance.new("TextButton")
+DropdownButton.Name = "DropdownButton"
+DropdownButton.Size = UDim2.new(1, 0, 1, 0)
+DropdownButton.BackgroundColor3 = themes[currentTheme].Dropdown
+DropdownButton.BackgroundTransparency = 0.7
+DropdownButton.BorderSizePixel = 0
+DropdownButton.Text = "Theme ▼"
+DropdownButton.TextColor3 = themes[currentTheme].Accent
+DropdownButton.TextSize = 12
+DropdownButton.Font = Enum.Font.Gotham
+DropdownButton.Parent = ThemeDropdown
+
+local DropdownList = Instance.new("ScrollingFrame")
+DropdownList.Name = "DropdownList"
+DropdownList.Size = UDim2.new(1, 0, 0, 100)
+DropdownList.Position = UDim2.new(0, 0, 1, 2)
+DropdownList.BackgroundColor3 = themes[currentTheme].Dropdown
+DropdownList.BackgroundTransparency = 0.7
+DropdownList.BorderSizePixel = 1
+DropdownList.BorderColor3 = themes[currentTheme].Accent
+DropdownList.Visible = false
+DropdownList.ScrollBarThickness = 4
+DropdownList.CanvasSize = UDim2.new(0, 0, 0, 0)
+DropdownList.Parent = ThemeDropdown
+
+local ThemeLayout = Instance.new("UIListLayout")
+ThemeLayout.Padding = UDim.new(0, 2)
+ThemeLayout.Parent = DropdownList
+
+local CommandDisplay = Instance.new("ScrollingFrame")
+CommandDisplay.Name = "CommandDisplay"
+CommandDisplay.Size = UDim2.new(1, -20, 1, -50)
+CommandDisplay.Position = UDim2.new(0, 10, 0, 40)
+CommandDisplay.BackgroundColor3 = themes[currentTheme].Main
+CommandDisplay.BackgroundTransparency = 0.5
+CommandDisplay.BorderSizePixel = 1
+CommandDisplay.BorderColor3 = themes[currentTheme].Accent
+CommandDisplay.ScrollBarThickness = 6
+CommandDisplay.CanvasSize = UDim2.new(0, 0, 0, 0)
+CommandDisplay.Parent = MainFrame
+
+local DisplayLayout = Instance.new("UIListLayout")
+DisplayLayout.Padding = UDim.new(0, 2)
+DisplayLayout.Parent = CommandDisplay
+
+local CmdBarFrame = Instance.new("Frame")
+CmdBarFrame.Name = "CmdBarFrame"
+CmdBarFrame.Size = UDim2.new(0, 280, 0, 45)
+CmdBarFrame.Position = UDim2.new(0.5, -140, 0.9, 0)
+CmdBarFrame.BackgroundColor3 = themes[currentTheme].CmdBar
+CmdBarFrame.BackgroundTransparency = 0.8
+CmdBarFrame.BorderSizePixel = 2
+CmdBarFrame.BorderColor3 = themes[currentTheme].Accent
+CmdBarFrame.Active = true
+CmdBarFrame.Draggable = true
+CmdBarFrame.Visible = true
+CmdBarFrame.Parent = ScreenGui
+
+local CmdBarTop = Instance.new("Frame")
+CmdBarTop.Name = "CmdBarTop"
+CmdBarTop.Size = UDim2.new(1, 0, 0, 25)
+CmdBarTop.BackgroundColor3 = themes[currentTheme].TopBar
+CmdBarTop.BackgroundTransparency = 0.8
+CmdBarTop.BorderSizePixel = 0
+CmdBarTop.Parent = CmdBarFrame
+
+local CmdBarTitle = Instance.new("TextLabel")
+CmdBarTitle.Name = "CmdBarTitle"
+CmdBarTitle.Size = UDim2.new(1, -35, 1, 0)
+CmdBarTitle.Position = UDim2.new(0, 8, 0, 0)
+CmdBarTitle.BackgroundTransparency = 1
+CmdBarTitle.Text = "AxoAdmin Cmd Bar"
+CmdBarTitle.TextColor3 = themes[currentTheme].Accent
+CmdBarTitle.TextXAlignment = Enum.TextXAlignment.Left
+CmdBarTitle.Font = Enum.Font.GothamBold
+CmdBarTitle.TextSize = 12
+CmdBarTitle.Parent = CmdBarTop
+
+local CmdBarClose = Instance.new("TextButton")
+CmdBarClose.Name = "CmdBarClose"
+CmdBarClose.Size = UDim2.new(0, 20, 0, 20)
+CmdBarClose.Position = UDim2.new(1, -25, 0, 2.5)
+CmdBarClose.BackgroundColor3 = themes[currentTheme].Button
+CmdBarClose.BackgroundTransparency = 0.8
+CmdBarClose.Text = "✕"
+CmdBarClose.TextColor3 = Color3.fromRGB(255, 80, 80)
+CmdBarClose.TextScaled = true
+CmdBarClose.Font = Enum.Font.GothamBold
+CmdBarClose.BorderSizePixel = 0
+CmdBarClose.Parent = CmdBarTop
+
+local CmdBarMinimize = Instance.new("TextButton")
+CmdBarMinimize.Name = "CmdBarMinimize"
+CmdBarMinimize.Size = UDim2.new(0, 20, 0, 20)
+CmdBarMinimize.Position = UDim2.new(1, -50, 0, 2.5)
+CmdBarMinimize.BackgroundColor3 = themes[currentTheme].Button
+CmdBarMinimize.BackgroundTransparency = 0.8
+CmdBarMinimize.Text = "−"
+CmdBarMinimize.TextColor3 = themes[currentTheme].Accent
+CmdBarMinimize.TextScaled = true
+CmdBarMinimize.Font = Enum.Font.GothamBold
+CmdBarMinimize.BorderSizePixel = 0
+CmdBarMinimize.Parent = CmdBarTop
+
+local CommandBox = Instance.new("TextBox")
+CommandBox.Name = "CommandBox"
+CommandBox.Size = UDim2.new(1, -80, 0, 30)
+CommandBox.Position = UDim2.new(0, 8, 0, 28)
+CommandBox.BackgroundColor3 = themes[currentTheme].Button
+CommandBox.BackgroundTransparency = 0.8
+CommandBox.TextColor3 = themes[currentTheme].Accent
+CommandBox.PlaceholderText = "Type command... (me, random, all, others, username)"
+CommandBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+CommandBox.Text = ""
+CommandBox.Font = Enum.Font.Code
+CommandBox.TextSize = 13
+CommandBox.ClearTextOnFocus = false
+CommandBox.BorderSizePixel = 1
+CommandBox.BorderColor3 = themes[currentTheme].Accent
+CommandBox.Parent = CmdBarFrame
+
+local ExecuteButton = Instance.new("TextButton")
+ExecuteButton.Name = "ExecuteButton"
+ExecuteButton.Size = UDim2.new(0, 60, 0, 30)
+ExecuteButton.Position = UDim2.new(1, -68, 0, 28)
+ExecuteButton.BackgroundColor3 = themes[currentTheme].Accent
+ExecuteButton.BackgroundTransparency = 0.3
+ExecuteButton.Text = "EXEC"
+ExecuteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ExecuteButton.TextScaled = true
+ExecuteButton.Font = Enum.Font.GothamBold
+ExecuteButton.BorderSizePixel = 0
+ExecuteButton.Parent = CmdBarFrame
+
+local SuggestionFrame = Instance.new("Frame")
+SuggestionFrame.Name = "SuggestionFrame"
+SuggestionFrame.Size = UDim2.new(1, -16, 0, 120)
+SuggestionFrame.Position = UDim2.new(0, 8, 0, 62)
+SuggestionFrame.BackgroundColor3 = themes[currentTheme].Dropdown
+SuggestionFrame.BackgroundTransparency = 0.8
+SuggestionFrame.BorderSizePixel = 1
+SuggestionFrame.BorderColor3 = themes[currentTheme].Accent
+SuggestionFrame.Visible = false
+SuggestionFrame.Parent = CmdBarFrame
+
+local SuggestionList = Instance.new("ScrollingFrame")
+SuggestionList.Name = "SuggestionList"
+SuggestionList.Size = UDim2.new(1, -10, 1, -10)
+SuggestionList.Position = UDim2.new(0, 5, 0, 5)
+SuggestionList.BackgroundTransparency = 1
+SuggestionList.BorderSizePixel = 0
+SuggestionList.ScrollBarThickness = 4
+SuggestionList.CanvasSize = UDim2.new(0, 0, 0, 0)
+SuggestionList.Parent = SuggestionFrame
+
+local SuggestionLayout = Instance.new("UIListLayout")
+SuggestionLayout.Padding = UDim.new(0, 2)
+SuggestionLayout.Parent = SuggestionList
+
+local CmdToggleButton = Instance.new("TextButton")
+CmdToggleButton.Name = "CmdToggleButton"
+CmdToggleButton.Size = UDim2.new(0, 50, 0, 50)
+CmdToggleButton.Position = UDim2.new(0.02, 0, 0.85, 0)
+CmdToggleButton.BackgroundColor3 = themes[currentTheme].Accent
+CmdToggleButton.BackgroundTransparency = 0.3
+CmdToggleButton.Text = "⌨"
+CmdToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CmdToggleButton.TextScaled = true
+CmdToggleButton.Font = Enum.Font.GothamBold
+CmdToggleButton.BorderSizePixel = 2
+CmdToggleButton.BorderColor3 = themes[currentTheme].Accent
+CmdToggleButton.Parent = ScreenGui
+
+local isMinimized = false
+
+MinimizeButton.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    if isMinimized then
+        MainFrame:TweenSize(UDim2.new(0, 350, 0, 35), "Out", "Quint", 0.3, true)
+        MinimizeButton.Text = "+"
+        Title.Text = "AxoAdmin Cmd"
+        CommandDisplay.Visible = false
+        ThemeDropdown.Visible = false
+    else
+        MainFrame:TweenSize(UDim2.new(0, 350, 0, 480), "Out", "Quint", 0.3, true)
+        MinimizeButton.Text = "−"
+        CommandDisplay.Visible = true
+        ThemeDropdown.Visible = true
+    end
+end)
+
+CmdBarMinimize.MouseButton1Click:Connect(function()
+    CmdBarFrame.Visible = false
+end)
+
+CmdBarClose.MouseButton1Click:Connect(function()
+    CmdBarFrame.Visible = false
+end)
+
+CmdToggleButton.MouseButton1Click:Connect(function()
+    CmdBarFrame.Visible = not CmdBarFrame.Visible
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+for themeName, _ in pairs(themes) do
+    local themeButton = Instance.new("TextButton")
+    themeButton.Size = UDim2.new(1, 0, 0, 25)
+    themeButton.BackgroundColor3 = themes[currentTheme].Dropdown
+    themeButton.BackgroundTransparency = 0.7
+    themeButton.BorderSizePixel = 0
+    themeButton.Text = themeName
+    themeButton.TextColor3 = themes[currentTheme].Accent
+    themeButton.TextSize = 12
+    themeButton.Font = Enum.Font.Gotham
+    themeButton.Parent = DropdownList
+    
+    themeButton.MouseButton1Click:Connect(function()
+        currentTheme = themeName
+        DropdownButton.Text = themeName .. " ▼"
+        DropdownList.Visible = false
+        local theme = themes[currentTheme]
+        MainFrame.BackgroundColor3 = theme.Main
+        MainFrame.BorderColor3 = theme.Accent
+        TopBar.BackgroundColor3 = theme.TopBar
+        Title.TextColor3 = theme.Accent
+        Credits.TextColor3 = theme.Text
+        ThemeDropdown.BackgroundColor3 = theme.Dropdown
+        ThemeDropdown.BorderColor3 = theme.Accent
+        DropdownButton.BackgroundColor3 = theme.Dropdown
+        DropdownButton.TextColor3 = theme.Accent
+        DropdownList.BackgroundColor3 = theme.Dropdown
+        DropdownList.BorderColor3 = theme.Accent
+        CommandDisplay.BorderColor3 = theme.Accent
+        CmdBarFrame.BackgroundColor3 = theme.CmdBar
+        CmdBarFrame.BorderColor3 = theme.Accent
+        CmdBarTop.BackgroundColor3 = theme.TopBar
+        CmdBarTitle.TextColor3 = theme.Accent
+        CmdBarMinimize.BackgroundColor3 = theme.Button
+        CmdBarMinimize.TextColor3 = theme.Accent
+        CommandBox.BackgroundColor3 = theme.Button
+        CommandBox.BorderColor3 = theme.Accent
+        CommandBox.TextColor3 = theme.Accent
+        ExecuteButton.BackgroundColor3 = theme.Accent
+        CmdToggleButton.BackgroundColor3 = theme.Accent
+        CmdToggleButton.BorderColor3 = theme.Accent
+        for _, btn in pairs(DropdownList:GetChildren()) do
+            if btn:IsA("TextButton") then
+                btn.BackgroundColor3 = theme.Dropdown
+                btn.TextColor3 = theme.Accent
+            end
+        end
+        for _, lbl in pairs(CommandDisplay:GetChildren()) do
+            if lbl:IsA("TextLabel") then
+                lbl.TextColor3 = theme.Text
+                lbl.BackgroundColor3 = theme.Main
+            end
+        end
+        for _, sug in pairs(SuggestionList:GetChildren()) do
+            if sug:IsA("TextButton") then
+                sug.TextColor3 = theme.Accent
+            end
+        end
+    end)
 end
+
+DropdownButton.MouseButton1Click:Connect(function()
+    DropdownList.Visible = not DropdownList.Visible
+    DropdownList.CanvasSize = UDim2.new(0, 0, 0, ThemeLayout.AbsoluteContentSize.Y)
+end)
 
 local commandsTable = {
     {name = "fly", aliases = {"fly"}, description = "Enable flight"},
@@ -337,182 +713,19 @@ local commandsTable = {
     {name = "unshiftlock", aliases = {"unshiftlock", "unsl"}, description = "Disable shiftlock"},
     {name = "fakelag", aliases = {"fakelag", "flag"}, description = "Enable fake lag"},
     {name = "unfakelag", aliases = {"unfakelag", "unflag"}, description = "Disable fake lag"},
-    {name = "godmode", aliases = {"godmode", "god"}, description = "Enable god mode"},
-    {name = "ungodmode", aliases = {"ungodmode"}, description = "Disable god mode"},
-    {name = "loopws", aliases = {"loopwalkspeed", "loopws"}, description = "Loop walkspeed <speed>"},
-    {name = "unloopws", aliases = {"unloopwalkspeed", "unloopws"}, description = "Stop loop walkspeed"},
-    {name = "loopjp", aliases = {"loopjumppower", "loopjp"}, description = "Loop jump power <power>"},
-    {name = "unloopjp", aliases = {"unloopjumppower", "unloopjp"}, description = "Stop loop jump power"},
     {name = "loopgrab", aliases = {"loopgrab", "loopgrabtools"}, description = "Loop grab tools"},
     {name = "unloopgrab", aliases = {"unloopgrab", "unloopgrabtools"}, description = "Stop loop grab"},
     {name = "loopmute", aliases = {"loopmute", "loopmuteboombox"}, description = "Loop mute <player>"},
     {name = "unloopmute", aliases = {"unloopmute", "unloopmuteboombox"}, description = "Stop loop mute"},
-    {name = "loopvoid", aliases = {"loopvoid", "loopv"}, description = "Loop void <player>"},
-    {name = "unloopvoid", aliases = {"unloopvoid", "unloopv"}, description = "Stop loop void"},
-    {name = "loopkill", aliases = {"loopkill"}, description = "Loop kill <player>"},
-    {name = "unloopkill", aliases = {"unloopkill"}, description = "Stop loop kill"},
-    {name = "loopbring", aliases = {"loopbring"}, description = "Loop bring <player>"},
-    {name = "unloopbring", aliases = {"unloopbring"}, description = "Stop loop bring"},
-    {name = "loopban", aliases = {"loopbanish", "loopban"}, description = "Loop ban <player>"},
-    {name = "unloopban", aliases = {"unloopbanish", "unloopban"}, description = "Stop loop ban"},
-    {name = "looptornado", aliases = {"looptornado"}, description = "Loop tornado <player>"},
-    {name = "unlooptornado", aliases = {"unlooptornado"}, description = "Stop loop tornado"},
-    {name = "loopcuff", aliases = {"loopcuff", "loopjail"}, description = "Loop cuff <player>"},
-    {name = "unloopcuff", aliases = {"unloopcuff", "unloopjail"}, description = "Stop loop cuff"},
-    {name = "loopstand", aliases = {"loopstand"}, description = "Loop stand <player>"},
-    {name = "unloopstand", aliases = {"unloopstand"}, description = "Stop loop stand"},
-    {name = "loopwave", aliases = {"loopwaveat", "loopwave"}, description = "Loop wave at <player>"},
-    {name = "unloopwave", aliases = {"unloopwaveat", "unloopwave"}, description = "Stop loop wave"},
-    {name = "loopspook", aliases = {"loopspook", "loopscare"}, description = "Loop spook <player>"},
-    {name = "unloopspook", aliases = {"unloopspook", "unloopscare"}, description = "Stop loop spook"},
     {name = "annoy", aliases = {"annoy"}, description = "Annoy <player>"},
     {name = "unannoy", aliases = {"unannoy"}, description = "Stop annoying"},
     {name = "spam", aliases = {"spam"}, description = "Spam message <text>"},
     {name = "unspam", aliases = {"unspam"}, description = "Stop spam"},
     {name = "yellspam", aliases = {"yellspam", "syell"}, description = "Spam yell <text>"},
     {name = "unyellspam", aliases = {"unyellspam", "unsyell"}, description = "Stop yell spam"},
-    {name = "chatlog", aliases = {"chatlogger", "chatlog"}, description = "Enable chat logger"},
-    {name = "unchatlog", aliases = {"unchatlogger", "unchatlog"}, description = "Disable chat logger"},
     {name = "chatspy", aliases = {"chatspy"}, description = "Enable chat spy"},
     {name = "unchatspy", aliases = {"unchatspy"}, description = "Disable chat spy"}
 }
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "screengui"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = CoreGui
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 380, 0, 480)
-MainFrame.Position = UDim2.new(0.5, -190, 0.5, -240)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-MainFrame.BackgroundTransparency = 0.6
-MainFrame.BorderSizePixel = 2
-MainFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Parent = ScreenGui
-
-local TopBar = Instance.new("Frame")
-TopBar.Name = "TopBar"
-TopBar.Size = UDim2.new(1, 0, 0, 35)
-TopBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-TopBar.BackgroundTransparency = 0.6
-TopBar.BorderSizePixel = 0
-TopBar.Parent = MainFrame
-
-local Title = Instance.new("TextLabel")
-Title.Name = "Title"
-Title.Size = UDim2.new(1, -35, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "AxoAdmin Cmd"
-Title.TextColor3 = Color3.fromRGB(0, 170, 255)
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-Title.Parent = TopBar
-
-local CloseButton = Instance.new("TextButton")
-CloseButton.Name = "CloseButton"
-CloseButton.Size = UDim2.new(0, 30, 0, 30)
-CloseButton.Position = UDim2.new(1, -35, 0, 2.5)
-CloseButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-CloseButton.BackgroundTransparency = 0.6
-CloseButton.Text = "✕"
-CloseButton.TextColor3 = Color3.fromRGB(255, 80, 80)
-CloseButton.TextScaled = true
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.BorderSizePixel = 0
-CloseButton.Parent = TopBar
-
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
-local Credits = Instance.new("TextLabel")
-Credits.Name = "Credits"
-Credits.Size = UDim2.new(1, 0, 0, 20)
-Credits.Position = UDim2.new(0, 0, 1, -22)
-Credits.BackgroundTransparency = 1
-Credits.Text = "Made By Axom"
-Credits.TextColor3 = Color3.fromRGB(150, 150, 150)
-Credits.TextSize = 12
-Credits.Font = Enum.Font.Gotham
-Credits.Parent = MainFrame
-
-local CommandBox = Instance.new("TextBox")
-CommandBox.Name = "CommandBox"
-CommandBox.Size = UDim2.new(1, -20, 0, 35)
-CommandBox.Position = UDim2.new(0, 10, 0, 42)
-CommandBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-CommandBox.BackgroundTransparency = 0.6
-CommandBox.TextColor3 = Color3.fromRGB(0, 170, 255)
-CommandBox.PlaceholderText = "Type command... (me, random, all, others, or username)"
-CommandBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-CommandBox.Text = ""
-CommandBox.Font = Enum.Font.Code
-CommandBox.TextSize = 14
-CommandBox.ClearTextOnFocus = false
-CommandBox.BorderSizePixel = 1
-CommandBox.BorderColor3 = Color3.fromRGB(0, 170, 255)
-CommandBox.Parent = MainFrame
-
-local ExecuteButton = Instance.new("TextButton")
-ExecuteButton.Name = "ExecuteButton"
-ExecuteButton.Size = UDim2.new(0, 70, 0, 35)
-ExecuteButton.Position = UDim2.new(1, -80, 0, 42)
-ExecuteButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-ExecuteButton.BackgroundTransparency = 0.6
-ExecuteButton.Text = "EXEC"
-ExecuteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ExecuteButton.TextScaled = true
-ExecuteButton.Font = Enum.Font.GothamBold
-ExecuteButton.BorderSizePixel = 0
-ExecuteButton.Parent = MainFrame
-
-local SuggestionFrame = Instance.new("Frame")
-SuggestionFrame.Name = "SuggestionFrame"
-SuggestionFrame.Size = UDim2.new(1, -20, 0, 150)
-SuggestionFrame.Position = UDim2.new(0, 10, 0, 80)
-SuggestionFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-SuggestionFrame.BackgroundTransparency = 0.6
-SuggestionFrame.BorderSizePixel = 1
-SuggestionFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
-SuggestionFrame.Visible = false
-SuggestionFrame.Parent = MainFrame
-
-local SuggestionList = Instance.new("ScrollingFrame")
-SuggestionList.Name = "SuggestionList"
-SuggestionList.Size = UDim2.new(1, -10, 1, -10)
-SuggestionList.Position = UDim2.new(0, 5, 0, 5)
-SuggestionList.BackgroundTransparency = 1
-SuggestionList.BorderSizePixel = 0
-SuggestionList.ScrollBarThickness = 4
-SuggestionList.CanvasSize = UDim2.new(0, 0, 0, 0)
-SuggestionList.Parent = SuggestionFrame
-
-local SuggestionLayout = Instance.new("UIListLayout")
-SuggestionLayout.Padding = UDim.new(0, 2)
-SuggestionLayout.Parent = SuggestionList
-
-local CommandDisplay = Instance.new("ScrollingFrame")
-CommandDisplay.Name = "CommandDisplay"
-CommandDisplay.Size = UDim2.new(1, -20, 1, -100)
-CommandDisplay.Position = UDim2.new(0, 10, 0, 85)
-CommandDisplay.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-CommandDisplay.BackgroundTransparency = 0.6
-CommandDisplay.BorderSizePixel = 1
-CommandDisplay.BorderColor3 = Color3.fromRGB(0, 170, 255)
-CommandDisplay.ScrollBarThickness = 6
-CommandDisplay.CanvasSize = UDim2.new(0, 0, 0, 0)
-CommandDisplay.Parent = MainFrame
-
-local DisplayLayout = Instance.new("UIListLayout")
-DisplayLayout.Padding = UDim.new(0, 2)
-DisplayLayout.Parent = CommandDisplay
 
 local function updateCommandDisplay(filter)
     for _, child in pairs(CommandDisplay:GetChildren()) do
@@ -539,13 +752,13 @@ local function updateCommandDisplay(filter)
         if show then
             local cmdLabel = Instance.new("TextLabel")
             cmdLabel.Size = UDim2.new(1, -10, 0, 28)
-            cmdLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-            cmdLabel.BackgroundTransparency = 0.6
+            cmdLabel.BackgroundColor3 = themes[currentTheme].Main
+            cmdLabel.BackgroundTransparency = 0.5
             cmdLabel.Text = "  " .. cmd.name .. " - " .. cmd.description
-            cmdLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+            cmdLabel.TextColor3 = themes[currentTheme].Text
             cmdLabel.TextXAlignment = Enum.TextXAlignment.Left
             cmdLabel.Font = Enum.Font.Code
-            cmdLabel.TextSize = 13
+            cmdLabel.TextSize = 12
             cmdLabel.Parent = CommandDisplay
         end
     end
@@ -583,16 +796,16 @@ local function updateSuggestions(text)
     
     if #matches > 0 then
         SuggestionFrame.Visible = true
-        SuggestionFrame.Size = UDim2.new(1, -20, 0, math.min(#matches * 32 + 10, 150))
+        SuggestionFrame.Size = UDim2.new(1, -16, 0, math.min(#matches * 32 + 10, 120))
         for _, cmdName in ipairs(matches) do
             local btn = Instance.new("TextButton")
             btn.Size = UDim2.new(1, -10, 0, 28)
-            btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-            btn.BackgroundTransparency = 0.6
+            btn.BackgroundColor3 = themes[currentTheme].Button
+            btn.BackgroundTransparency = 0.8
             btn.BorderSizePixel = 0
             btn.Text = cmdName
-            btn.TextColor3 = Color3.fromRGB(0, 170, 255)
-            btn.TextSize = 14
+            btn.TextColor3 = themes[currentTheme].Accent
+            btn.TextSize = 12
             btn.Font = Enum.Font.Code
             btn.Parent = SuggestionList
             btn.MouseButton1Click:Connect(function()
@@ -615,7 +828,6 @@ local function executeCommand(cmd)
     local command = args[1]:lower()
     local arg1 = args[2]
     local arg2 = args[3]
-    local arg3 = args[4]
     
     if command == "fly" then
         if not flyActive then
@@ -1205,12 +1417,12 @@ local function executeCommand(cmd)
         loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/AntiFling%20Script"))()
         notify("AxoAdmin", "Anti fling v1 enabled")
     elseif command == "unantifling1" then
-        notify("AxoAdmin", "Anti fling v1 disabled (rejoin to fully disable)")
+        notify("AxoAdmin", "Anti fling v1 disabled")
     elseif command == "antifling2" then
         loadstring(game:HttpGet("https://raw.githubusercontent.com/adamowaissi22-boop/Axom/refs/heads/main/AntiFling%20Script2"))()
         notify("AxoAdmin", "Anti fling v2 enabled")
     elseif command == "unantifling2" then
-        notify("AxoAdmin", "Anti fling v2 disabled (rejoin to fully disable)")
+        notify("AxoAdmin", "Anti fling v2 disabled")
     elseif command == "svtime" or command == "servertime" then
         local time = math.floor(Workspace.DistributedGameTime)
         local hours = math.floor(time / 3600)
@@ -1587,7 +1799,6 @@ local function executeCommand(cmd)
         local fps = game:GetService("Stats").PerformanceStats.FPS:GetValueString()
         notify("FPS", fps)
     elseif command == "joke" then
-        local HttpService = game:GetService("HttpService")
         local data = game:HttpGet("https://official-joke-api.appspot.com/jokes/programming/random")
         local decoded = HttpService:JSONDecode(data)
         if decoded and decoded[1] then
@@ -1702,4 +1913,4 @@ end)
 
 updateCommandDisplay("")
 
-notify("AxoAdmin", "Press F5 to toggle UI | Type 'cmds' for commands")
+notify("AxoAdmin", "Press F5 to toggle UI | Click ⌨ for command bar")
