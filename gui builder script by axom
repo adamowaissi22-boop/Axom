@@ -1,0 +1,897 @@
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "screengui"
+screenGui.Parent = game:GetService("CoreGui")
+screenGui.ResetOnSpawn = false
+
+local minimizedCircle = Instance.new("TextButton")
+minimizedCircle.Name = "MinimizedCircle"
+minimizedCircle.Size = UDim2.new(0, 60, 0, 60)
+minimizedCircle.Position = UDim2.new(0.5, -30, 0.5, -30)
+minimizedCircle.Text = "A"
+minimizedCircle.TextSize = 30
+minimizedCircle.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizedCircle.BackgroundColor3 = Color3.fromRGB(0, 80, 120)
+minimizedCircle.BorderSizePixel = 0
+minimizedCircle.Visible = false
+minimizedCircle.Parent = screenGui
+
+local circleCorner = Instance.new("UICorner")
+circleCorner.CornerRadius = UDim.new(1, 0)
+circleCorner.Parent = minimizedCircle
+
+local circleGradient = Instance.new("UIGradient")
+circleGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 100, 150)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 60, 100))
+})
+circleGradient.Parent = minimizedCircle
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 750, 0, 700)
+mainFrame.Position = UDim2.new(0.5, -375, 0.5, -350)
+mainFrame.BackgroundColor3 = Color3.fromRGB(0, 40, 60)
+mainFrame.BackgroundTransparency = 0.05
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 12)
+mainCorner.Parent = mainFrame
+
+local mainGradient = Instance.new("UIGradient")
+mainGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 60, 90)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 80, 120)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 50, 80))
+})
+mainGradient.Parent = mainFrame
+
+local dragBar = Instance.new("Frame")
+dragBar.Name = "DragBar"
+dragBar.Size = UDim2.new(1, 0, 0, 45)
+dragBar.BackgroundColor3 = Color3.fromRGB(0, 70, 100)
+dragBar.BorderSizePixel = 0
+dragBar.Parent = mainFrame
+
+local dragBarCorner = Instance.new("UICorner")
+dragBarCorner.CornerRadius = UDim.new(0, 12)
+dragBarCorner.Parent = dragBar
+
+local dragBarGradient = Instance.new("UIGradient")
+dragBarGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 90, 130)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 70, 100))
+})
+dragBarGradient.Parent = dragBar
+
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Size = UDim2.new(0, 35, 0, 35)
+closeButton.Position = UDim2.new(1, -45, 0, 5)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeButton.BorderSizePixel = 0
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = 18
+closeButton.Parent = dragBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 6)
+closeCorner.Parent = closeButton
+
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Name = "MinimizeButton"
+minimizeButton.Size = UDim2.new(0, 35, 0, 35)
+minimizeButton.Position = UDim2.new(1, -90, 0, 5)
+minimizeButton.Text = "-"
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(0, 100, 140)
+minimizeButton.BorderSizePixel = 0
+minimizeButton.Font = Enum.Font.GothamBold
+minimizeButton.TextSize = 24
+minimizeButton.Parent = dragBar
+
+local minimizeCorner = Instance.new("UICorner")
+minimizeCorner.CornerRadius = UDim.new(0, 6)
+minimizeCorner.Parent = minimizeButton
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "TitleLabel"
+titleLabel.Size = UDim2.new(1, -140, 1, 0)
+titleLabel.Position = UDim2.new(0, 15, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Axomic GUI Builder"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 16
+titleLabel.Parent = dragBar
+
+local componentsFrame = Instance.new("ScrollingFrame")
+componentsFrame.Name = "ComponentsFrame"
+componentsFrame.Size = UDim2.new(0, 180, 1, -45)
+componentsFrame.Position = UDim2.new(0, 0, 0, 45)
+componentsFrame.BackgroundColor3 = Color3.fromRGB(0, 50, 75)
+componentsFrame.BorderSizePixel = 0
+componentsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+componentsFrame.ScrollBarThickness = 6
+componentsFrame.Parent = mainFrame
+
+local componentsCorner = Instance.new("UICorner")
+componentsCorner.CornerRadius = UDim.new(0, 8)
+componentsCorner.Parent = componentsFrame
+
+local componentsGradient = Instance.new("UIGradient")
+componentsGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 55, 80)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 45, 70))
+})
+componentsGradient.Parent = componentsFrame
+
+local propertiesFrame = Instance.new("ScrollingFrame")
+propertiesFrame.Name = "PropertiesFrame"
+propertiesFrame.Size = UDim2.new(0, 250, 1, -45)
+propertiesFrame.Position = UDim2.new(1, -250, 0, 45)
+propertiesFrame.BackgroundColor3 = Color3.fromRGB(0, 50, 75)
+propertiesFrame.BorderSizePixel = 0
+propertiesFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+propertiesFrame.ScrollBarThickness = 6
+propertiesFrame.Parent = mainFrame
+
+local propertiesCorner = Instance.new("UICorner")
+propertiesCorner.CornerRadius = UDim.new(0, 8)
+propertiesCorner.Parent = propertiesFrame
+
+local propertiesGradient = Instance.new("UIGradient")
+propertiesGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 55, 80)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 45, 70))
+})
+propertiesGradient.Parent = propertiesFrame
+
+local workspaceFrame = Instance.new("Frame")
+workspaceFrame.Name = "WorkspaceFrame"
+workspaceFrame.Size = UDim2.new(1, -440, 1, -45)
+workspaceFrame.Position = UDim2.new(0, 180, 0, 45)
+workspaceFrame.BackgroundColor3 = Color3.fromRGB(15, 35, 50)
+workspaceFrame.BorderSizePixel = 2
+workspaceFrame.BorderColor3 = Color3.fromRGB(0, 150, 200)
+workspaceFrame.Parent = mainFrame
+
+local workspaceCorner = Instance.new("UICorner")
+workspaceCorner.CornerRadius = UDim.new(0, 8)
+workspaceCorner.Parent = workspaceFrame
+
+local selectionBox = Instance.new("Frame")
+selectionBox.Name = "SelectionBox"
+selectionBox.Size = UDim2.new(0, 0, 0, 0)
+selectionBox.BackgroundTransparency = 0.7
+selectionBox.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+selectionBox.BorderSizePixel = 2
+selectionBox.BorderColor3 = Color3.fromRGB(0, 255, 255)
+selectionBox.ZIndex = 10
+selectionBox.Visible = false
+selectionBox.Parent = workspaceFrame
+
+local modeSwitch = Instance.new("TextButton")
+modeSwitch.Name = "ModeSwitch"
+modeSwitch.Size = UDim2.new(0, 100, 0, 35)
+modeSwitch.Position = UDim2.new(1, -110, 1, -42)
+modeSwitch.Text = "Edit"
+modeSwitch.TextColor3 = Color3.fromRGB(255, 255, 255)
+modeSwitch.BackgroundColor3 = Color3.fromRGB(0, 120, 160)
+modeSwitch.BorderSizePixel = 0
+modeSwitch.Font = Enum.Font.GothamBold
+modeSwitch.TextSize = 13
+modeSwitch.Parent = mainFrame
+
+local modeCorner = Instance.new("UICorner")
+modeCorner.CornerRadius = UDim.new(0, 6)
+modeCorner.Parent = modeSwitch
+
+local generateButton = Instance.new("TextButton")
+generateButton.Name = "GenerateButton"
+generateButton.Size = UDim2.new(0, 120, 0, 35)
+generateButton.Position = UDim2.new(0, 10, 1, -42)
+generateButton.Text = "Generate"
+generateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+generateButton.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
+generateButton.BorderSizePixel = 0
+generateButton.Font = Enum.Font.GothamBold
+generateButton.TextSize = 13
+generateButton.Parent = mainFrame
+
+local generateCorner = Instance.new("UICorner")
+generateCorner.CornerRadius = UDim.new(0, 6)
+generateCorner.Parent = generateButton
+
+local outputBox = Instance.new("TextBox")
+outputBox.Name = "OutputBox"
+outputBox.Size = UDim2.new(1, -20, 0, 120)
+outputBox.Position = UDim2.new(0, 10, 1, -165)
+outputBox.BackgroundColor3 = Color3.fromRGB(10, 30, 45)
+outputBox.TextColor3 = Color3.fromRGB(200, 220, 240)
+outputBox.TextXAlignment = Enum.TextXAlignment.Left
+outputBox.TextYAlignment = Enum.TextYAlignment.Top
+outputBox.Text = ""
+outputBox.ClearTextOnFocus = false
+outputBox.Font = Enum.Font.Code
+outputBox.TextSize = 11
+outputBox.MultiLine = true
+outputBox.Parent = mainFrame
+
+local outputCorner = Instance.new("UICorner")
+outputCorner.CornerRadius = UDim.new(0, 6)
+outputCorner.Parent = outputBox
+
+local currentSelected = nil
+local editMode = true
+local isMinimized = false
+
+local components = {
+    {name = "TextButton", class = "TextButton"},
+    {name = "TextBox", class = "TextBox"},
+    {name = "ScrollingFrame", class = "ScrollingFrame"},
+    {name = "Frame", class = "Frame"},
+    {name = "TextLabel", class = "TextLabel"},
+    {name = "ImageLabel", class = "ImageLabel"},
+    {name = "UIGradient", class = "UIGradient"},
+    {name = "UICorner", class = "UICorner"},
+    {name = "UIListLayout", class = "UIListLayout"},
+    {name = "UIGridLayout", class = "UIGridLayout"},
+    {name = "UIPadding", class = "UIPadding"}
+}
+
+function updateSelectionBox(target)
+    if not target or not selectionBox then return end
+    selectionBox.Size = target.Size
+    selectionBox.Position = target.Position
+    selectionBox.Rotation = target.Rotation
+    selectionBox.BackgroundTransparency = 0.85
+    selectionBox.Visible = true
+end
+
+function clearSelection()
+    currentSelected = nil
+    selectionBox.Visible = false
+    refreshPropertiesPanel(nil)
+end
+
+function refreshPropertiesPanel(selected)
+    for _, child in pairs(propertiesFrame:GetChildren()) do
+        if child:IsA("Frame") and child.Name == "PropFrame" then
+            child:Destroy()
+        end
+    end
+    
+    if not selected or not editMode then
+        local emptyLabel = Instance.new("TextLabel")
+        emptyLabel.Name = "EmptyLabel"
+        emptyLabel.Size = UDim2.new(1, -10, 0, 30)
+        emptyLabel.Position = UDim2.new(0, 5, 0, 10)
+        emptyLabel.BackgroundTransparency = 1
+        emptyLabel.Text = "No element selected"
+        emptyLabel.TextColor3 = Color3.fromRGB(150, 180, 200)
+        emptyLabel.TextSize = 12
+        emptyLabel.Font = Enum.Font.Gotham
+        emptyLabel.Parent = propertiesFrame
+        propertiesFrame.CanvasSize = UDim2.new(0, 0, 0, 50)
+        return
+    end
+    
+    local properties = {
+        {name = "Name", property = "Name", type = "text"},
+        {name = "Parent", property = "Parent", type = "parent"},
+        {name = "Background Color", property = "BackgroundColor3", type = "color"},
+        {name = "Background Transparency", property = "BackgroundTransparency", type = "number", min = 0, max = 1},
+        {name = "Size X Offset", property = "Size", type = "sizeX"},
+        {name = "Size Y Offset", property = "Size", type = "sizeY"},
+        {name = "Position X Offset", property = "Position", type = "posX"},
+        {name = "Position Y Offset", property = "Position", type = "posY"},
+        {name = "Rotation", property = "Rotation", type = "number", min = -360, max = 360},
+        {name = "Visible", property = "Visible", type = "bool"},
+        {name = "ZIndex", property = "ZIndex", type = "number", min = 0, max = 10}
+    }
+    
+    if selected:IsA("TextButton") or selected:IsA("TextLabel") or selected:IsA("TextBox") then
+        table.insert(properties, {name = "Text", property = "Text", type = "text"})
+        table.insert(properties, {name = "Text Color", property = "TextColor3", type = "color"})
+        table.insert(properties, {name = "Text Size", property = "TextSize", type = "number", min = 8, max = 100})
+        table.insert(properties, {name = "Text Transparency", property = "TextTransparency", type = "number", min = 0, max = 1})
+        if selected:IsA("TextBox") then
+            table.insert(properties, {name = "Clear Text On Focus", property = "ClearTextOnFocus", type = "bool"})
+        end
+    end
+    
+    if selected:IsA("ScrollingFrame") then
+        table.insert(properties, {name = "Scroll Bar Thickness", property = "ScrollBarThickness", type = "number", min = 0, max = 20})
+    end
+    
+    if selected:IsA("ImageLabel") then
+        table.insert(properties, {name = "Image", property = "Image", type = "text"})
+    end
+    
+    local yPos = 5
+    for _, prop in pairs(properties) do
+        local propFrame = Instance.new("Frame")
+        propFrame.Name = "PropFrame"
+        propFrame.Size = UDim2.new(1, -10, 0, 40)
+        propFrame.Position = UDim2.new(0, 5, 0, yPos)
+        propFrame.BackgroundTransparency = 1
+        propFrame.Parent = propertiesFrame
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(0.45, -5, 1, 0)
+        label.Position = UDim2.new(0, 0, 0, 0)
+        label.BackgroundTransparency = 1
+        label.Text = prop.name
+        label.TextColor3 = Color3.fromRGB(200, 220, 240)
+        label.TextSize = 11
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Font = Enum.Font.Gotham
+        label.Parent = propFrame
+        
+        if prop.type == "text" then
+            local input = Instance.new("TextBox")
+            input.Size = UDim2.new(0.55, -5, 1, -5)
+            input.Position = UDim2.new(0.45, 5, 0, 2.5)
+            input.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+            input.TextColor3 = Color3.fromRGB(255, 255, 255)
+            input.Text = tostring(selected[prop.property])
+            input.ClearTextOnFocus = false
+            input.Font = Enum.Font.Gotham
+            input.TextSize = 11
+            input.Parent = propFrame
+            
+            local inputCorner = Instance.new("UICorner")
+            inputCorner.CornerRadius = UDim.new(0, 4)
+            inputCorner.Parent = input
+            
+            input.FocusLost:Connect(function()
+                if prop.property == "Name" then
+                    selected.Name = input.Text
+                elseif prop.property == "Text" then
+                    selected.Text = input.Text
+                elseif prop.property == "Image" then
+                    selected.Image = input.Text
+                else
+                    selected[prop.property] = input.Text
+                end
+                refreshPropertiesPanel(selected)
+            end)
+        elseif prop.type == "parent" then
+            local dropdown = Instance.new("TextButton")
+            dropdown.Size = UDim2.new(0.55, -5, 1, -5)
+            dropdown.Position = UDim2.new(0.45, 5, 0, 2.5)
+            dropdown.Text = tostring(selected.Parent.Name)
+            dropdown.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+            dropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
+            dropdown.Font = Enum.Font.Gotham
+            dropdown.TextSize = 11
+            dropdown.Parent = propFrame
+            
+            local dropdownCorner = Instance.new("UICorner")
+            dropdownCorner.CornerRadius = UDim.new(0, 4)
+            dropdownCorner.Parent = dropdown
+            
+            dropdown.MouseButton1Click:Connect(function()
+                local menuFrame = Instance.new("ScrollingFrame")
+                menuFrame.Size = UDim2.new(0, 120, 0, 100)
+                menuFrame.Position = UDim2.new(0, dropdown.AbsolutePosition.X, 0, dropdown.AbsolutePosition.Y + 35)
+                menuFrame.BackgroundColor3 = Color3.fromRGB(30, 60, 80)
+                menuFrame.BorderSizePixel = 1
+                menuFrame.BorderColor3 = Color3.fromRGB(0, 150, 200)
+                menuFrame.ZIndex = 50
+                menuFrame.Parent = mainFrame
+                
+                local menuCorner = Instance.new("UICorner")
+                menuCorner.CornerRadius = UDim.new(0, 4)
+                menuCorner.Parent = menuFrame
+                
+                local parents = {workspaceFrame, mainFrame, screenGui}
+                local yOff = 5
+                
+                for _, p in pairs(parents) do
+                    local btn = Instance.new("TextButton")
+                    btn.Size = UDim2.new(1, -10, 0, 25)
+                    btn.Position = UDim2.new(0, 5, 0, yOff)
+                    btn.Text = p.Name
+                    btn.BackgroundColor3 = Color3.fromRGB(40, 70, 90)
+                    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    btn.Font = Enum.Font.Gotham
+                    btn.TextSize = 10
+                    btn.Parent = menuFrame
+                    
+                    local btnCorner = Instance.new("UICorner")
+                    btnCorner.CornerRadius = UDim.new(0, 3)
+                    btnCorner.Parent = btn
+                    
+                    btn.MouseButton1Click:Connect(function()
+                        selected.Parent = p
+                        dropdown.Text = p.Name
+                        menuFrame:Destroy()
+                        refreshPropertiesPanel(selected)
+                    end)
+                    
+                    yOff = yOff + 30
+                end
+                
+                menuFrame.CanvasSize = UDim2.new(0, 0, 0, yOff + 10)
+                
+                local cleanupConn
+                cleanupConn = game:GetService("UserInputService").InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        task.wait(0.15)
+                        if menuFrame and menuFrame.Parent then
+                            menuFrame:Destroy()
+                        end
+                        cleanupConn:Disconnect()
+                    end
+                end)
+            end)
+        elseif prop.type == "number" then
+            local input = Instance.new("TextBox")
+            input.Size = UDim2.new(0.55, -5, 1, -5)
+            input.Position = UDim2.new(0.45, 5, 0, 2.5)
+            input.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+            input.TextColor3 = Color3.fromRGB(255, 255, 255)
+            input.Text = tostring(selected[prop.property])
+            input.ClearTextOnFocus = false
+            input.Font = Enum.Font.Gotham
+            input.TextSize = 11
+            input.Parent = propFrame
+            
+            local inputCorner = Instance.new("UICorner")
+            inputCorner.CornerRadius = UDim.new(0, 4)
+            inputCorner.Parent = input
+            
+            input.FocusLost:Connect(function()
+                local num = tonumber(input.Text)
+                if num then
+                    if prop.min and num < prop.min then num = prop.min end
+                    if prop.max and num > prop.max then num = prop.max end
+                    selected[prop.property] = num
+                    updateSelectionBox(selected)
+                end
+                refreshPropertiesPanel(selected)
+            end)
+        elseif prop.type == "bool" then
+            local toggle = Instance.new("TextButton")
+            toggle.Size = UDim2.new(0.55, -5, 1, -5)
+            toggle.Position = UDim2.new(0.45, 5, 0, 2.5)
+            toggle.Text = tostring(selected[prop.property])
+            toggle.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+            toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+            toggle.Font = Enum.Font.Gotham
+            toggle.TextSize = 11
+            toggle.Parent = propFrame
+            
+            local toggleCorner = Instance.new("UICorner")
+            toggleCorner.CornerRadius = UDim.new(0, 4)
+            toggleCorner.Parent = toggle
+            
+            toggle.MouseButton1Click:Connect(function()
+                selected[prop.property] = not selected[prop.property]
+                toggle.Text = tostring(selected[prop.property])
+                refreshPropertiesPanel(selected)
+            end)
+        elseif prop.type == "color" then
+            local input = Instance.new("TextBox")
+            input.Size = UDim2.new(0.55, -5, 1, -5)
+            input.Position = UDim2.new(0.45, 5, 0, 2.5)
+            input.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+            input.TextColor3 = Color3.fromRGB(255, 255, 255)
+            local color = selected[prop.property]
+            input.Text = string.format("%d, %d, %d", color.R * 255, color.G * 255, color.B * 255)
+            input.ClearTextOnFocus = false
+            input.Font = Enum.Font.Gotham
+            input.TextSize = 11
+            input.Parent = propFrame
+            
+            local inputCorner = Instance.new("UICorner")
+            inputCorner.CornerRadius = UDim.new(0, 4)
+            inputCorner.Parent = input
+            
+            input.FocusLost:Connect(function()
+                local r, g, b = input.Text:match("(%d+),%s*(%d+),%s*(%d+)")
+                if r and g and b then
+                    selected[prop.property] = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+                end
+                refreshPropertiesPanel(selected)
+            end)
+        elseif prop.type == "sizeX" then
+            local input = Instance.new("TextBox")
+            input.Size = UDim2.new(0.55, -5, 1, -5)
+            input.Position = UDim2.new(0.45, 5, 0, 2.5)
+            input.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+            input.TextColor3 = Color3.fromRGB(255, 255, 255)
+            input.Text = tostring(selected.Size.X.Offset)
+            input.ClearTextOnFocus = false
+            input.Font = Enum.Font.Gotham
+            input.TextSize = 11
+            input.Parent = propFrame
+            
+            local inputCorner = Instance.new("UICorner")
+            inputCorner.CornerRadius = UDim.new(0, 4)
+            inputCorner.Parent = input
+            
+            input.FocusLost:Connect(function()
+                local num = tonumber(input.Text)
+                if num then
+                    local newSize = UDim2.new(selected.Size.X.Scale, num, selected.Size.Y.Scale, selected.Size.Y.Offset)
+                    selected.Size = newSize
+                    updateSelectionBox(selected)
+                end
+                refreshPropertiesPanel(selected)
+            end)
+        elseif prop.type == "sizeY" then
+            local input = Instance.new("TextBox")
+            input.Size = UDim2.new(0.55, -5, 1, -5)
+            input.Position = UDim2.new(0.45, 5, 0, 2.5)
+            input.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+            input.TextColor3 = Color3.fromRGB(255, 255, 255)
+            input.Text = tostring(selected.Size.Y.Offset)
+            input.ClearTextOnFocus = false
+            input.Font = Enum.Font.Gotham
+            input.TextSize = 11
+            input.Parent = propFrame
+            
+            local inputCorner = Instance.new("UICorner")
+            inputCorner.CornerRadius = UDim.new(0, 4)
+            inputCorner.Parent = input
+            
+            input.FocusLost:Connect(function()
+                local num = tonumber(input.Text)
+                if num then
+                    local newSize = UDim2.new(selected.Size.X.Scale, selected.Size.X.Offset, selected.Size.Y.Scale, num)
+                    selected.Size = newSize
+                    updateSelectionBox(selected)
+                end
+                refreshPropertiesPanel(selected)
+            end)
+        elseif prop.type == "posX" then
+            local input = Instance.new("TextBox")
+            input.Size = UDim2.new(0.55, -5, 1, -5)
+            input.Position = UDim2.new(0.45, 5, 0, 2.5)
+            input.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+            input.TextColor3 = Color3.fromRGB(255, 255, 255)
+            input.Text = tostring(selected.Position.X.Offset)
+            input.ClearTextOnFocus = false
+            input.Font = Enum.Font.Gotham
+            input.TextSize = 11
+            input.Parent = propFrame
+            
+            local inputCorner = Instance.new("UICorner")
+            inputCorner.CornerRadius = UDim.new(0, 4)
+            inputCorner.Parent = input
+            
+            input.FocusLost:Connect(function()
+                local num = tonumber(input.Text)
+                if num then
+                    local newPos = UDim2.new(selected.Position.X.Scale, num, selected.Position.Y.Scale, selected.Position.Y.Offset)
+                    selected.Position = newPos
+                    updateSelectionBox(selected)
+                end
+                refreshPropertiesPanel(selected)
+            end)
+        elseif prop.type == "posY" then
+            local input = Instance.new("TextBox")
+            input.Size = UDim2.new(0.55, -5, 1, -5)
+            input.Position = UDim2.new(0.45, 5, 0, 2.5)
+            input.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+            input.TextColor3 = Color3.fromRGB(255, 255, 255)
+            input.Text = tostring(selected.Position.Y.Offset)
+            input.ClearTextOnFocus = false
+            input.Font = Enum.Font.Gotham
+            input.TextSize = 11
+            input.Parent = propFrame
+            
+            local inputCorner = Instance.new("UICorner")
+            inputCorner.CornerRadius = UDim.new(0, 4)
+            inputCorner.Parent = input
+            
+            input.FocusLost:Connect(function()
+                local num = tonumber(input.Text)
+                if num then
+                    local newPos = UDim2.new(selected.Position.X.Scale, selected.Position.X.Offset, selected.Position.Y.Scale, num)
+                    selected.Position = newPos
+                    updateSelectionBox(selected)
+                end
+                refreshPropertiesPanel(selected)
+            end)
+        end
+        
+        yPos = yPos + 45
+    end
+    
+    propertiesFrame.CanvasSize = UDim2.new(0, 0, 0, yPos + 10)
+end
+
+function addComponentToWorkspace(componentClass, componentName)
+    local newGui
+    
+    if componentClass == "UIGradient" or componentClass == "UICorner" or componentClass == "UIListLayout" or componentClass == "UIGridLayout" or componentClass == "UIPadding" then
+        if currentSelected and currentSelected:IsA("GuiObject") then
+            newGui = Instance.new(componentClass)
+            newGui.Name = componentName
+            newGui.Parent = currentSelected
+            return newGui
+        else
+            outputBox.Text = "Select a GUI element first to add " .. componentClass
+            return nil
+        end
+    end
+    
+    newGui = Instance.new(componentClass)
+    newGui.Name = componentName .. "_" .. math.random(1000, 9999)
+    newGui.Size = UDim2.new(0, 120, 0, 80)
+    
+    local finalX = 50 + math.random(0, 150)
+    local finalY = 50 + math.random(0, 100)
+    
+    if finalX + 120 > workspaceFrame.AbsoluteSize.X then
+        finalX = 50
+    end
+    if finalY + 80 > workspaceFrame.AbsoluteSize.Y then
+        finalY = 50
+    end
+    
+    newGui.Position = UDim2.new(0, finalX, 0, finalY)
+    newGui.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+    newGui.BorderSizePixel = 1
+    newGui.BorderColor3 = Color3.fromRGB(200, 220, 255)
+    newGui.Parent = workspaceFrame
+    
+    local elementCorner = Instance.new("UICorner")
+    elementCorner.CornerRadius = UDim.new(0, 4)
+    elementCorner.Parent = newGui
+    
+    if componentClass == "TextButton" or componentClass == "TextLabel" or componentClass == "TextBox" then
+        newGui.Text = componentName
+        newGui.TextColor3 = Color3.fromRGB(255, 255, 255)
+        newGui.BackgroundColor3 = Color3.fromRGB(60, 110, 150)
+        newGui.Font = Enum.Font.Gotham
+        newGui.TextSize = 14
+    end
+    
+    if componentClass == "ScrollingFrame" then
+        newGui.BackgroundColor3 = Color3.fromRGB(40, 80, 110)
+        local scrollCorner = Instance.new("UICorner")
+        scrollCorner.CornerRadius = UDim.new(0, 4)
+        scrollCorner.Parent = newGui
+        newGui.ScrollBarThickness = 6
+    end
+    
+    newGui.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if editMode then
+                currentSelected = newGui
+                updateSelectionBox(newGui)
+                refreshPropertiesPanel(newGui)
+                
+                local dragStartPos = nil
+                local dragStartMouse = nil
+                local dragging = false
+                
+                local moveConn
+                moveConn = game:GetService("UserInputService").InputChanged:Connect(function(moveInput)
+                    if dragging and dragStartPos and dragStartMouse and (moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch) then
+                        local delta = moveInput.Position - dragStartMouse
+                        local newPos = UDim2.new(dragStartPos.X.Scale, dragStartPos.X.Offset + delta.X, dragStartPos.Y.Scale, dragStartPos.Y.Offset + delta.Y)
+                        newGui.Position = newPos
+                        updateSelectionBox(newGui)
+                    end
+                end)
+                
+                local dragConn
+                dragConn = input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.Begin then
+                        dragStartPos = newGui.Position
+                        dragStartMouse = input.Position
+                        dragging = true
+                    elseif input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                        dragConn:Disconnect()
+                        moveConn:Disconnect()
+                    end
+                end)
+            end
+        end
+    end)
+    
+    return newGui
+end
+
+function generateScript()
+    local scriptLines = {"local screenGui = Instance.new(\"ScreenGui\")", "screenGui.Name = \"screengui\"", "screenGui.Parent = game:GetService(\"CoreGui\")", "screenGui.ResetOnSpawn = false", ""}
+    
+    local function serializeGui(gui, indent)
+        local lines = {}
+        local spaces = string.rep("    ", indent)
+        local varName = gui.Name:gsub("%W", "")
+        
+        if #varName == 0 then varName = "gui_" .. math.random(1000, 9999) end
+        
+        lines[#lines + 1] = spaces .. "local " .. varName .. " = Instance.new(\"" .. gui.ClassName .. "\")"
+        lines[#lines + 1] = spaces .. varName .. ".Name = \"" .. gui.Name .. "\""
+        
+        if gui:IsA("GuiObject") then
+            lines[#lines + 1] = spaces .. varName .. ".Size = UDim2.new(" .. gui.Size.X.Scale .. ", " .. gui.Size.X.Offset .. ", " .. gui.Size.Y.Scale .. ", " .. gui.Size.Y.Offset .. ")"
+            lines[#lines + 1] = spaces .. varName .. ".Position = UDim2.new(" .. gui.Position.X.Scale .. ", " .. gui.Position.X.Offset .. ", " .. gui.Position.Y.Scale .. ", " .. gui.Position.Y.Offset .. ")"
+            lines[#lines + 1] = spaces .. varName .. ".BackgroundColor3 = Color3.new(" .. gui.BackgroundColor3.R .. ", " .. gui.BackgroundColor3.G .. ", " .. gui.BackgroundColor3.B .. ")"
+            lines[#lines + 1] = spaces .. varName .. ".BackgroundTransparency = " .. gui.BackgroundTransparency
+            lines[#lines + 1] = spaces .. varName .. ".BorderSizePixel = " .. gui.BorderSizePixel
+            lines[#lines + 1] = spaces .. varName .. ".Rotation = " .. gui.Rotation
+            lines[#lines + 1] = spaces .. varName .. ".Visible = " .. tostring(gui.Visible)
+            if gui:IsA("ScrollingFrame") then
+                lines[#lines + 1] = spaces .. varName .. ".ScrollBarThickness = " .. (gui.ScrollBarThickness or 6)
+            end
+        end
+        
+        if gui:IsA("TextButton") or gui:IsA("TextLabel") or gui:IsA("TextBox") then
+            lines[#lines + 1] = spaces .. varName .. ".Text = \"" .. gui.Text .. "\""
+            lines[#lines + 1] = spaces .. varName .. ".TextColor3 = Color3.new(" .. gui.TextColor3.R .. ", " .. gui.TextColor3.G .. ", " .. gui.TextColor3.B .. ")"
+            lines[#lines + 1] = spaces .. varName .. ".TextSize = " .. gui.TextSize
+            if gui:IsA("TextBox") then
+                lines[#lines + 1] = spaces .. varName .. ".ClearTextOnFocus = " .. tostring(gui.ClearTextOnFocus)
+            end
+        end
+        
+        if gui:IsA("ImageLabel") then
+            lines[#lines + 1] = spaces .. varName .. ".Image = \"" .. gui.Image .. "\""
+        end
+        
+        for _, child in pairs(gui:GetChildren()) do
+            if child:IsA("UIGradient") or child:IsA("UICorner") or child:IsA("UIListLayout") or child:IsA("UIGridLayout") or child:IsA("UIPadding") then
+                lines[#lines + 1] = spaces .. "local child = Instance.new(\"" .. child.ClassName .. "\")"
+                lines[#lines + 1] = spaces .. "child.Parent = " .. varName
+                if child:IsA("UICorner") and child.CornerRadius then
+                    lines[#lines + 1] = spaces .. "child.CornerRadius = UDim.new(0, " .. (child.CornerRadius.Offset or 8) .. ")"
+                end
+            end
+        end
+        
+        lines[#lines + 1] = spaces .. varName .. ".Parent = screenGui"
+        
+        for _, child in pairs(gui:GetChildren()) do
+            if child:IsA("GuiObject") and child ~= selectionBox then
+                local childLines = serializeGui(child, indent + 1)
+                for _, line in pairs(childLines) do
+                    lines[#lines + 1] = line
+                end
+            end
+        end
+        
+        return lines
+    end
+    
+    for _, child in pairs(workspaceFrame:GetChildren()) do
+        if child:IsA("GuiObject") and child ~= selectionBox then
+            local guiLines = serializeGui(child, 0)
+            for _, line in pairs(guiLines) do
+                scriptLines[#scriptLines + 1] = line
+            end
+            scriptLines[#scriptLines + 1] = ""
+        end
+    end
+    
+    outputBox.Text = table.concat(scriptLines, "\n")
+end
+
+local yOffset = 10
+for _, comp in pairs(components) do
+    local button = Instance.new("TextButton")
+    button.Name = comp.name .. "Btn"
+    button.Size = UDim2.new(1, -10, 0, 38)
+    button.Position = UDim2.new(0, 5, 0, yOffset)
+    button.Text = comp.name
+    button.BackgroundColor3 = Color3.fromRGB(0, 80, 110)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.BorderSizePixel = 0
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 12
+    button.Parent = componentsFrame
+    
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 6)
+    buttonCorner.Parent = button
+    
+    button.MouseButton1Click:Connect(function()
+        addComponentToWorkspace(comp.class, comp.name)
+    end)
+    
+    yOffset = yOffset + 45
+end
+
+componentsFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 20)
+
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+minimizeButton.MouseButton1Click:Connect(function()
+    isMinimized = true
+    mainFrame.Visible = false
+    minimizedCircle.Visible = true
+end)
+
+minimizedCircle.MouseButton1Click:Connect(function()
+    isMinimized = false
+    mainFrame.Visible = true
+    minimizedCircle.Visible = false
+end)
+
+modeSwitch.MouseButton1Click:Connect(function()
+    editMode = not editMode
+    if editMode then
+        modeSwitch.Text = "Edit"
+        modeSwitch.BackgroundColor3 = Color3.fromRGB(0, 120, 160)
+        if currentSelected then
+            updateSelectionBox(currentSelected)
+            refreshPropertiesPanel(currentSelected)
+        end
+    else
+        modeSwitch.Text = "Preview"
+        modeSwitch.BackgroundColor3 = Color3.fromRGB(150, 100, 0)
+        clearSelection()
+    end
+end)
+
+generateButton.MouseButton1Click:Connect(function()
+    generateScript()
+end)
+
+local draggingMain = false
+local dragStartMain
+local dragStartPosMain
+
+dragBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingMain = true
+        dragStartMain = input.Position
+        dragStartPosMain = mainFrame.Position
+        
+        local moveConn
+        moveConn = game:GetService("UserInputService").InputChanged:Connect(function(moveInput)
+            if draggingMain and (moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch) then
+                local delta = moveInput.Position - dragStartMain
+                mainFrame.Position = UDim2.new(dragStartPosMain.X.Scale, dragStartPosMain.X.Offset + delta.X, dragStartPosMain.Y.Scale, dragStartPosMain.Y.Offset + delta.Y)
+            end
+        end)
+        
+        local endConn
+        endConn = game:GetService("UserInputService").InputEnded:Connect(function(endInput)
+            if endInput == input then
+                draggingMain = false
+                moveConn:Disconnect()
+                endConn:Disconnect()
+            end
+        end)
+    end
+end)
+
+workspaceFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if editMode then
+            if not input.Target or (input.Target:IsDescendantOf(workspaceFrame) and input.Target ~= selectionBox and not input.Target:IsA("TextButton") and not input.Target:IsA("TextBox") and not input.Target:IsA("TextLabel")) then
+                clearSelection()
+                currentSelected = nil
+            end
+        end
+    end
+end)
+
+for _, child in pairs(workspaceFrame:GetChildren()) do
+    if child:IsA("GuiObject") and child ~= selectionBox then
+        child:Destroy()
+    end
+end
+
+local exampleFrame = addComponentToWorkspace("Frame", "ExampleFrame")
+if exampleFrame then
+    exampleFrame.Size = UDim2.new(0, 150, 0, 100)
+    exampleFrame.Position = UDim2.new(0, 30, 0, 30)
+    exampleFrame.BackgroundColor3 = Color3.fromRGB(80, 150, 200)
+end
