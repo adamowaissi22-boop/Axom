@@ -290,50 +290,51 @@ function createColorPicker(parent, currentColor, callback)
     end
     
     colorPickerFrame = Instance.new("Frame")
-    colorPickerFrame.Size = scaleSize(300, 400)
-    colorPickerFrame.Position = UDim2.new(0.5, -150 * scale, 0.5, -200 * scale)
+    colorPickerFrame.Size = scaleSize(320, 450)
+    colorPickerFrame.Position = UDim2.new(0.5, -160 * scale, 0.5, -225 * scale)
     colorPickerFrame.BackgroundColor3 = Color3.fromRGB(30, 60, 80)
-    colorPickerFrame.BorderSizePixel = 1
+    colorPickerFrame.BorderSizePixel = 2
     colorPickerFrame.BorderColor3 = Color3.fromRGB(0, 200, 255)
     colorPickerFrame.ZIndex = 100
+    colorPickerFrame.Visible = true
     colorPickerFrame.Parent = parent
     
     local pickerCorner = Instance.new("UICorner")
-    pickerCorner.CornerRadius = UDim.new(0, 8)
+    pickerCorner.CornerRadius = UDim.new(0, 10)
     pickerCorner.Parent = colorPickerFrame
     
     local titleBar = Instance.new("Frame")
-    titleBar.Size = UDim2.new(1, 0, 0, 35 * scale)
+    titleBar.Size = UDim2.new(1, 0, 0, 40 * scale)
     titleBar.BackgroundColor3 = Color3.fromRGB(0, 80, 110)
     titleBar.Parent = colorPickerFrame
     
     local titleCorner = Instance.new("UICorner")
-    titleCorner.CornerRadius = UDim.new(0, 8)
+    titleCorner.CornerRadius = UDim.new(0, 10)
     titleCorner.Parent = titleBar
     
     local titleText = Instance.new("TextLabel")
-    titleText.Size = UDim2.new(1, -40 * scale, 1, 0)
+    titleText.Size = UDim2.new(1, -50 * scale, 1, 0)
     titleText.Position = UDim2.new(0, 10 * scale, 0, 0)
     titleText.BackgroundTransparency = 1
     titleText.Text = "Color Picker"
     titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleText.TextSize = 14 * scale
+    titleText.TextSize = 16 * scale
     titleText.Font = Enum.Font.GothamBold
     titleText.TextXAlignment = Enum.TextXAlignment.Left
     titleText.Parent = titleBar
     
     local closePicker = Instance.new("TextButton")
-    closePicker.Size = scaleSize(25, 25)
-    closePicker.Position = UDim2.new(1, -30 * scale, 0, 5 * scale)
+    closePicker.Size = scaleSize(30, 30)
+    closePicker.Position = UDim2.new(1, -35 * scale, 0, 5 * scale)
     closePicker.Text = "X"
-    closePicker.TextSize = 12 * scale
+    closePicker.TextSize = 14 * scale
     closePicker.TextColor3 = Color3.fromRGB(255, 255, 255)
     closePicker.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
     closePicker.BorderSizePixel = 0
     closePicker.Parent = titleBar
     
     local closeCornerBtn = Instance.new("UICorner")
-    closeCornerBtn.CornerRadius = UDim.new(0, 4)
+    closeCornerBtn.CornerRadius = UDim.new(0, 5)
     closeCornerBtn.Parent = closePicker
     
     closePicker.MouseButton1Click:Connect(function()
@@ -342,12 +343,13 @@ function createColorPicker(parent, currentColor, callback)
     end)
     
     local scrollFrame = Instance.new("ScrollingFrame")
-    scrollFrame.Size = UDim2.new(1, -10 * scale, 1, -45 * scale)
-    scrollFrame.Position = UDim2.new(0, 5 * scale, 0, 40 * scale)
-    scrollFrame.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
-    scrollFrame.BorderSizePixel = 0
+    scrollFrame.Size = UDim2.new(1, -10 * scale, 1, -50 * scale)
+    scrollFrame.Position = UDim2.new(0, 5 * scale, 0, 45 * scale)
+    scrollFrame.BackgroundColor3 = Color3.fromRGB(25, 55, 75)
+    scrollFrame.BorderSizePixel = 1
+    scrollFrame.BorderColor3 = Color3.fromRGB(0, 150, 200)
     scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    scrollFrame.ScrollBarThickness = 6
+    scrollFrame.ScrollBarThickness = 8
     scrollFrame.Parent = colorPickerFrame
     
     local scrollCorner = Instance.new("UICorner")
@@ -357,19 +359,19 @@ function createColorPicker(parent, currentColor, callback)
     local yPos = 5
     for _, preset in pairs(colorPresets) do
         local colorButton = Instance.new("TextButton")
-        colorButton.Size = UDim2.new(1, -10, 0, 35)
+        colorButton.Size = UDim2.new(1, -10, 0, 40)
         colorButton.Position = UDim2.new(0, 5, 0, yPos)
         colorButton.Text = preset.name .. " (" .. preset.rgb .. ")"
         colorButton.BackgroundColor3 = preset.color
         colorButton.TextColor3 = preset.textColor
-        colorButton.Font = Enum.Font.Gotham
+        colorButton.Font = Enum.Font.GothamBold
         colorButton.TextSize = 12 * scale
         colorButton.BorderSizePixel = 1
-        colorButton.BorderColor3 = Color3.fromRGB(200, 200, 200)
+        colorButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
         colorButton.Parent = scrollFrame
         
         local buttonCorner = Instance.new("UICorner")
-        buttonCorner.CornerRadius = UDim.new(0, 4)
+        buttonCorner.CornerRadius = UDim.new(0, 5)
         buttonCorner.Parent = colorButton
         
         colorButton.MouseButton1Click:Connect(function()
@@ -378,58 +380,58 @@ function createColorPicker(parent, currentColor, callback)
             colorPickerFrame = nil
         end)
         
-        yPos = yPos + 40
+        yPos = yPos + 45
     end
     
     local customFrame = Instance.new("Frame")
-    customFrame.Size = UDim2.new(1, -10, 0, 80)
+    customFrame.Size = UDim2.new(1, -10, 0, 90)
     customFrame.Position = UDim2.new(0, 5, 0, yPos)
     customFrame.BackgroundColor3 = Color3.fromRGB(40, 70, 90)
     customFrame.BorderSizePixel = 1
-    customFrame.BorderColor3 = Color3.fromRGB(0, 150, 200)
+    customFrame.BorderColor3 = Color3.fromRGB(0, 200, 255)
     customFrame.Parent = scrollFrame
     
     local customCorner = Instance.new("UICorner")
-    customCorner.CornerRadius = UDim.new(0, 4)
+    customCorner.CornerRadius = UDim.new(0, 5)
     customCorner.Parent = customFrame
     
     local customLabel = Instance.new("TextLabel")
-    customLabel.Size = UDim2.new(1, 0, 0, 25)
-    customLabel.Position = UDim2.new(0, 0, 0, 0)
+    customLabel.Size = UDim2.new(1, 0, 0, 30)
+    customLabel.Position = UDim2.new(0, 0, 0, 5)
     customLabel.BackgroundTransparency = 1
     customLabel.Text = "Custom RGB (R,G,B):"
     customLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    customLabel.TextSize = 11 * scale
-    customLabel.Font = Enum.Font.Gotham
+    customLabel.TextSize = 12 * scale
+    customLabel.Font = Enum.Font.GothamBold
     customLabel.Parent = customFrame
     
     local customInput = Instance.new("TextBox")
-    customInput.Size = UDim2.new(0.6, 0, 0, 30)
-    customInput.Position = UDim2.new(0.2, 0, 0, 30)
+    customInput.Size = UDim2.new(0.6, 0, 0, 35)
+    customInput.Position = UDim2.new(0.2, 0, 0, 40)
     customInput.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
     customInput.TextColor3 = Color3.fromRGB(255, 255, 255)
     customInput.Text = "255,255,255"
     customInput.ClearTextOnFocus = false
     customInput.Font = Enum.Font.Gotham
-    customInput.TextSize = 11 * scale
+    customInput.TextSize = 12 * scale
     customInput.Parent = customFrame
     
     local customCornerInput = Instance.new("UICorner")
-    customCornerInput.CornerRadius = UDim.new(0, 4)
+    customCornerInput.CornerRadius = UDim.new(0, 5)
     customCornerInput.Parent = customInput
     
     local applyCustom = Instance.new("TextButton")
-    applyCustom.Size = scaleSize(60, 30)
-    applyCustom.Position = UDim2.new(0.85, 0, 0, 30)
+    applyCustom.Size = scaleSize(70, 35)
+    applyCustom.Position = UDim2.new(0.85, 0, 0, 40)
     applyCustom.Text = "Apply"
     applyCustom.BackgroundColor3 = Color3.fromRGB(0, 120, 160)
     applyCustom.TextColor3 = Color3.fromRGB(255, 255, 255)
-    applyCustom.Font = Enum.Font.Gotham
-    applyCustom.TextSize = 11 * scale
+    applyCustom.Font = Enum.Font.GothamBold
+    applyCustom.TextSize = 12 * scale
     applyCustom.Parent = customFrame
     
     local applyCustomCorner = Instance.new("UICorner")
-    applyCustomCorner.CornerRadius = UDim.new(0, 4)
+    applyCustomCorner.CornerRadius = UDim.new(0, 5)
     applyCustomCorner.Parent = applyCustom
     
     applyCustom.MouseButton1Click:Connect(function()
@@ -442,7 +444,7 @@ function createColorPicker(parent, currentColor, callback)
         end
     end)
     
-    yPos = yPos + 90
+    yPos = yPos + 100
     scrollFrame.CanvasSize = UDim2.new(0, 0, 0, yPos + 10)
 end
 
