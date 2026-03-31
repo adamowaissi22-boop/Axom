@@ -13,10 +13,6 @@ local function scaleSize(x, y)
     return UDim2.new(0, x * scale, 0, y * scale)
 end
 
-local function scalePos(x, y)
-    return UDim2.new(0, x * scale, 0, y * scale)
-end
-
 local minimizedCircle = Instance.new("TextButton")
 minimizedCircle.Name = "MinimizedCircle"
 minimizedCircle.Size = scaleSize(60, 60)
@@ -264,6 +260,29 @@ local components = {
 
 local colorPickerFrame = nil
 
+local colorPresets = {
+    {name = "White", rgb = "255,255,255", color = Color3.fromRGB(255, 255, 255), textColor = Color3.fromRGB(0, 0, 0)},
+    {name = "Black", rgb = "0,0,0", color = Color3.fromRGB(0, 0, 0), textColor = Color3.fromRGB(255, 255, 255)},
+    {name = "Red", rgb = "255,0,0", color = Color3.fromRGB(255, 0, 0), textColor = Color3.fromRGB(255, 255, 255)},
+    {name = "Green", rgb = "0,255,0", color = Color3.fromRGB(0, 255, 0), textColor = Color3.fromRGB(0, 0, 0)},
+    {name = "Blue", rgb = "0,0,255", color = Color3.fromRGB(0, 0, 255), textColor = Color3.fromRGB(255, 255, 255)},
+    {name = "Yellow", rgb = "255,255,0", color = Color3.fromRGB(255, 255, 0), textColor = Color3.fromRGB(0, 0, 0)},
+    {name = "Cyan", rgb = "0,255,255", color = Color3.fromRGB(0, 255, 255), textColor = Color3.fromRGB(0, 0, 0)},
+    {name = "Magenta", rgb = "255,0,255", color = Color3.fromRGB(255, 0, 255), textColor = Color3.fromRGB(255, 255, 255)},
+    {name = "Orange", rgb = "255,165,0", color = Color3.fromRGB(255, 165, 0), textColor = Color3.fromRGB(0, 0, 0)},
+    {name = "Purple", rgb = "128,0,128", color = Color3.fromRGB(128, 0, 128), textColor = Color3.fromRGB(255, 255, 255)},
+    {name = "Pink", rgb = "255,192,203", color = Color3.fromRGB(255, 192, 203), textColor = Color3.fromRGB(0, 0, 0)},
+    {name = "Brown", rgb = "165,42,42", color = Color3.fromRGB(165, 42, 42), textColor = Color3.fromRGB(255, 255, 255)},
+    {name = "Lime", rgb = "50,205,50", color = Color3.fromRGB(50, 205, 50), textColor = Color3.fromRGB(0, 0, 0)},
+    {name = "Teal", rgb = "0,128,128", color = Color3.fromRGB(0, 128, 128), textColor = Color3.fromRGB(255, 255, 255)},
+    {name = "Lavender", rgb = "230,230,250", color = Color3.fromRGB(230, 230, 250), textColor = Color3.fromRGB(0, 0, 0)},
+    {name = "Maroon", rgb = "128,0,0", color = Color3.fromRGB(128, 0, 0), textColor = Color3.fromRGB(255, 255, 255)},
+    {name = "Navy", rgb = "0,0,128", color = Color3.fromRGB(0, 0, 128), textColor = Color3.fromRGB(255, 255, 255)},
+    {name = "Olive", rgb = "128,128,0", color = Color3.fromRGB(128, 128, 0), textColor = Color3.fromRGB(255, 255, 255)},
+    {name = "Coral", rgb = "255,127,80", color = Color3.fromRGB(255, 127, 80), textColor = Color3.fromRGB(0, 0, 0)},
+    {name = "Sky Blue", rgb = "135,206,235", color = Color3.fromRGB(135, 206, 235), textColor = Color3.fromRGB(0, 0, 0)}
+}
+
 function createColorPicker(parent, currentColor, callback)
     if colorPickerFrame then
         colorPickerFrame:Destroy()
@@ -271,8 +290,8 @@ function createColorPicker(parent, currentColor, callback)
     end
     
     colorPickerFrame = Instance.new("Frame")
-    colorPickerFrame.Size = scaleSize(220, 200)
-    colorPickerFrame.Position = UDim2.new(0.5, -110 * scale, 0.5, -100 * scale)
+    colorPickerFrame.Size = scaleSize(300, 400)
+    colorPickerFrame.Position = UDim2.new(0.5, -150 * scale, 0.5, -200 * scale)
     colorPickerFrame.BackgroundColor3 = Color3.fromRGB(30, 60, 80)
     colorPickerFrame.BorderSizePixel = 1
     colorPickerFrame.BorderColor3 = Color3.fromRGB(0, 200, 255)
@@ -322,148 +341,109 @@ function createColorPicker(parent, currentColor, callback)
         colorPickerFrame = nil
     end)
     
-    local redSlider = Instance.new("Frame")
-    redSlider.Size = UDim2.new(0.9, 0, 0, 30 * scale)
-    redSlider.Position = UDim2.new(0.05, 0, 0, 45 * scale)
-    redSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    redSlider.Parent = colorPickerFrame
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Size = UDim2.new(1, -10 * scale, 1, -45 * scale)
+    scrollFrame.Position = UDim2.new(0, 5 * scale, 0, 40 * scale)
+    scrollFrame.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+    scrollFrame.BorderSizePixel = 0
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scrollFrame.ScrollBarThickness = 6
+    scrollFrame.Parent = colorPickerFrame
     
-    local redLabel = Instance.new("TextLabel")
-    redLabel.Size = UDim2.new(0.2, 0, 1, 0)
-    redLabel.Text = "Red"
-    redLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-    redLabel.BackgroundTransparency = 1
-    redLabel.TextSize = 12 * scale
-    redLabel.Parent = redSlider
+    local scrollCorner = Instance.new("UICorner")
+    scrollCorner.CornerRadius = UDim.new(0, 6)
+    scrollCorner.Parent = scrollFrame
     
-    local redInput = Instance.new("TextBox")
-    redInput.Size = UDim2.new(0.3, 0, 0.8, 0)
-    redInput.Position = UDim2.new(0.7, 0, 0.1, 0)
-    redInput.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
-    redInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-    redInput.Text = tostring(math.floor(currentColor.R * 255))
-    redInput.ClearTextOnFocus = false
-    redInput.TextSize = 12 * scale
-    redInput.Parent = redSlider
-    
-    local redCorner = Instance.new("UICorner")
-    redCorner.CornerRadius = UDim.new(0, 4)
-    redCorner.Parent = redInput
-    
-    local greenSlider = Instance.new("Frame")
-    greenSlider.Size = UDim2.new(0.9, 0, 0, 30 * scale)
-    greenSlider.Position = UDim2.new(0.05, 0, 0, 80 * scale)
-    greenSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    greenSlider.Parent = colorPickerFrame
-    
-    local greenLabel = Instance.new("TextLabel")
-    greenLabel.Size = UDim2.new(0.2, 0, 1, 0)
-    greenLabel.Text = "Green"
-    greenLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-    greenLabel.BackgroundTransparency = 1
-    greenLabel.TextSize = 12 * scale
-    greenLabel.Parent = greenSlider
-    
-    local greenInput = Instance.new("TextBox")
-    greenInput.Size = UDim2.new(0.3, 0, 0.8, 0)
-    greenInput.Position = UDim2.new(0.7, 0, 0.1, 0)
-    greenInput.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
-    greenInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-    greenInput.Text = tostring(math.floor(currentColor.G * 255))
-    greenInput.ClearTextOnFocus = false
-    greenInput.TextSize = 12 * scale
-    greenInput.Parent = greenSlider
-    
-    local greenCorner = Instance.new("UICorner")
-    greenCorner.CornerRadius = UDim.new(0, 4)
-    greenCorner.Parent = greenInput
-    
-    local blueSlider = Instance.new("Frame")
-    blueSlider.Size = UDim2.new(0.9, 0, 0, 30 * scale)
-    blueSlider.Position = UDim2.new(0.05, 0, 0, 115 * scale)
-    blueSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    blueSlider.Parent = colorPickerFrame
-    
-    local blueLabel = Instance.new("TextLabel")
-    blueLabel.Size = UDim2.new(0.2, 0, 1, 0)
-    blueLabel.Text = "Blue"
-    blueLabel.TextColor3 = Color3.fromRGB(100, 100, 255)
-    blueLabel.BackgroundTransparency = 1
-    blueLabel.TextSize = 12 * scale
-    blueLabel.Parent = blueSlider
-    
-    local blueInput = Instance.new("TextBox")
-    blueInput.Size = UDim2.new(0.3, 0, 0.8, 0)
-    blueInput.Position = UDim2.new(0.7, 0, 0.1, 0)
-    blueInput.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
-    blueInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-    blueInput.Text = tostring(math.floor(currentColor.B * 255))
-    blueInput.ClearTextOnFocus = false
-    blueInput.TextSize = 12 * scale
-    blueInput.Parent = blueSlider
-    
-    local blueCorner = Instance.new("UICorner")
-    blueCorner.CornerRadius = UDim.new(0, 4)
-    blueCorner.Parent = blueInput
-    
-    local preview = Instance.new("Frame")
-    preview.Size = scaleSize(40, 40)
-    preview.Position = UDim2.new(0.7, 0, 0, 155 * scale)
-    preview.BackgroundColor3 = currentColor
-    preview.BorderSizePixel = 1
-    preview.BorderColor3 = Color3.fromRGB(255, 255, 255)
-    preview.Parent = colorPickerFrame
-    
-    local previewCorner = Instance.new("UICorner")
-    previewCorner.CornerRadius = UDim.new(0, 4)
-    previewCorner.Parent = preview
-    
-    local applyButton = Instance.new("TextButton")
-    applyButton.Size = scaleSize(70, 30)
-    applyButton.Position = UDim2.new(0.1, 0, 0, 160 * scale)
-    applyButton.Text = "Apply"
-    applyButton.BackgroundColor3 = Color3.fromRGB(0, 120, 160)
-    applyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    applyButton.TextSize = 12 * scale
-    applyButton.Parent = colorPickerFrame
-    
-    local applyCorner = Instance.new("UICorner")
-    applyCorner.CornerRadius = UDim.new(0, 4)
-    applyCorner.Parent = applyButton
-    
-    local function updateColor()
-        local r = tonumber(redInput.Text) or 0
-        local g = tonumber(greenInput.Text) or 0
-        local b = tonumber(blueInput.Text) or 0
-        r = math.clamp(r, 0, 255)
-        g = math.clamp(g, 0, 255)
-        b = math.clamp(b, 0, 255)
-        local newColor = Color3.fromRGB(r, g, b)
-        preview.BackgroundColor3 = newColor
-        return newColor
+    local yPos = 5
+    for _, preset in pairs(colorPresets) do
+        local colorButton = Instance.new("TextButton")
+        colorButton.Size = UDim2.new(1, -10, 0, 35)
+        colorButton.Position = UDim2.new(0, 5, 0, yPos)
+        colorButton.Text = preset.name .. " (" .. preset.rgb .. ")"
+        colorButton.BackgroundColor3 = preset.color
+        colorButton.TextColor3 = preset.textColor
+        colorButton.Font = Enum.Font.Gotham
+        colorButton.TextSize = 12 * scale
+        colorButton.BorderSizePixel = 1
+        colorButton.BorderColor3 = Color3.fromRGB(200, 200, 200)
+        colorButton.Parent = scrollFrame
+        
+        local buttonCorner = Instance.new("UICorner")
+        buttonCorner.CornerRadius = UDim.new(0, 4)
+        buttonCorner.Parent = colorButton
+        
+        colorButton.MouseButton1Click:Connect(function()
+            callback(preset.color)
+            colorPickerFrame:Destroy()
+            colorPickerFrame = nil
+        end)
+        
+        yPos = yPos + 40
     end
     
-    redInput.FocusLost:Connect(function()
-        local newColor = updateColor()
-        redInput.Text = tostring(math.floor(newColor.R * 255))
+    local customFrame = Instance.new("Frame")
+    customFrame.Size = UDim2.new(1, -10, 0, 80)
+    customFrame.Position = UDim2.new(0, 5, 0, yPos)
+    customFrame.BackgroundColor3 = Color3.fromRGB(40, 70, 90)
+    customFrame.BorderSizePixel = 1
+    customFrame.BorderColor3 = Color3.fromRGB(0, 150, 200)
+    customFrame.Parent = scrollFrame
+    
+    local customCorner = Instance.new("UICorner")
+    customCorner.CornerRadius = UDim.new(0, 4)
+    customCorner.Parent = customFrame
+    
+    local customLabel = Instance.new("TextLabel")
+    customLabel.Size = UDim2.new(1, 0, 0, 25)
+    customLabel.Position = UDim2.new(0, 0, 0, 0)
+    customLabel.BackgroundTransparency = 1
+    customLabel.Text = "Custom RGB (R,G,B):"
+    customLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    customLabel.TextSize = 11 * scale
+    customLabel.Font = Enum.Font.Gotham
+    customLabel.Parent = customFrame
+    
+    local customInput = Instance.new("TextBox")
+    customInput.Size = UDim2.new(0.6, 0, 0, 30)
+    customInput.Position = UDim2.new(0.2, 0, 0, 30)
+    customInput.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+    customInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    customInput.Text = "255,255,255"
+    customInput.ClearTextOnFocus = false
+    customInput.Font = Enum.Font.Gotham
+    customInput.TextSize = 11 * scale
+    customInput.Parent = customFrame
+    
+    local customCornerInput = Instance.new("UICorner")
+    customCornerInput.CornerRadius = UDim.new(0, 4)
+    customCornerInput.Parent = customInput
+    
+    local applyCustom = Instance.new("TextButton")
+    applyCustom.Size = scaleSize(60, 30)
+    applyCustom.Position = UDim2.new(0.85, 0, 0, 30)
+    applyCustom.Text = "Apply"
+    applyCustom.BackgroundColor3 = Color3.fromRGB(0, 120, 160)
+    applyCustom.TextColor3 = Color3.fromRGB(255, 255, 255)
+    applyCustom.Font = Enum.Font.Gotham
+    applyCustom.TextSize = 11 * scale
+    applyCustom.Parent = customFrame
+    
+    local applyCustomCorner = Instance.new("UICorner")
+    applyCustomCorner.CornerRadius = UDim.new(0, 4)
+    applyCustomCorner.Parent = applyCustom
+    
+    applyCustom.MouseButton1Click:Connect(function()
+        local r, g, b = customInput.Text:match("(%d+),%s*(%d+),%s*(%d+)")
+        if r and g and b then
+            local newColor = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+            callback(newColor)
+            colorPickerFrame:Destroy()
+            colorPickerFrame = nil
+        end
     end)
     
-    greenInput.FocusLost:Connect(function()
-        local newColor = updateColor()
-        greenInput.Text = tostring(math.floor(newColor.G * 255))
-    end)
-    
-    blueInput.FocusLost:Connect(function()
-        local newColor = updateColor()
-        blueInput.Text = tostring(math.floor(newColor.B * 255))
-    end)
-    
-    applyButton.MouseButton1Click:Connect(function()
-        local newColor = updateColor()
-        callback(newColor)
-        colorPickerFrame:Destroy()
-        colorPickerFrame = nil
-    end)
+    yPos = yPos + 90
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, yPos + 10)
 end
 
 function updateSelectionBox(target)
@@ -582,74 +562,51 @@ function refreshPropertiesPanel(selected)
                 refreshPropertiesPanel(selected)
             end)
         elseif prop.type == "parent" then
-            local dropdown = Instance.new("TextButton")
-            dropdown.Size = UDim2.new(0.55, -5, 1, -5)
-            dropdown.Position = UDim2.new(0.45, 5, 0, 2.5)
-            dropdown.Text = tostring(selected.Parent.Name)
-            dropdown.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
-            dropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
-            dropdown.Font = Enum.Font.Gotham
-            dropdown.TextSize = 12 * scale
-            dropdown.Parent = propFrame
+            local input = Instance.new("TextBox")
+            input.Size = UDim2.new(0.55, -5, 1, -5)
+            input.Position = UDim2.new(0.45, 5, 0, 2.5)
+            input.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+            input.TextColor3 = Color3.fromRGB(255, 255, 255)
+            local parentName = selected.Parent.Name
+            if selected.Parent == workspaceFrame then
+                input.Text = "workspaceFrame"
+            elseif selected.Parent == mainFrame then
+                input.Text = "mainFrame"
+            elseif selected.Parent == screenGui then
+                input.Text = "screenGui"
+            else
+                input.Text = parentName
+            end
+            input.ClearTextOnFocus = false
+            input.Font = Enum.Font.Gotham
+            input.TextSize = 12 * scale
+            input.Parent = propFrame
             
-            local dropdownCorner = Instance.new("UICorner")
-            dropdownCorner.CornerRadius = UDim.new(0, 4)
-            dropdownCorner.Parent = dropdown
+            local inputCorner = Instance.new("UICorner")
+            inputCorner.CornerRadius = UDim.new(0, 4)
+            inputCorner.Parent = input
             
-            dropdown.MouseButton1Click:Connect(function()
-                local menuFrame = Instance.new("ScrollingFrame")
-                menuFrame.Size = scaleSize(150, 130)
-                menuFrame.Position = UDim2.new(0, dropdown.AbsolutePosition.X, 0, dropdown.AbsolutePosition.Y + 40)
-                menuFrame.BackgroundColor3 = Color3.fromRGB(30, 60, 80)
-                menuFrame.BorderSizePixel = 1
-                menuFrame.BorderColor3 = Color3.fromRGB(0, 150, 200)
-                menuFrame.ZIndex = 50
-                menuFrame.Parent = mainFrame
-                
-                local menuCorner = Instance.new("UICorner")
-                menuCorner.CornerRadius = UDim.new(0, 4)
-                menuCorner.Parent = menuFrame
-                
-                local parents = {workspaceFrame, mainFrame, screenGui}
-                local yOff = 5
-                
-                for _, p in pairs(parents) do
-                    local btn = Instance.new("TextButton")
-                    btn.Size = UDim2.new(1, -10, 0, 30)
-                    btn.Position = UDim2.new(0, 5, 0, yOff)
-                    btn.Text = p.Name
-                    btn.BackgroundColor3 = Color3.fromRGB(40, 70, 90)
-                    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    btn.Font = Enum.Font.Gotham
-                    btn.TextSize = 11 * scale
-                    btn.Parent = menuFrame
-                    
-                    local btnCorner = Instance.new("UICorner")
-                    btnCorner.CornerRadius = UDim.new(0, 3)
-                    btnCorner.Parent = btn
-                    
-                    btn.MouseButton1Click:Connect(function()
-                        selected.Parent = p
-                        dropdown.Text = p.Name
-                        menuFrame:Destroy()
-                        refreshPropertiesPanel(selected)
-                    end)
-                    
-                    yOff = yOff + 35
-                end
-                
-                menuFrame.CanvasSize = UDim2.new(0, 0, 0, yOff + 10)
-                
-                local cleanupConn
-                cleanupConn = game:GetService("UserInputService").InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        task.wait(0.15)
-                        if menuFrame and menuFrame.Parent then
-                            menuFrame:Destroy()
+            input.FocusLost:Connect(function()
+                local targetParent = input.Text:lower()
+                if targetParent == "workspaceframe" then
+                    selected.Parent = workspaceFrame
+                elseif targetParent == "mainframe" then
+                    selected.Parent = mainFrame
+                elseif targetParent == "screengui" then
+                    selected.Parent = screenGui
+                else
+                    local found = nil
+                    for _, child in pairs(workspaceFrame:GetChildren()) do
+                        if child:IsA("GuiObject") and child.Name:lower() == targetParent then
+                            found = child
+                            break
                         end
-                        cleanupConn:Disconnect()
                     end
-                end)
+                    if found then
+                        selected.Parent = found
+                    end
+                end
+                refreshPropertiesPanel(selected)
             end)
         elseif prop.type == "number" then
             local input = Instance.new("TextBox")
