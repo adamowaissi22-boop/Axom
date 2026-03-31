@@ -4,27 +4,25 @@ screenGui.Parent = game:GetService("CoreGui")
 screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
 
-local viewport = game:GetService("UserInputService"):GetMouseLocation()
 local screenSize = workspace.CurrentCamera.ViewportSize
+local scaleX = screenSize.X / 1920
+local scaleY = screenSize.Y / 1080
+local scale = math.min(scaleX, scaleY)
 
 local function scaleSize(x, y)
-    local baseX = 1920
-    local baseY = 1080
-    return UDim2.new(0, (x / baseX) * screenSize.X, 0, (y / baseY) * screenSize.Y)
+    return UDim2.new(0, x * scale, 0, y * scale)
 end
 
 local function scalePos(x, y)
-    local baseX = 1920
-    local baseY = 1080
-    return UDim2.new(0, (x / baseX) * screenSize.X, 0, (y / baseY) * screenSize.Y)
+    return UDim2.new(0, x * scale, 0, y * scale)
 end
 
 local minimizedCircle = Instance.new("TextButton")
 minimizedCircle.Name = "MinimizedCircle"
 minimizedCircle.Size = scaleSize(60, 60)
-minimizedCircle.Position = UDim2.new(0.5, -30, 0.5, -30)
+minimizedCircle.Position = UDim2.new(0.5, -30 * scale, 0.5, -30 * scale)
 minimizedCircle.Text = "A"
-minimizedCircle.TextSize = 30
+minimizedCircle.TextSize = 30 * scale
 minimizedCircle.TextColor3 = Color3.fromRGB(255, 255, 255)
 minimizedCircle.BackgroundColor3 = Color3.fromRGB(0, 80, 120)
 minimizedCircle.BorderSizePixel = 0
@@ -44,8 +42,8 @@ circleGradient.Parent = minimizedCircle
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = scaleSize(750, 650)
-mainFrame.Position = UDim2.new(0.5, -375, 0.5, -325)
+mainFrame.Size = scaleSize(900, 700)
+mainFrame.Position = UDim2.new(0.5, -450 * scale, 0.5, -350 * scale)
 mainFrame.BackgroundColor3 = Color3.fromRGB(0, 40, 60)
 mainFrame.BackgroundTransparency = 0.05
 mainFrame.BorderSizePixel = 0
@@ -65,7 +63,7 @@ mainGradient.Parent = mainFrame
 
 local dragBar = Instance.new("Frame")
 dragBar.Name = "DragBar"
-dragBar.Size = UDim2.new(1, 0, 0, 45)
+dragBar.Size = UDim2.new(1, 0, 0, 50 * scale)
 dragBar.BackgroundColor3 = Color3.fromRGB(0, 70, 100)
 dragBar.BorderSizePixel = 0
 dragBar.Parent = mainFrame
@@ -84,13 +82,13 @@ dragBarGradient.Parent = dragBar
 local closeButton = Instance.new("TextButton")
 closeButton.Name = "CloseButton"
 closeButton.Size = scaleSize(35, 35)
-closeButton.Position = UDim2.new(1, -45, 0, 5)
+closeButton.Position = UDim2.new(1, -45 * scale, 0, 7.5 * scale)
 closeButton.Text = "X"
 closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 closeButton.BorderSizePixel = 0
 closeButton.Font = Enum.Font.GothamBold
-closeButton.TextSize = 18
+closeButton.TextSize = 18 * scale
 closeButton.Parent = dragBar
 
 local closeCorner = Instance.new("UICorner")
@@ -100,13 +98,13 @@ closeCorner.Parent = closeButton
 local minimizeButton = Instance.new("TextButton")
 minimizeButton.Name = "MinimizeButton"
 minimizeButton.Size = scaleSize(35, 35)
-minimizeButton.Position = UDim2.new(1, -90, 0, 5)
+minimizeButton.Position = UDim2.new(1, -90 * scale, 0, 7.5 * scale)
 minimizeButton.Text = "-"
 minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 minimizeButton.BackgroundColor3 = Color3.fromRGB(0, 100, 140)
 minimizeButton.BorderSizePixel = 0
 minimizeButton.Font = Enum.Font.GothamBold
-minimizeButton.TextSize = 24
+minimizeButton.TextSize = 24 * scale
 minimizeButton.Parent = dragBar
 
 local minimizeCorner = Instance.new("UICorner")
@@ -115,20 +113,20 @@ minimizeCorner.Parent = minimizeButton
 
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Name = "TitleLabel"
-titleLabel.Size = UDim2.new(1, -140, 1, 0)
-titleLabel.Position = UDim2.new(0, 15, 0, 0)
+titleLabel.Size = UDim2.new(1, -150 * scale, 1, 0)
+titleLabel.Position = UDim2.new(0, 15 * scale, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Text = "Axomic GUI Builder"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 16
+titleLabel.TextSize = 18 * scale
 titleLabel.Parent = dragBar
 
 local componentsFrame = Instance.new("ScrollingFrame")
 componentsFrame.Name = "ComponentsFrame"
-componentsFrame.Size = scaleSize(180, 605)
-componentsFrame.Position = UDim2.new(0, 0, 0, 45)
+componentsFrame.Size = UDim2.new(0, 200 * scale, 1, -50 * scale)
+componentsFrame.Position = UDim2.new(0, 0, 0, 50 * scale)
 componentsFrame.BackgroundColor3 = Color3.fromRGB(0, 50, 75)
 componentsFrame.BorderSizePixel = 0
 componentsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -148,8 +146,8 @@ componentsGradient.Parent = componentsFrame
 
 local propertiesFrame = Instance.new("ScrollingFrame")
 propertiesFrame.Name = "PropertiesFrame"
-propertiesFrame.Size = scaleSize(250, 605)
-propertiesFrame.Position = UDim2.new(1, -250, 0, 45)
+propertiesFrame.Size = UDim2.new(0, 280 * scale, 1, -50 * scale)
+propertiesFrame.Position = UDim2.new(1, -280 * scale, 0, 50 * scale)
 propertiesFrame.BackgroundColor3 = Color3.fromRGB(0, 50, 75)
 propertiesFrame.BorderSizePixel = 0
 propertiesFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -169,8 +167,8 @@ propertiesGradient.Parent = propertiesFrame
 
 local workspaceFrame = Instance.new("Frame")
 workspaceFrame.Name = "WorkspaceFrame"
-workspaceFrame.Size = UDim2.new(1, -440, 1, -45)
-workspaceFrame.Position = UDim2.new(0, 180, 0, 45)
+workspaceFrame.Size = UDim2.new(1, -490 * scale, 1, -50 * scale)
+workspaceFrame.Position = UDim2.new(0, 200 * scale, 0, 50 * scale)
 workspaceFrame.BackgroundColor3 = Color3.fromRGB(15, 35, 50)
 workspaceFrame.BorderSizePixel = 2
 workspaceFrame.BorderColor3 = Color3.fromRGB(0, 150, 200)
@@ -191,17 +189,24 @@ selectionBox.ZIndex = 10
 selectionBox.Visible = false
 selectionBox.Parent = workspaceFrame
 
+local buttonPanel = Instance.new("Frame")
+buttonPanel.Name = "ButtonPanel"
+buttonPanel.Size = UDim2.new(1, -10 * scale, 0, 45 * scale)
+buttonPanel.Position = UDim2.new(0, 5 * scale, 1, -50 * scale)
+buttonPanel.BackgroundTransparency = 1
+buttonPanel.Parent = mainFrame
+
 local modeSwitch = Instance.new("TextButton")
 modeSwitch.Name = "ModeSwitch"
 modeSwitch.Size = scaleSize(100, 35)
-modeSwitch.Position = UDim2.new(1, -220, 1, -42)
+modeSwitch.Position = UDim2.new(1, -210 * scale, 0, 5 * scale)
 modeSwitch.Text = "Edit"
 modeSwitch.TextColor3 = Color3.fromRGB(255, 255, 255)
 modeSwitch.BackgroundColor3 = Color3.fromRGB(0, 120, 160)
 modeSwitch.BorderSizePixel = 0
 modeSwitch.Font = Enum.Font.GothamBold
-modeSwitch.TextSize = 13
-modeSwitch.Parent = mainFrame
+modeSwitch.TextSize = 13 * scale
+modeSwitch.Parent = buttonPanel
 
 local modeCorner = Instance.new("UICorner")
 modeCorner.CornerRadius = UDim.new(0, 6)
@@ -210,14 +215,14 @@ modeCorner.Parent = modeSwitch
 local deleteButton = Instance.new("TextButton")
 deleteButton.Name = "DeleteButton"
 deleteButton.Size = scaleSize(80, 35)
-deleteButton.Position = UDim2.new(1, -310, 1, -42)
+deleteButton.Position = UDim2.new(1, -300 * scale, 0, 5 * scale)
 deleteButton.Text = "Delete"
 deleteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 deleteButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 deleteButton.BorderSizePixel = 0
 deleteButton.Font = Enum.Font.GothamBold
-deleteButton.TextSize = 13
-deleteButton.Parent = mainFrame
+deleteButton.TextSize = 13 * scale
+deleteButton.Parent = buttonPanel
 
 local deleteCorner = Instance.new("UICorner")
 deleteCorner.CornerRadius = UDim.new(0, 6)
@@ -226,38 +231,18 @@ deleteCorner.Parent = deleteButton
 local generateButton = Instance.new("TextButton")
 generateButton.Name = "GenerateButton"
 generateButton.Size = scaleSize(100, 35)
-generateButton.Position = UDim2.new(0, 10, 1, -42)
+generateButton.Position = UDim2.new(0, 0, 0, 5 * scale)
 generateButton.Text = "Generate"
 generateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 generateButton.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
 generateButton.BorderSizePixel = 0
 generateButton.Font = Enum.Font.GothamBold
-generateButton.TextSize = 13
-generateButton.Parent = mainFrame
+generateButton.TextSize = 13 * scale
+generateButton.Parent = buttonPanel
 
 local generateCorner = Instance.new("UICorner")
 generateCorner.CornerRadius = UDim.new(0, 6)
 generateCorner.Parent = generateButton
-
-local outputBox = Instance.new("TextBox")
-outputBox.Name = "OutputBox"
-outputBox.Size = UDim2.new(1, -20, 0, 120)
-outputBox.Position = UDim2.new(0, 10, 1, -165)
-outputBox.BackgroundColor3 = Color3.fromRGB(10, 30, 45)
-outputBox.TextColor3 = Color3.fromRGB(200, 220, 240)
-outputBox.TextXAlignment = Enum.TextXAlignment.Left
-outputBox.TextYAlignment = Enum.TextYAlignment.Top
-outputBox.Text = ""
-outputBox.ClearTextOnFocus = false
-outputBox.Font = Enum.Font.Code
-outputBox.TextSize = 11
-outputBox.MultiLine = true
-outputBox.Visible = false
-outputBox.Parent = mainFrame
-
-local outputCorner = Instance.new("UICorner")
-outputCorner.CornerRadius = UDim.new(0, 6)
-outputCorner.Parent = outputBox
 
 local currentSelected = nil
 local editMode = true
@@ -286,8 +271,8 @@ function createColorPicker(parent, currentColor, callback)
     end
     
     colorPickerFrame = Instance.new("Frame")
-    colorPickerFrame.Size = scaleSize(200, 180)
-    colorPickerFrame.Position = UDim2.new(0.5, -100, 0.5, -90)
+    colorPickerFrame.Size = scaleSize(220, 200)
+    colorPickerFrame.Position = UDim2.new(0.5, -110 * scale, 0.5, -100 * scale)
     colorPickerFrame.BackgroundColor3 = Color3.fromRGB(30, 60, 80)
     colorPickerFrame.BorderSizePixel = 1
     colorPickerFrame.BorderColor3 = Color3.fromRGB(0, 200, 255)
@@ -299,7 +284,7 @@ function createColorPicker(parent, currentColor, callback)
     pickerCorner.Parent = colorPickerFrame
     
     local titleBar = Instance.new("Frame")
-    titleBar.Size = UDim2.new(1, 0, 0, 30)
+    titleBar.Size = UDim2.new(1, 0, 0, 35 * scale)
     titleBar.BackgroundColor3 = Color3.fromRGB(0, 80, 110)
     titleBar.Parent = colorPickerFrame
     
@@ -308,21 +293,21 @@ function createColorPicker(parent, currentColor, callback)
     titleCorner.Parent = titleBar
     
     local titleText = Instance.new("TextLabel")
-    titleText.Size = UDim2.new(1, -30, 1, 0)
-    titleText.Position = UDim2.new(0, 10, 0, 0)
+    titleText.Size = UDim2.new(1, -40 * scale, 1, 0)
+    titleText.Position = UDim2.new(0, 10 * scale, 0, 0)
     titleText.BackgroundTransparency = 1
     titleText.Text = "Color Picker"
     titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleText.TextSize = 12
+    titleText.TextSize = 14 * scale
     titleText.Font = Enum.Font.GothamBold
     titleText.TextXAlignment = Enum.TextXAlignment.Left
     titleText.Parent = titleBar
     
     local closePicker = Instance.new("TextButton")
-    closePicker.Size = scaleSize(20, 20)
-    closePicker.Position = UDim2.new(1, -25, 0, 5)
+    closePicker.Size = scaleSize(25, 25)
+    closePicker.Position = UDim2.new(1, -30 * scale, 0, 5 * scale)
     closePicker.Text = "X"
-    closePicker.TextSize = 12
+    closePicker.TextSize = 12 * scale
     closePicker.TextColor3 = Color3.fromRGB(255, 255, 255)
     closePicker.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
     closePicker.BorderSizePixel = 0
@@ -338,8 +323,8 @@ function createColorPicker(parent, currentColor, callback)
     end)
     
     local redSlider = Instance.new("Frame")
-    redSlider.Size = UDim2.new(0.9, 0, 0, 25)
-    redSlider.Position = UDim2.new(0.05, 0, 0, 40)
+    redSlider.Size = UDim2.new(0.9, 0, 0, 30 * scale)
+    redSlider.Position = UDim2.new(0.05, 0, 0, 45 * scale)
     redSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     redSlider.Parent = colorPickerFrame
     
@@ -348,7 +333,7 @@ function createColorPicker(parent, currentColor, callback)
     redLabel.Text = "Red"
     redLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
     redLabel.BackgroundTransparency = 1
-    redLabel.TextSize = 11
+    redLabel.TextSize = 12 * scale
     redLabel.Parent = redSlider
     
     local redInput = Instance.new("TextBox")
@@ -358,7 +343,7 @@ function createColorPicker(parent, currentColor, callback)
     redInput.TextColor3 = Color3.fromRGB(255, 255, 255)
     redInput.Text = tostring(math.floor(currentColor.R * 255))
     redInput.ClearTextOnFocus = false
-    redInput.TextSize = 11
+    redInput.TextSize = 12 * scale
     redInput.Parent = redSlider
     
     local redCorner = Instance.new("UICorner")
@@ -366,8 +351,8 @@ function createColorPicker(parent, currentColor, callback)
     redCorner.Parent = redInput
     
     local greenSlider = Instance.new("Frame")
-    greenSlider.Size = UDim2.new(0.9, 0, 0, 25)
-    greenSlider.Position = UDim2.new(0.05, 0, 0, 70)
+    greenSlider.Size = UDim2.new(0.9, 0, 0, 30 * scale)
+    greenSlider.Position = UDim2.new(0.05, 0, 0, 80 * scale)
     greenSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     greenSlider.Parent = colorPickerFrame
     
@@ -376,7 +361,7 @@ function createColorPicker(parent, currentColor, callback)
     greenLabel.Text = "Green"
     greenLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
     greenLabel.BackgroundTransparency = 1
-    greenLabel.TextSize = 11
+    greenLabel.TextSize = 12 * scale
     greenLabel.Parent = greenSlider
     
     local greenInput = Instance.new("TextBox")
@@ -386,7 +371,7 @@ function createColorPicker(parent, currentColor, callback)
     greenInput.TextColor3 = Color3.fromRGB(255, 255, 255)
     greenInput.Text = tostring(math.floor(currentColor.G * 255))
     greenInput.ClearTextOnFocus = false
-    greenInput.TextSize = 11
+    greenInput.TextSize = 12 * scale
     greenInput.Parent = greenSlider
     
     local greenCorner = Instance.new("UICorner")
@@ -394,8 +379,8 @@ function createColorPicker(parent, currentColor, callback)
     greenCorner.Parent = greenInput
     
     local blueSlider = Instance.new("Frame")
-    blueSlider.Size = UDim2.new(0.9, 0, 0, 25)
-    blueSlider.Position = UDim2.new(0.05, 0, 0, 100)
+    blueSlider.Size = UDim2.new(0.9, 0, 0, 30 * scale)
+    blueSlider.Position = UDim2.new(0.05, 0, 0, 115 * scale)
     blueSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     blueSlider.Parent = colorPickerFrame
     
@@ -404,7 +389,7 @@ function createColorPicker(parent, currentColor, callback)
     blueLabel.Text = "Blue"
     blueLabel.TextColor3 = Color3.fromRGB(100, 100, 255)
     blueLabel.BackgroundTransparency = 1
-    blueLabel.TextSize = 11
+    blueLabel.TextSize = 12 * scale
     blueLabel.Parent = blueSlider
     
     local blueInput = Instance.new("TextBox")
@@ -414,7 +399,7 @@ function createColorPicker(parent, currentColor, callback)
     blueInput.TextColor3 = Color3.fromRGB(255, 255, 255)
     blueInput.Text = tostring(math.floor(currentColor.B * 255))
     blueInput.ClearTextOnFocus = false
-    blueInput.TextSize = 11
+    blueInput.TextSize = 12 * scale
     blueInput.Parent = blueSlider
     
     local blueCorner = Instance.new("UICorner")
@@ -422,8 +407,8 @@ function createColorPicker(parent, currentColor, callback)
     blueCorner.Parent = blueInput
     
     local preview = Instance.new("Frame")
-    preview.Size = scaleSize(30, 30)
-    preview.Position = UDim2.new(0.75, 0, 0, 140)
+    preview.Size = scaleSize(40, 40)
+    preview.Position = UDim2.new(0.7, 0, 0, 155 * scale)
     preview.BackgroundColor3 = currentColor
     preview.BorderSizePixel = 1
     preview.BorderColor3 = Color3.fromRGB(255, 255, 255)
@@ -434,12 +419,12 @@ function createColorPicker(parent, currentColor, callback)
     previewCorner.Parent = preview
     
     local applyButton = Instance.new("TextButton")
-    applyButton.Size = scaleSize(60, 25)
-    applyButton.Position = UDim2.new(0.05, 0, 0, 140)
+    applyButton.Size = scaleSize(70, 30)
+    applyButton.Position = UDim2.new(0.1, 0, 0, 160 * scale)
     applyButton.Text = "Apply"
     applyButton.BackgroundColor3 = Color3.fromRGB(0, 120, 160)
     applyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    applyButton.TextSize = 11
+    applyButton.TextSize = 12 * scale
     applyButton.Parent = colorPickerFrame
     
     local applyCorner = Instance.new("UICorner")
@@ -506,15 +491,15 @@ function refreshPropertiesPanel(selected)
     if not selected or not editMode then
         local emptyLabel = Instance.new("TextLabel")
         emptyLabel.Name = "EmptyLabel"
-        emptyLabel.Size = UDim2.new(1, -10, 0, 30)
+        emptyLabel.Size = UDim2.new(1, -10, 0, 40)
         emptyLabel.Position = UDim2.new(0, 5, 0, 10)
         emptyLabel.BackgroundTransparency = 1
         emptyLabel.Text = "No element selected"
         emptyLabel.TextColor3 = Color3.fromRGB(150, 180, 200)
-        emptyLabel.TextSize = 12
+        emptyLabel.TextSize = 13 * scale
         emptyLabel.Font = Enum.Font.Gotham
         emptyLabel.Parent = propertiesFrame
-        propertiesFrame.CanvasSize = UDim2.new(0, 0, 0, 50)
+        propertiesFrame.CanvasSize = UDim2.new(0, 0, 0, 60)
         return
     end
     
@@ -554,7 +539,7 @@ function refreshPropertiesPanel(selected)
     for _, prop in pairs(properties) do
         local propFrame = Instance.new("Frame")
         propFrame.Name = "PropFrame"
-        propFrame.Size = UDim2.new(1, -10, 0, 40)
+        propFrame.Size = UDim2.new(1, -10, 0, 45)
         propFrame.Position = UDim2.new(0, 5, 0, yPos)
         propFrame.BackgroundTransparency = 1
         propFrame.Parent = propertiesFrame
@@ -565,7 +550,7 @@ function refreshPropertiesPanel(selected)
         label.BackgroundTransparency = 1
         label.Text = prop.name
         label.TextColor3 = Color3.fromRGB(200, 220, 240)
-        label.TextSize = 11
+        label.TextSize = 12 * scale
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.Font = Enum.Font.Gotham
         label.Parent = propFrame
@@ -579,7 +564,7 @@ function refreshPropertiesPanel(selected)
             input.Text = tostring(selected[prop.property])
             input.ClearTextOnFocus = false
             input.Font = Enum.Font.Gotham
-            input.TextSize = 11
+            input.TextSize = 12 * scale
             input.Parent = propFrame
             
             local inputCorner = Instance.new("UICorner")
@@ -604,7 +589,7 @@ function refreshPropertiesPanel(selected)
             dropdown.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
             dropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
             dropdown.Font = Enum.Font.Gotham
-            dropdown.TextSize = 11
+            dropdown.TextSize = 12 * scale
             dropdown.Parent = propFrame
             
             local dropdownCorner = Instance.new("UICorner")
@@ -613,8 +598,8 @@ function refreshPropertiesPanel(selected)
             
             dropdown.MouseButton1Click:Connect(function()
                 local menuFrame = Instance.new("ScrollingFrame")
-                menuFrame.Size = scaleSize(140, 120)
-                menuFrame.Position = UDim2.new(0, dropdown.AbsolutePosition.X, 0, dropdown.AbsolutePosition.Y + 35)
+                menuFrame.Size = scaleSize(150, 130)
+                menuFrame.Position = UDim2.new(0, dropdown.AbsolutePosition.X, 0, dropdown.AbsolutePosition.Y + 40)
                 menuFrame.BackgroundColor3 = Color3.fromRGB(30, 60, 80)
                 menuFrame.BorderSizePixel = 1
                 menuFrame.BorderColor3 = Color3.fromRGB(0, 150, 200)
@@ -630,13 +615,13 @@ function refreshPropertiesPanel(selected)
                 
                 for _, p in pairs(parents) do
                     local btn = Instance.new("TextButton")
-                    btn.Size = UDim2.new(1, -10, 0, 25)
+                    btn.Size = UDim2.new(1, -10, 0, 30)
                     btn.Position = UDim2.new(0, 5, 0, yOff)
                     btn.Text = p.Name
                     btn.BackgroundColor3 = Color3.fromRGB(40, 70, 90)
                     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
                     btn.Font = Enum.Font.Gotham
-                    btn.TextSize = 10
+                    btn.TextSize = 11 * scale
                     btn.Parent = menuFrame
                     
                     local btnCorner = Instance.new("UICorner")
@@ -650,7 +635,7 @@ function refreshPropertiesPanel(selected)
                         refreshPropertiesPanel(selected)
                     end)
                     
-                    yOff = yOff + 30
+                    yOff = yOff + 35
                 end
                 
                 menuFrame.CanvasSize = UDim2.new(0, 0, 0, yOff + 10)
@@ -675,7 +660,7 @@ function refreshPropertiesPanel(selected)
             input.Text = tostring(selected[prop.property])
             input.ClearTextOnFocus = false
             input.Font = Enum.Font.Gotham
-            input.TextSize = 11
+            input.TextSize = 12 * scale
             input.Parent = propFrame
             
             local inputCorner = Instance.new("UICorner")
@@ -700,7 +685,7 @@ function refreshPropertiesPanel(selected)
             toggle.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
             toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
             toggle.Font = Enum.Font.Gotham
-            toggle.TextSize = 11
+            toggle.TextSize = 12 * scale
             toggle.Parent = propFrame
             
             local toggleCorner = Instance.new("UICorner")
@@ -720,7 +705,7 @@ function refreshPropertiesPanel(selected)
             colorButton.BackgroundColor3 = selected[prop.property]
             colorButton.TextColor3 = Color3.fromRGB(255, 255, 255)
             colorButton.Font = Enum.Font.Gotham
-            colorButton.TextSize = 11
+            colorButton.TextSize = 12 * scale
             colorButton.Parent = propFrame
             
             local colorCorner = Instance.new("UICorner")
@@ -743,7 +728,7 @@ function refreshPropertiesPanel(selected)
             input.Text = tostring(selected.Size.X.Offset)
             input.ClearTextOnFocus = false
             input.Font = Enum.Font.Gotham
-            input.TextSize = 11
+            input.TextSize = 12 * scale
             input.Parent = propFrame
             
             local inputCorner = Instance.new("UICorner")
@@ -768,7 +753,7 @@ function refreshPropertiesPanel(selected)
             input.Text = tostring(selected.Size.Y.Offset)
             input.ClearTextOnFocus = false
             input.Font = Enum.Font.Gotham
-            input.TextSize = 11
+            input.TextSize = 12 * scale
             input.Parent = propFrame
             
             local inputCorner = Instance.new("UICorner")
@@ -793,7 +778,7 @@ function refreshPropertiesPanel(selected)
             input.Text = tostring(selected.Position.X.Offset)
             input.ClearTextOnFocus = false
             input.Font = Enum.Font.Gotham
-            input.TextSize = 11
+            input.TextSize = 12 * scale
             input.Parent = propFrame
             
             local inputCorner = Instance.new("UICorner")
@@ -818,7 +803,7 @@ function refreshPropertiesPanel(selected)
             input.Text = tostring(selected.Position.Y.Offset)
             input.ClearTextOnFocus = false
             input.Font = Enum.Font.Gotham
-            input.TextSize = 11
+            input.TextSize = 12 * scale
             input.Parent = propFrame
             
             local inputCorner = Instance.new("UICorner")
@@ -836,7 +821,7 @@ function refreshPropertiesPanel(selected)
             end)
         end
         
-        yPos = yPos + 45
+        yPos = yPos + 50
     end
     
     propertiesFrame.CanvasSize = UDim2.new(0, 0, 0, yPos + 10)
@@ -866,10 +851,10 @@ function addComponentToWorkspace(componentClass, componentName)
     
     newGui = Instance.new(componentClass)
     newGui.Name = componentName .. "_" .. math.random(1000, 9999)
-    newGui.Size = scaleSize(120, 80)
+    newGui.Size = scaleSize(140, 90)
     
-    local finalX = 50 + math.random(0, math.max(50, workspaceFrame.AbsoluteSize.X - 170))
-    local finalY = 50 + math.random(0, math.max(50, workspaceFrame.AbsoluteSize.Y - 130))
+    local finalX = 30 + math.random(0, math.max(50, workspaceFrame.AbsoluteSize.X - 180))
+    local finalY = 30 + math.random(0, math.max(50, workspaceFrame.AbsoluteSize.Y - 140))
     
     newGui.Position = UDim2.new(0, finalX, 0, finalY)
     newGui.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
@@ -886,7 +871,7 @@ function addComponentToWorkspace(componentClass, componentName)
         newGui.TextColor3 = Color3.fromRGB(255, 255, 255)
         newGui.BackgroundColor3 = Color3.fromRGB(60, 110, 150)
         newGui.Font = Enum.Font.Gotham
-        newGui.TextSize = 14
+        newGui.TextSize = 14 * scale
     end
     
     if componentClass == "ScrollingFrame" then
@@ -1010,24 +995,64 @@ function generateScript()
         end
     end
     
+    local outputBox = Instance.new("TextBox")
+    outputBox.Size = UDim2.new(0.8, 0, 0.4, 0)
+    outputBox.Position = UDim2.new(0.1, 0, 0.3, 0)
+    outputBox.BackgroundColor3 = Color3.fromRGB(10, 30, 45)
+    outputBox.TextColor3 = Color3.fromRGB(200, 220, 240)
+    outputBox.TextXAlignment = Enum.TextXAlignment.Left
+    outputBox.TextYAlignment = Enum.TextYAlignment.Top
     outputBox.Text = table.concat(scriptLines, "\n")
-    outputBox.Visible = true
-    task.wait(3)
-    outputBox.Visible = false
+    outputBox.ClearTextOnFocus = false
+    outputBox.Font = Enum.Font.Code
+    outputBox.TextSize = 11 * scale
+    outputBox.MultiLine = true
+    outputBox.ZIndex = 100
+    outputBox.Parent = mainFrame
+    
+    local outputCorner = Instance.new("UICorner")
+    outputCorner.CornerRadius = UDim.new(0, 6)
+    outputCorner.Parent = outputBox
+    
+    local closeOutput = Instance.new("TextButton")
+    closeOutput.Size = scaleSize(30, 30)
+    closeOutput.Position = UDim2.new(0.8, -35, 0.3, 5)
+    closeOutput.Text = "X"
+    closeOutput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeOutput.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeOutput.BorderSizePixel = 0
+    closeOutput.Font = Enum.Font.GothamBold
+    closeOutput.TextSize = 14 * scale
+    closeOutput.Parent = mainFrame
+    
+    local closeOutputCorner = Instance.new("UICorner")
+    closeOutputCorner.CornerRadius = UDim.new(0, 4)
+    closeOutputCorner.Parent = closeOutput
+    
+    closeOutput.MouseButton1Click:Connect(function()
+        outputBox:Destroy()
+        closeOutput:Destroy()
+    end)
+    
+    task.wait(5)
+    if outputBox and outputBox.Parent then
+        outputBox:Destroy()
+        closeOutput:Destroy()
+    end
 end
 
 local yOffset = 10
 for _, comp in pairs(components) do
     local button = Instance.new("TextButton")
     button.Name = comp.name .. "Btn"
-    button.Size = UDim2.new(1, -10, 0, 38)
+    button.Size = UDim2.new(1, -10, 0, 42)
     button.Position = UDim2.new(0, 5, 0, yOffset)
     button.Text = comp.name
     button.BackgroundColor3 = Color3.fromRGB(0, 80, 110)
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
     button.BorderSizePixel = 0
     button.Font = Enum.Font.Gotham
-    button.TextSize = 12
+    button.TextSize = 13 * scale
     button.Parent = componentsFrame
     
     local buttonCorner = Instance.new("UICorner")
@@ -1038,7 +1063,7 @@ for _, comp in pairs(components) do
         addComponentToWorkspace(comp.class, comp.name)
     end)
     
-    yOffset = yOffset + 45
+    yOffset = yOffset + 48
 end
 
 componentsFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 20)
@@ -1131,7 +1156,7 @@ end
 
 local exampleFrame = addComponentToWorkspace("Frame", "ExampleFrame")
 if exampleFrame then
-    exampleFrame.Size = scaleSize(150, 100)
+    exampleFrame.Size = scaleSize(160, 110)
     exampleFrame.Position = UDim2.new(0, 30, 0, 30)
     exampleFrame.BackgroundColor3 = Color3.fromRGB(80, 150, 200)
 end
