@@ -244,18 +244,18 @@ local currentSelected = nil
 local editMode = true
 local isMinimized = false
 
-local components = {
+local componentsList = {
     {name = "TextButton", class = "TextButton"},
     {name = "TextBox", class = "TextBox"},
     {name = "ScrollingFrame", class = "ScrollingFrame"},
     {name = "Frame", class = "Frame"},
     {name = "TextLabel", class = "TextLabel"},
     {name = "ImageLabel", class = "ImageLabel"},
-    {name = "UIGradient", class = "UIGradient"},
-    {name = "UICorner", class = "UICorner"},
-    {name = "UIListLayout", class = "UIListLayout"},
-    {name = "UIGridLayout", class = "UIGridLayout"},
-    {name = "UIPadding", class = "UIPadding"}
+    {name = "UIGradient", class = "UIGradient", isDecorator = true},
+    {name = "UICorner", class = "UICorner", isDecorator = true},
+    {name = "UIListLayout", class = "UIListLayout", isDecorator = true},
+    {name = "UIGridLayout", class = "UIGridLayout", isDecorator = true},
+    {name = "UIPadding", class = "UIPadding", isDecorator = true}
 }
 
 local colorPickerFrame = nil
@@ -517,6 +517,17 @@ function refreshPropertiesPanel(selected)
         table.insert(properties, {name = "Image", property = "Image", type = "text"})
     end
     
+    local decorators = {}
+    for _, child in pairs(selected:GetChildren()) do
+        if child:IsA("UIGradient") or child:IsA("UICorner") or child:IsA("UIListLayout") or child:IsA("UIGridLayout") or child:IsA("UIPadding") then
+            table.insert(decorators, child)
+        end
+    end
+    
+    if #decorators > 0 then
+        table.insert(properties, {name = "Decorators", type = "decorators", list = decorators})
+    end
+    
     local yPos = 5
     for _, prop in pairs(properties) do
         local propFrame = Instance.new("Frame")
@@ -569,7 +580,6 @@ function refreshPropertiesPanel(selected)
             input.Position = UDim2.new(0.45, 5, 0, 2.5)
             input.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
             input.TextColor3 = Color3.fromRGB(255, 255, 255)
-            local parentName = selected.Parent.Name
             if selected.Parent == workspaceFrame then
                 input.Text = "workspaceFrame"
             elseif selected.Parent == mainFrame then
@@ -577,7 +587,7 @@ function refreshPropertiesPanel(selected)
             elseif selected.Parent == screenGui then
                 input.Text = "screenGui"
             else
-                input.Text = parentName
+                input.Text = selected.Parent.Name
             end
             input.ClearTextOnFocus = false
             input.Font = Enum.Font.Gotham
@@ -778,6 +788,54 @@ function refreshPropertiesPanel(selected)
                 end
                 refreshPropertiesPanel(selected)
             end)
+        elseif prop.type == "decorators" then
+            local decorFrame = Instance.new("Frame")
+            decorFrame.Size = UDim2.new(1, -10, 0, 30 + (#prop.list * 35))
+            decorFrame.Position = UDim2.new(0, 5, 0, yPos)
+            decorFrame.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+            decorFrame.BorderSizePixel = 1
+            decorFrame.BorderColor3 = Color3.fromRGB(0, 150, 200)
+            decorFrame.Parent = propertiesFrame
+            
+            local decorCorner = Instance.new("UICorner")
+            decorCorner.CornerRadius = UDim.new(0, 4)
+            decorCorner.Parent = decorFrame
+            
+            local decorLabel = Instance.new("TextLabel")
+            decorLabel.Size = UDim2.new(1, 0, 0, 25)
+            decorLabel.Text = "Decorators (click to delete):"
+            decorLabel.BackgroundTransparency = 1
+            decorLabel.TextColor3 = Color3.fromRGB(200, 220, 240)
+            decorLabel.TextSize = 11 * scale
+            decorLabel.Font = Enum.Font.Gotham
+            decorLabel.Parent = decorFrame
+            
+            local dy = 30
+            for _, dec in pairs(prop.list) do
+                local decBtn = Instance.new("TextButton")
+                decBtn.Size = UDim2.new(1, -10, 0, 30)
+                decBtn.Position = UDim2.new(0, 5, 0, dy)
+                decBtn.Text = dec.ClassName .. " (" .. dec.Name .. ")"
+                decBtn.BackgroundColor3 = Color3.fromRGB(40, 80, 100)
+                decBtn.TextColor3 = Color3.fromRGB(255, 200, 100)
+                decBtn.Font = Enum.Font.Gotham
+                decBtn.TextSize = 11 * scale
+                decBtn.Parent = decorFrame
+                
+                local decCorner = Instance.new("UICorner")
+                decCorner.CornerRadius = UDim.new(0, 4)
+                decCorner.Parent = decBtn
+                
+                decBtn.MouseButton1Click:Connect(function()
+                    dec:Destroy()
+                    refreshPropertiesPanel(selected)
+                end)
+                
+                dy = dy + 35
+            end
+            
+            yPos = yPos + 30 + (#prop.list * 35)
+            continue
         end
         
         yPos = yPos + 50
@@ -787,28 +845,40 @@ function refreshPropertiesPanel(selected)
 end
 
 function deleteSelectedElement()
-    if currentSelected and currentSelected.Parent == workspaceFrame then
-        local toDelete = currentSelected
-        clearSelection()
-        toDelete:Destroy()
+    if currentSelected then
+        if currentSelected.Parent == workspaceFrame or currentSelected.Parent == mainFrame or currentSelected.Parent == screenGui then
+            local toDelete = currentSelected
+            clearSelection()
+            toDelete:Destroy()
+        elseif currentSelected:IsA("UIGradient") or currentSelected:IsA("UICorner") or currentSelected:IsA("UIListLayout") or currentSelected:IsA("UIGridLayout") or currentSelected:IsA("UIPadding") then
+            local toDelete = currentSelected
+            clearSelection()
+            toDelete:Destroy()
+        end
     end
 end
 
-function addComponentToWorkspace(componentClass, componentName)
-    local newGui
-    
-    if componentClass == "UIGradient" or componentClass == "UICorner" or componentClass == "UIListLayout" or componentClass == "UIGridLayout" or componentClass == "UIPadding" then
+function addComponentToWorkspace(componentClass, componentName, isDecorator)
+    if isDecorator then
         if currentSelected and currentSelected:IsA("GuiObject") then
-            newGui = Instance.new(componentClass)
+            local existing = currentSelected:FindFirstChildWhichIsA(componentClass)
+            if existing then
+                return
+            end
+            local newGui = Instance.new(componentClass)
             newGui.Name = componentName
             newGui.Parent = currentSelected
+            if componentClass == "UICorner" then
+                newGui.CornerRadius = UDim.new(0, 8)
+            end
+            refreshPropertiesPanel(currentSelected)
             return newGui
         else
             return nil
         end
     end
     
-    newGui = Instance.new(componentClass)
+    local newGui = Instance.new(componentClass)
     newGui.Name = componentName .. "_" .. math.random(1000, 9999)
     newGui.Size = scaleSize(140, 90)
     
@@ -1001,7 +1071,7 @@ function generateScript()
 end
 
 local yOffset = 10
-for _, comp in pairs(components) do
+for _, comp in pairs(componentsList) do
     local button = Instance.new("TextButton")
     button.Name = comp.name .. "Btn"
     button.Size = UDim2.new(1, -10, 0, 42)
@@ -1019,7 +1089,7 @@ for _, comp in pairs(components) do
     buttonCorner.Parent = button
     
     button.MouseButton1Click:Connect(function()
-        addComponentToWorkspace(comp.class, comp.name)
+        addComponentToWorkspace(comp.class, comp.name, comp.isDecorator or false)
     end)
     
     yOffset = yOffset + 48
@@ -1113,7 +1183,7 @@ for _, child in pairs(workspaceFrame:GetChildren()) do
     end
 end
 
-local exampleFrame = addComponentToWorkspace("Frame", "ExampleFrame")
+local exampleFrame = addComponentToWorkspace("Frame", "ExampleFrame", false)
 if exampleFrame then
     exampleFrame.Size = scaleSize(160, 110)
     exampleFrame.Position = UDim2.new(0, 30, 0, 30)
