@@ -2,10 +2,26 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "screengui"
 screenGui.Parent = game:GetService("CoreGui")
 screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+
+local viewport = game:GetService("UserInputService"):GetMouseLocation()
+local screenSize = workspace.CurrentCamera.ViewportSize
+
+local function scaleSize(x, y)
+    local baseX = 1920
+    local baseY = 1080
+    return UDim2.new(0, (x / baseX) * screenSize.X, 0, (y / baseY) * screenSize.Y)
+end
+
+local function scalePos(x, y)
+    local baseX = 1920
+    local baseY = 1080
+    return UDim2.new(0, (x / baseX) * screenSize.X, 0, (y / baseY) * screenSize.Y)
+end
 
 local minimizedCircle = Instance.new("TextButton")
 minimizedCircle.Name = "MinimizedCircle"
-minimizedCircle.Size = UDim2.new(0, 60, 0, 60)
+minimizedCircle.Size = scaleSize(60, 60)
 minimizedCircle.Position = UDim2.new(0.5, -30, 0.5, -30)
 minimizedCircle.Text = "A"
 minimizedCircle.TextSize = 30
@@ -28,8 +44,8 @@ circleGradient.Parent = minimizedCircle
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 750, 0, 700)
-mainFrame.Position = UDim2.new(0.5, -375, 0.5, -350)
+mainFrame.Size = scaleSize(750, 650)
+mainFrame.Position = UDim2.new(0.5, -375, 0.5, -325)
 mainFrame.BackgroundColor3 = Color3.fromRGB(0, 40, 60)
 mainFrame.BackgroundTransparency = 0.05
 mainFrame.BorderSizePixel = 0
@@ -67,7 +83,7 @@ dragBarGradient.Parent = dragBar
 
 local closeButton = Instance.new("TextButton")
 closeButton.Name = "CloseButton"
-closeButton.Size = UDim2.new(0, 35, 0, 35)
+closeButton.Size = scaleSize(35, 35)
 closeButton.Position = UDim2.new(1, -45, 0, 5)
 closeButton.Text = "X"
 closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -83,7 +99,7 @@ closeCorner.Parent = closeButton
 
 local minimizeButton = Instance.new("TextButton")
 minimizeButton.Name = "MinimizeButton"
-minimizeButton.Size = UDim2.new(0, 35, 0, 35)
+minimizeButton.Size = scaleSize(35, 35)
 minimizeButton.Position = UDim2.new(1, -90, 0, 5)
 minimizeButton.Text = "-"
 minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -111,7 +127,7 @@ titleLabel.Parent = dragBar
 
 local componentsFrame = Instance.new("ScrollingFrame")
 componentsFrame.Name = "ComponentsFrame"
-componentsFrame.Size = UDim2.new(0, 180, 1, -45)
+componentsFrame.Size = scaleSize(180, 605)
 componentsFrame.Position = UDim2.new(0, 0, 0, 45)
 componentsFrame.BackgroundColor3 = Color3.fromRGB(0, 50, 75)
 componentsFrame.BorderSizePixel = 0
@@ -132,7 +148,7 @@ componentsGradient.Parent = componentsFrame
 
 local propertiesFrame = Instance.new("ScrollingFrame")
 propertiesFrame.Name = "PropertiesFrame"
-propertiesFrame.Size = UDim2.new(0, 250, 1, -45)
+propertiesFrame.Size = scaleSize(250, 605)
 propertiesFrame.Position = UDim2.new(1, -250, 0, 45)
 propertiesFrame.BackgroundColor3 = Color3.fromRGB(0, 50, 75)
 propertiesFrame.BorderSizePixel = 0
@@ -177,8 +193,8 @@ selectionBox.Parent = workspaceFrame
 
 local modeSwitch = Instance.new("TextButton")
 modeSwitch.Name = "ModeSwitch"
-modeSwitch.Size = UDim2.new(0, 100, 0, 35)
-modeSwitch.Position = UDim2.new(1, -110, 1, -42)
+modeSwitch.Size = scaleSize(100, 35)
+modeSwitch.Position = UDim2.new(1, -220, 1, -42)
 modeSwitch.Text = "Edit"
 modeSwitch.TextColor3 = Color3.fromRGB(255, 255, 255)
 modeSwitch.BackgroundColor3 = Color3.fromRGB(0, 120, 160)
@@ -191,9 +207,25 @@ local modeCorner = Instance.new("UICorner")
 modeCorner.CornerRadius = UDim.new(0, 6)
 modeCorner.Parent = modeSwitch
 
+local deleteButton = Instance.new("TextButton")
+deleteButton.Name = "DeleteButton"
+deleteButton.Size = scaleSize(80, 35)
+deleteButton.Position = UDim2.new(1, -310, 1, -42)
+deleteButton.Text = "Delete"
+deleteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+deleteButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+deleteButton.BorderSizePixel = 0
+deleteButton.Font = Enum.Font.GothamBold
+deleteButton.TextSize = 13
+deleteButton.Parent = mainFrame
+
+local deleteCorner = Instance.new("UICorner")
+deleteCorner.CornerRadius = UDim.new(0, 6)
+deleteCorner.Parent = deleteButton
+
 local generateButton = Instance.new("TextButton")
 generateButton.Name = "GenerateButton"
-generateButton.Size = UDim2.new(0, 120, 0, 35)
+generateButton.Size = scaleSize(100, 35)
 generateButton.Position = UDim2.new(0, 10, 1, -42)
 generateButton.Text = "Generate"
 generateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -220,6 +252,7 @@ outputBox.ClearTextOnFocus = false
 outputBox.Font = Enum.Font.Code
 outputBox.TextSize = 11
 outputBox.MultiLine = true
+outputBox.Visible = false
 outputBox.Parent = mainFrame
 
 local outputCorner = Instance.new("UICorner")
@@ -243,6 +276,210 @@ local components = {
     {name = "UIGridLayout", class = "UIGridLayout"},
     {name = "UIPadding", class = "UIPadding"}
 }
+
+local colorPickerFrame = nil
+
+function createColorPicker(parent, currentColor, callback)
+    if colorPickerFrame then
+        colorPickerFrame:Destroy()
+        colorPickerFrame = nil
+    end
+    
+    colorPickerFrame = Instance.new("Frame")
+    colorPickerFrame.Size = scaleSize(200, 180)
+    colorPickerFrame.Position = UDim2.new(0.5, -100, 0.5, -90)
+    colorPickerFrame.BackgroundColor3 = Color3.fromRGB(30, 60, 80)
+    colorPickerFrame.BorderSizePixel = 1
+    colorPickerFrame.BorderColor3 = Color3.fromRGB(0, 200, 255)
+    colorPickerFrame.ZIndex = 100
+    colorPickerFrame.Parent = parent
+    
+    local pickerCorner = Instance.new("UICorner")
+    pickerCorner.CornerRadius = UDim.new(0, 8)
+    pickerCorner.Parent = colorPickerFrame
+    
+    local titleBar = Instance.new("Frame")
+    titleBar.Size = UDim2.new(1, 0, 0, 30)
+    titleBar.BackgroundColor3 = Color3.fromRGB(0, 80, 110)
+    titleBar.Parent = colorPickerFrame
+    
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 8)
+    titleCorner.Parent = titleBar
+    
+    local titleText = Instance.new("TextLabel")
+    titleText.Size = UDim2.new(1, -30, 1, 0)
+    titleText.Position = UDim2.new(0, 10, 0, 0)
+    titleText.BackgroundTransparency = 1
+    titleText.Text = "Color Picker"
+    titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleText.TextSize = 12
+    titleText.Font = Enum.Font.GothamBold
+    titleText.TextXAlignment = Enum.TextXAlignment.Left
+    titleText.Parent = titleBar
+    
+    local closePicker = Instance.new("TextButton")
+    closePicker.Size = scaleSize(20, 20)
+    closePicker.Position = UDim2.new(1, -25, 0, 5)
+    closePicker.Text = "X"
+    closePicker.TextSize = 12
+    closePicker.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closePicker.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closePicker.BorderSizePixel = 0
+    closePicker.Parent = titleBar
+    
+    local closeCornerBtn = Instance.new("UICorner")
+    closeCornerBtn.CornerRadius = UDim.new(0, 4)
+    closeCornerBtn.Parent = closePicker
+    
+    closePicker.MouseButton1Click:Connect(function()
+        colorPickerFrame:Destroy()
+        colorPickerFrame = nil
+    end)
+    
+    local redSlider = Instance.new("Frame")
+    redSlider.Size = UDim2.new(0.9, 0, 0, 25)
+    redSlider.Position = UDim2.new(0.05, 0, 0, 40)
+    redSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    redSlider.Parent = colorPickerFrame
+    
+    local redLabel = Instance.new("TextLabel")
+    redLabel.Size = UDim2.new(0.2, 0, 1, 0)
+    redLabel.Text = "Red"
+    redLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    redLabel.BackgroundTransparency = 1
+    redLabel.TextSize = 11
+    redLabel.Parent = redSlider
+    
+    local redInput = Instance.new("TextBox")
+    redInput.Size = UDim2.new(0.3, 0, 0.8, 0)
+    redInput.Position = UDim2.new(0.7, 0, 0.1, 0)
+    redInput.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+    redInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    redInput.Text = tostring(math.floor(currentColor.R * 255))
+    redInput.ClearTextOnFocus = false
+    redInput.TextSize = 11
+    redInput.Parent = redSlider
+    
+    local redCorner = Instance.new("UICorner")
+    redCorner.CornerRadius = UDim.new(0, 4)
+    redCorner.Parent = redInput
+    
+    local greenSlider = Instance.new("Frame")
+    greenSlider.Size = UDim2.new(0.9, 0, 0, 25)
+    greenSlider.Position = UDim2.new(0.05, 0, 0, 70)
+    greenSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    greenSlider.Parent = colorPickerFrame
+    
+    local greenLabel = Instance.new("TextLabel")
+    greenLabel.Size = UDim2.new(0.2, 0, 1, 0)
+    greenLabel.Text = "Green"
+    greenLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+    greenLabel.BackgroundTransparency = 1
+    greenLabel.TextSize = 11
+    greenLabel.Parent = greenSlider
+    
+    local greenInput = Instance.new("TextBox")
+    greenInput.Size = UDim2.new(0.3, 0, 0.8, 0)
+    greenInput.Position = UDim2.new(0.7, 0, 0.1, 0)
+    greenInput.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+    greenInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    greenInput.Text = tostring(math.floor(currentColor.G * 255))
+    greenInput.ClearTextOnFocus = false
+    greenInput.TextSize = 11
+    greenInput.Parent = greenSlider
+    
+    local greenCorner = Instance.new("UICorner")
+    greenCorner.CornerRadius = UDim.new(0, 4)
+    greenCorner.Parent = greenInput
+    
+    local blueSlider = Instance.new("Frame")
+    blueSlider.Size = UDim2.new(0.9, 0, 0, 25)
+    blueSlider.Position = UDim2.new(0.05, 0, 0, 100)
+    blueSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    blueSlider.Parent = colorPickerFrame
+    
+    local blueLabel = Instance.new("TextLabel")
+    blueLabel.Size = UDim2.new(0.2, 0, 1, 0)
+    blueLabel.Text = "Blue"
+    blueLabel.TextColor3 = Color3.fromRGB(100, 100, 255)
+    blueLabel.BackgroundTransparency = 1
+    blueLabel.TextSize = 11
+    blueLabel.Parent = blueSlider
+    
+    local blueInput = Instance.new("TextBox")
+    blueInput.Size = UDim2.new(0.3, 0, 0.8, 0)
+    blueInput.Position = UDim2.new(0.7, 0, 0.1, 0)
+    blueInput.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
+    blueInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    blueInput.Text = tostring(math.floor(currentColor.B * 255))
+    blueInput.ClearTextOnFocus = false
+    blueInput.TextSize = 11
+    blueInput.Parent = blueSlider
+    
+    local blueCorner = Instance.new("UICorner")
+    blueCorner.CornerRadius = UDim.new(0, 4)
+    blueCorner.Parent = blueInput
+    
+    local preview = Instance.new("Frame")
+    preview.Size = scaleSize(30, 30)
+    preview.Position = UDim2.new(0.75, 0, 0, 140)
+    preview.BackgroundColor3 = currentColor
+    preview.BorderSizePixel = 1
+    preview.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    preview.Parent = colorPickerFrame
+    
+    local previewCorner = Instance.new("UICorner")
+    previewCorner.CornerRadius = UDim.new(0, 4)
+    previewCorner.Parent = preview
+    
+    local applyButton = Instance.new("TextButton")
+    applyButton.Size = scaleSize(60, 25)
+    applyButton.Position = UDim2.new(0.05, 0, 0, 140)
+    applyButton.Text = "Apply"
+    applyButton.BackgroundColor3 = Color3.fromRGB(0, 120, 160)
+    applyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    applyButton.TextSize = 11
+    applyButton.Parent = colorPickerFrame
+    
+    local applyCorner = Instance.new("UICorner")
+    applyCorner.CornerRadius = UDim.new(0, 4)
+    applyCorner.Parent = applyButton
+    
+    local function updateColor()
+        local r = tonumber(redInput.Text) or 0
+        local g = tonumber(greenInput.Text) or 0
+        local b = tonumber(blueInput.Text) or 0
+        r = math.clamp(r, 0, 255)
+        g = math.clamp(g, 0, 255)
+        b = math.clamp(b, 0, 255)
+        local newColor = Color3.fromRGB(r, g, b)
+        preview.BackgroundColor3 = newColor
+        return newColor
+    end
+    
+    redInput.FocusLost:Connect(function()
+        local newColor = updateColor()
+        redInput.Text = tostring(math.floor(newColor.R * 255))
+    end)
+    
+    greenInput.FocusLost:Connect(function()
+        local newColor = updateColor()
+        greenInput.Text = tostring(math.floor(newColor.G * 255))
+    end)
+    
+    blueInput.FocusLost:Connect(function()
+        local newColor = updateColor()
+        blueInput.Text = tostring(math.floor(newColor.B * 255))
+    end)
+    
+    applyButton.MouseButton1Click:Connect(function()
+        local newColor = updateColor()
+        callback(newColor)
+        colorPickerFrame:Destroy()
+        colorPickerFrame = nil
+    end)
+end
 
 function updateSelectionBox(target)
     if not target or not selectionBox then return end
@@ -356,8 +593,6 @@ function refreshPropertiesPanel(selected)
                     selected.Text = input.Text
                 elseif prop.property == "Image" then
                     selected.Image = input.Text
-                else
-                    selected[prop.property] = input.Text
                 end
                 refreshPropertiesPanel(selected)
             end)
@@ -378,7 +613,7 @@ function refreshPropertiesPanel(selected)
             
             dropdown.MouseButton1Click:Connect(function()
                 local menuFrame = Instance.new("ScrollingFrame")
-                menuFrame.Size = UDim2.new(0, 120, 0, 100)
+                menuFrame.Size = scaleSize(140, 120)
                 menuFrame.Position = UDim2.new(0, dropdown.AbsolutePosition.X, 0, dropdown.AbsolutePosition.Y + 35)
                 menuFrame.BackgroundColor3 = Color3.fromRGB(30, 60, 80)
                 menuFrame.BorderSizePixel = 1
@@ -478,28 +713,26 @@ function refreshPropertiesPanel(selected)
                 refreshPropertiesPanel(selected)
             end)
         elseif prop.type == "color" then
-            local input = Instance.new("TextBox")
-            input.Size = UDim2.new(0.55, -5, 1, -5)
-            input.Position = UDim2.new(0.45, 5, 0, 2.5)
-            input.BackgroundColor3 = Color3.fromRGB(20, 50, 70)
-            input.TextColor3 = Color3.fromRGB(255, 255, 255)
-            local color = selected[prop.property]
-            input.Text = string.format("%d, %d, %d", color.R * 255, color.G * 255, color.B * 255)
-            input.ClearTextOnFocus = false
-            input.Font = Enum.Font.Gotham
-            input.TextSize = 11
-            input.Parent = propFrame
+            local colorButton = Instance.new("TextButton")
+            colorButton.Size = UDim2.new(0.55, -5, 1, -5)
+            colorButton.Position = UDim2.new(0.45, 5, 0, 2.5)
+            colorButton.Text = "Pick Color"
+            colorButton.BackgroundColor3 = selected[prop.property]
+            colorButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            colorButton.Font = Enum.Font.Gotham
+            colorButton.TextSize = 11
+            colorButton.Parent = propFrame
             
-            local inputCorner = Instance.new("UICorner")
-            inputCorner.CornerRadius = UDim.new(0, 4)
-            inputCorner.Parent = input
+            local colorCorner = Instance.new("UICorner")
+            colorCorner.CornerRadius = UDim.new(0, 4)
+            colorCorner.Parent = colorButton
             
-            input.FocusLost:Connect(function()
-                local r, g, b = input.Text:match("(%d+),%s*(%d+),%s*(%d+)")
-                if r and g and b then
-                    selected[prop.property] = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
-                end
-                refreshPropertiesPanel(selected)
+            colorButton.MouseButton1Click:Connect(function()
+                createColorPicker(mainFrame, selected[prop.property], function(newColor)
+                    selected[prop.property] = newColor
+                    colorButton.BackgroundColor3 = newColor
+                    refreshPropertiesPanel(selected)
+                end)
             end)
         elseif prop.type == "sizeX" then
             local input = Instance.new("TextBox")
@@ -609,6 +842,14 @@ function refreshPropertiesPanel(selected)
     propertiesFrame.CanvasSize = UDim2.new(0, 0, 0, yPos + 10)
 end
 
+function deleteSelectedElement()
+    if currentSelected and currentSelected.Parent == workspaceFrame then
+        local toDelete = currentSelected
+        clearSelection()
+        toDelete:Destroy()
+    end
+end
+
 function addComponentToWorkspace(componentClass, componentName)
     local newGui
     
@@ -619,24 +860,16 @@ function addComponentToWorkspace(componentClass, componentName)
             newGui.Parent = currentSelected
             return newGui
         else
-            outputBox.Text = "Select a GUI element first to add " .. componentClass
             return nil
         end
     end
     
     newGui = Instance.new(componentClass)
     newGui.Name = componentName .. "_" .. math.random(1000, 9999)
-    newGui.Size = UDim2.new(0, 120, 0, 80)
+    newGui.Size = scaleSize(120, 80)
     
-    local finalX = 50 + math.random(0, 150)
-    local finalY = 50 + math.random(0, 100)
-    
-    if finalX + 120 > workspaceFrame.AbsoluteSize.X then
-        finalX = 50
-    end
-    if finalY + 80 > workspaceFrame.AbsoluteSize.Y then
-        finalY = 50
-    end
+    local finalX = 50 + math.random(0, math.max(50, workspaceFrame.AbsoluteSize.X - 170))
+    local finalY = 50 + math.random(0, math.max(50, workspaceFrame.AbsoluteSize.Y - 130))
     
     newGui.Position = UDim2.new(0, finalX, 0, finalY)
     newGui.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
@@ -778,6 +1011,9 @@ function generateScript()
     end
     
     outputBox.Text = table.concat(scriptLines, "\n")
+    outputBox.Visible = true
+    task.wait(3)
+    outputBox.Visible = false
 end
 
 local yOffset = 10
@@ -821,6 +1057,10 @@ minimizedCircle.MouseButton1Click:Connect(function()
     isMinimized = false
     mainFrame.Visible = true
     minimizedCircle.Visible = false
+end)
+
+deleteButton.MouseButton1Click:Connect(function()
+    deleteSelectedElement()
 end)
 
 modeSwitch.MouseButton1Click:Connect(function()
@@ -891,7 +1131,7 @@ end
 
 local exampleFrame = addComponentToWorkspace("Frame", "ExampleFrame")
 if exampleFrame then
-    exampleFrame.Size = UDim2.new(0, 150, 0, 100)
+    exampleFrame.Size = scaleSize(150, 100)
     exampleFrame.Position = UDim2.new(0, 30, 0, 30)
     exampleFrame.BackgroundColor3 = Color3.fromRGB(80, 150, 200)
 end
