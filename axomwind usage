@@ -1,0 +1,492 @@
+local AxomWind = loadstring(game:HttpGet("https://raw.githubusercontent.com/axom0022/Axom/refs/heads/main/AxomWind"))()
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer.PlayerGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Parent = screenGui
+AxomWind.style(mainFrame, "w-96 h-screen bg-gray-900")
+
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Parent = mainFrame
+AxomWind.style(scrollFrame, "w-full h-full bg-transparent")
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollFrame.ScrollBarThickness = 6
+scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(75, 85, 99)
+
+local uiList = Instance.new("UIListLayout")
+uiList.Parent = scrollFrame
+uiList.Padding = UDim.new(0, 12)
+uiList.SortOrder = Enum.SortOrder.LayoutOrder
+
+local uipadding = Instance.new("UIPadding")
+uipadding.Parent = scrollFrame
+uipadding.PaddingTop = UDim.new(0, 16)
+uipadding.PaddingBottom = UDim.new(0, 16)
+uipadding.PaddingLeft = UDim.new(0, 16)
+uipadding.PaddingRight = UDim.new(0, 16)
+
+local function createButton(parent, text, callback)
+    local button = Instance.new("TextButton")
+    button.Parent = parent
+    button.Text = text
+    button.AutoButtonColor = false
+    AxomWind.style(button, "w-full bg-blue-600 rounded-lg py-3 text-white font-semibold text-size-base")
+    
+    local function onHover()
+        button.BackgroundColor3 = Color3.fromRGB(37, 99, 235)
+    end
+    
+    local function onLeave()
+        button.BackgroundColor3 = Color3.fromRGB(37, 99, 235)
+    end
+    
+    button.MouseEnter:Connect(onHover)
+    button.MouseLeave:Connect(onLeave)
+    button.MouseButton1Click:Connect(callback)
+    
+    return button
+end
+
+local function createToggle(parent, labelText, defaultState, callback)
+    local container = Instance.new("Frame")
+    container.Parent = parent
+    AxomWind.style(container, "w-full bg-gray-750 rounded-lg py-2 px-3")
+    container.AutomaticSize = Enum.AutomaticSize.Y
+    
+    local label = Instance.new("TextLabel")
+    label.Parent = container
+    label.Text = labelText
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    AxomWind.style(label, "text-gray-200 text-size-base font-medium")
+    label.Size = UDim2.new(0.7, 0, 0, 32)
+    label.BackgroundTransparency = 1
+    
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Parent = container
+    toggleButton.Text = ""
+    toggleButton.Size = UDim2.new(0, 48, 0, 24)
+    toggleButton.Position = UDim2.new(1, -52, 0.5, -12)
+    AxomWind.style(toggleButton, "rounded-full border-2")
+    toggleButton.BorderColor3 = Color3.fromRGB(75, 85, 99)
+    
+    local toggleIndicator = Instance.new("Frame")
+    toggleIndicator.Parent = toggleButton
+    toggleIndicator.Size = UDim2.new(0, 20, 0, 20)
+    toggleIndicator.Position = UDim2.new(0, 2, 0.5, -10)
+    AxomWind.style(toggleIndicator, "rounded-full bg-gray-400")
+    
+    local state = defaultState
+    
+    local function updateToggle()
+        if state then
+            toggleButton.BackgroundColor3 = Color3.fromRGB(34, 197, 94)
+            toggleButton.BorderColor3 = Color3.fromRGB(34, 197, 94)
+            toggleIndicator.Position = UDim2.new(1, -22, 0.5, -10)
+            toggleIndicator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        else
+            toggleButton.BackgroundColor3 = Color3.fromRGB(31, 41, 55)
+            toggleButton.BorderColor3 = Color3.fromRGB(75, 85, 99)
+            toggleIndicator.Position = UDim2.new(0, 2, 0.5, -10)
+            toggleIndicator.BackgroundColor3 = Color3.fromRGB(156, 163, 175)
+        end
+    end
+    
+    toggleButton.MouseButton1Click:Connect(function()
+        state = not state
+        updateToggle()
+        callback(state)
+    end)
+    
+    updateToggle()
+    
+    return {
+        setState = function(newState)
+            state = newState
+            updateToggle()
+        end,
+        getState = function()
+            return state
+        end
+    }
+end
+
+local function createSlider(parent, labelText, min, max, default, callback)
+    local container = Instance.new("Frame")
+    container.Parent = parent
+    AxomWind.style(container, "w-full bg-gray-750 rounded-lg py-2 px-3")
+    container.AutomaticSize = Enum.AutomaticSize.Y
+    
+    local label = Instance.new("TextLabel")
+    label.Parent = container
+    label.Text = labelText
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    AxomWind.style(label, "text-gray-200 text-size-base font-medium")
+    label.Size = UDim2.new(0.7, 0, 0, 24)
+    label.BackgroundTransparency = 1
+    
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Parent = container
+    valueLabel.Text = tostring(default)
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    AxomWind.style(valueLabel, "text-gray-400 text-size-sm")
+    valueLabel.Size = UDim2.new(0.3, 0, 0, 24)
+    valueLabel.BackgroundTransparency = 1
+    
+    local sliderBar = Instance.new("Frame")
+    sliderBar.Parent = container
+    sliderBar.Size = UDim2.new(1, 0, 0, 4)
+    sliderBar.Position = UDim2.new(0, 0, 1, -8)
+    AxomWind.style(sliderBar, "bg-gray-700 rounded-full")
+    
+    local sliderFill = Instance.new("Frame")
+    sliderFill.Parent = sliderBar
+    sliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    AxomWind.style(sliderFill, "bg-blue-600 rounded-full")
+    
+    local sliderHandle = Instance.new("Frame")
+    sliderHandle.Parent = container
+    sliderHandle.Size = UDim2.new(0, 16, 0, 16)
+    sliderHandle.Position = UDim2.new((default - min) / (max - min), -8, 1, -12)
+    AxomWind.style(sliderHandle, "bg-white rounded-full shadow-md")
+    
+    local value = default
+    local dragging = false
+    
+    local function updateSlider(inputPosition)
+        local relativePos = math.clamp((inputPosition.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
+        value = min + (relativePos * (max - min))
+        value = math.floor(value * 100) / 100
+        
+        sliderFill.Size = UDim2.new(relativePos, 0, 1, 0)
+        sliderHandle.Position = UDim2.new(relativePos, -8, 1, -12)
+        valueLabel.Text = tostring(value)
+        
+        callback(value)
+    end
+    
+    sliderHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            updateSlider(input.Position)
+        end
+    end)
+    
+    sliderBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            updateSlider(input.Position)
+        end
+    end)
+    
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateSlider(input.Position)
+        end
+    end)
+    
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    return {
+        setValue = function(newValue)
+            value = math.clamp(newValue, min, max)
+            local relativePos = (value - min) / (max - min)
+            sliderFill.Size = UDim2.new(relativePos, 0, 1, 0)
+            sliderHandle.Position = UDim2.new(relativePos, -8, 1, -12)
+            valueLabel.Text = tostring(value)
+            callback(value)
+        end,
+        getValue = function()
+            return value
+        end
+    }
+end
+
+local function createDropdown(parent, labelText, options, defaultIndex, callback)
+    local container = Instance.new("Frame")
+    container.Parent = parent
+    AxomWind.style(container, "w-full bg-gray-750 rounded-lg py-2 px-3")
+    container.AutomaticSize = Enum.AutomaticSize.Y
+    
+    local label = Instance.new("TextLabel")
+    label.Parent = container
+    label.Text = labelText
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    AxomWind.style(label, "text-gray-200 text-size-base font-medium mb-2")
+    label.Size = UDim2.new(1, 0, 0, 24)
+    label.BackgroundTransparency = 1
+    
+    local dropdownButton = Instance.new("TextButton")
+    dropdownButton.Parent = container
+    dropdownButton.Text = options[defaultIndex] or options[1]
+    AxomWind.style(dropdownButton, "w-full bg-gray-700 rounded-lg py-2 text-gray-200 text-size-sm")
+    
+    local dropdownFrame = Instance.new("Frame")
+    dropdownFrame.Parent = container
+    AxomWind.style(dropdownFrame, "w-full bg-gray-700 rounded-lg mt-1")
+    dropdownFrame.Visible = false
+    dropdownFrame.AutomaticSize = Enum.AutomaticSize.Y
+    
+    local dropdownList = Instance.new("UIListLayout")
+    dropdownList.Parent = dropdownFrame
+    dropdownList.Padding = UDim.new(0, 4)
+    
+    local selectedIndex = defaultIndex
+    
+    for i, option in ipairs(options) do
+        local optionButton = Instance.new("TextButton")
+        optionButton.Parent = dropdownFrame
+        optionButton.Text = option
+        AxomWind.style(optionButton, "w-full bg-transparent text-gray-300 text-size-sm py-2")
+        optionButton.BackgroundTransparency = 0.9
+        
+        optionButton.MouseEnter:Connect(function()
+            optionButton.BackgroundColor3 = Color3.fromRGB(55, 65, 81)
+        end)
+        
+        optionButton.MouseLeave:Connect(function()
+            optionButton.BackgroundColor3 = Color3.fromRGB(55, 65, 81)
+        end)
+        
+        optionButton.MouseButton1Click:Connect(function()
+            selectedIndex = i
+            dropdownButton.Text = option
+            dropdownFrame.Visible = false
+            callback(option, i)
+        end)
+    end
+    
+    dropdownButton.MouseButton1Click:Connect(function()
+        dropdownFrame.Visible = not dropdownFrame.Visible
+    end)
+    
+    return {
+        setSelected = function(index)
+            selectedIndex = index
+            dropdownButton.Text = options[index]
+            callback(options[index], index)
+        end,
+        getSelected = function()
+            return selectedIndex
+        end
+    }
+end
+
+local function createInput(parent, labelText, placeholder, default, callback)
+    local container = Instance.new("Frame")
+    container.Parent = parent
+    AxomWind.style(container, "w-full bg-gray-750 rounded-lg py-2 px-3")
+    container.AutomaticSize = Enum.AutomaticSize.Y
+    
+    local label = Instance.new("TextLabel")
+    label.Parent = container
+    label.Text = labelText
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    AxomWind.style(label, "text-gray-200 text-size-base font-medium mb-2")
+    label.Size = UDim2.new(1, 0, 0, 24)
+    label.BackgroundTransparency = 1
+    
+    local inputBox = Instance.new("TextBox")
+    inputBox.Parent = container
+    inputBox.Text = default or ""
+    inputBox.PlaceholderText = placeholder
+    AxomWind.style(inputBox, "w-full bg-gray-700 rounded-lg py-2 px-3 text-gray-200 text-size-sm")
+    inputBox.ClearTextOnFocus = false
+    
+    inputBox:GetPropertyChangedSignal("Text"):Connect(function()
+        callback(inputBox.Text)
+    end)
+    
+    return {
+        setText = function(text)
+            inputBox.Text = text
+        end,
+        getText = function()
+            return inputBox.Text
+        end
+    }
+end
+
+local function createLabel(parent, text, style)
+    local label = Instance.new("TextLabel")
+    label.Parent = parent
+    label.Text = text
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    AxomWind.style(label, style or "text-gray-300 text-size-sm py-1")
+    label.Size = UDim2.new(1, 0, 0, 24)
+    label.BackgroundTransparency = 1
+    return label
+end
+
+local card1 = Instance.new("Frame")
+card1.Parent = scrollFrame
+AxomWind.style(card1, "w-full bg-gray-800 rounded-lg shadow-lg mb-4")
+card1.AutomaticSize = Enum.AutomaticSize.Y
+
+local card1Padding = Instance.new("UIPadding")
+card1Padding.Parent = card1
+card1Padding.PaddingTop = UDim.new(0, 16)
+card1Padding.PaddingBottom = UDim.new(0, 16)
+card1Padding.PaddingLeft = UDim.new(0, 16)
+card1Padding.PaddingRight = UDim.new(0, 16)
+
+local title1 = Instance.new("TextLabel")
+title1.Parent = card1
+title1.Text = "Buttons"
+AxomWind.style(title1, "text-white text-size-lg font-bold mb-4")
+title1.Size = UDim2.new(1, 0, 0, 32)
+title1.BackgroundTransparency = 1
+
+createButton(card1, "Primary Button", function()
+    print("Primary button clicked")
+end)
+
+createButton(card1, "Secondary Button", function()
+    print("Secondary button clicked")
+end)
+
+local card2 = Instance.new("Frame")
+card2.Parent = scrollFrame
+AxomWind.style(card2, "w-full bg-gray-800 rounded-lg shadow-lg mb-4")
+card2.AutomaticSize = Enum.AutomaticSize.Y
+
+local card2Padding = Instance.new("UIPadding")
+card2Padding.Parent = card2
+card2Padding.PaddingTop = UDim.new(0, 16)
+card2Padding.PaddingBottom = UDim.new(0, 16)
+card2Padding.PaddingLeft = UDim.new(0, 16)
+card2Padding.PaddingRight = UDim.new(0, 16)
+
+local title2 = Instance.new("TextLabel")
+title2.Parent = card2
+title2.Text = "Toggles"
+AxomWind.style(title2, "text-white text-size-lg font-bold mb-4")
+title2.Size = UDim2.new(1, 0, 0, 32)
+title2.BackgroundTransparency = 1
+
+local toggle1 = createToggle(card2, "Enable Feature 1", false, function(state)
+    print("Feature 1:", state)
+end)
+
+local toggle2 = createToggle(card2, "Enable Feature 2", true, function(state)
+    print("Feature 2:", state)
+end)
+
+local card3 = Instance.new("Frame")
+card3.Parent = scrollFrame
+AxomWind.style(card3, "w-full bg-gray-800 rounded-lg shadow-lg mb-4")
+card3.AutomaticSize = Enum.AutomaticSize.Y
+
+local card3Padding = Instance.new("UIPadding")
+card3Padding.Parent = card3
+card3Padding.PaddingTop = UDim.new(0, 16)
+card3Padding.PaddingBottom = UDim.new(0, 16)
+card3Padding.PaddingLeft = UDim.new(0, 16)
+card3Padding.PaddingRight = UDim.new(0, 16)
+
+local title3 = Instance.new("TextLabel")
+title3.Parent = card3
+title3.Text = "Sliders"
+AxomWind.style(title3, "text-white text-size-lg font-bold mb-4")
+title3.Size = UDim2.new(1, 0, 0, 32)
+title3.BackgroundTransparency = 1
+
+local slider1 = createSlider(card3, "Volume", 0, 100, 75, function(value)
+    print("Volume:", value)
+end)
+
+local slider2 = createSlider(card3, "Speed", 0.1, 5, 1.5, function(value)
+    print("Speed:", value)
+end)
+
+local card4 = Instance.new("Frame")
+card4.Parent = scrollFrame
+AxomWind.style(card4, "w-full bg-gray-800 rounded-lg shadow-lg mb-4")
+card4.AutomaticSize = Enum.AutomaticSize.Y
+
+local card4Padding = Instance.new("UIPadding")
+card4Padding.Parent = card4
+card4Padding.PaddingTop = UDim.new(0, 16)
+card4Padding.PaddingBottom = UDim.new(0, 16)
+card4Padding.PaddingLeft = UDim.new(0, 16)
+card4Padding.PaddingRight = UDim.new(0, 16)
+
+local title4 = Instance.new("TextLabel")
+title4.Parent = card4
+title4.Text = "Dropdown"
+AxomWind.style(title4, "text-white text-size-lg font-bold mb-4")
+title4.Size = UDim2.new(1, 0, 0, 32)
+title4.BackgroundTransparency = 1
+
+local dropdown1 = createDropdown(card4, "Select Option", {"Option 1", "Option 2", "Option 3", "Option 4"}, 1, function(option, index)
+    print("Selected:", option, "Index:", index)
+end)
+
+local card5 = Instance.new("Frame")
+card5.Parent = scrollFrame
+AxomWind.style(card5, "w-full bg-gray-800 rounded-lg shadow-lg mb-4")
+card5.AutomaticSize = Enum.AutomaticSize.Y
+
+local card5Padding = Instance.new("UIPadding")
+card5Padding.Parent = card5
+card5Padding.PaddingTop = UDim.new(0, 16)
+card5Padding.PaddingBottom = UDim.new(0, 16)
+card5Padding.PaddingLeft = UDim.new(0, 16)
+card5Padding.PaddingRight = UDim.new(0, 16)
+
+local title5 = Instance.new("TextLabel")
+title5.Parent = card5
+title5.Text = "Text Input"
+AxomWind.style(title5, "text-white text-size-lg font-bold mb-4")
+title5.Size = UDim2.new(1, 0, 0, 32)
+title5.BackgroundTransparency = 1
+
+local input1 = createInput(card5, "Username", "Enter your username", "", function(text)
+    print("Username:", text)
+end)
+
+local input2 = createInput(card5, "Message", "Type something...", "Hello World", function(text)
+    print("Message:", text)
+end)
+
+local card6 = Instance.new("Frame")
+card6.Parent = scrollFrame
+AxomWind.style(card6, "w-full bg-gray-800 rounded-lg shadow-lg mb-4")
+card6.AutomaticSize = Enum.AutomaticSize.Y
+
+local card6Padding = Instance.new("UIPadding")
+card6Padding.Parent = card6
+card6Padding.PaddingTop = UDim.new(0, 16)
+card6Padding.PaddingBottom = UDim.new(0, 16)
+card6Padding.PaddingLeft = UDim.new(0, 16)
+card6Padding.PaddingRight = UDim.new(0, 16)
+
+local title6 = Instance.new("TextLabel")
+title6.Parent = card6
+title6.Text = "Status"
+AxomWind.style(title6, "text-white text-size-lg font-bold mb-4")
+title6.Size = UDim2.new(1, 0, 0, 32)
+title6.BackgroundTransparency = 1
+
+local statusLabel = createLabel(card6, "System Ready", "text-green-400 text-size-base font-semibold py-2")
+statusLabel.Size = UDim2.new(1, 0, 0, 32)
+
+createButton(card6, "Update Status", function()
+    statusLabel.Text = "Updating..."
+    task.wait(1)
+    statusLabel.Text = "Update Complete!"
+    AxomWind.style(statusLabel, "text-green-400 text-size-base font-semibold py-2")
+    task.wait(2)
+    statusLabel.Text = "Ready"
+end)
+
+local function updateCanvas()
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, uiList.AbsoluteContentSize.Y + 32)
+end
+
+uiList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+task.wait(0.1)
+updateCanvas()
