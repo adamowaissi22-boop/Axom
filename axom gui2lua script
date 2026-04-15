@@ -1,363 +1,329 @@
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
-local gui = {
-    properties = {
-        "ImageRectOffset", "SliceCenter", "SliceScale", "TileSize",
-        "ImageTransparency", "ImageRectSize", 
-        "Image", "ImageColor3", "ScaleType", 
-        "BorderColor3", "BorderTransparency", 
-        "BorderMode", "BorderSizePixel",
-        "Name", "Active", "Visible", "ClipsDescendants", 
-        "Rotation", "ZIndex", "LayoutOrder",
-        "Size", "Position", "AutomaticSize", "AnchorPoint",
-        "BackgroundTransparency", "Transparency", 
-        "BackgroundColor3", 
-        "SizeConstraint", "Interactable",
-        "SelectionOrder", "SelectionImageObject",
-        "GroupTransparency", "GroupColor3", 
-        "Text", "TextColor3", "TextSize", "TextXAlignment", 
-        "TextYAlignment", "FontFace", "TextWrapped", "RichText",
-        "AutoButtonColor", "LineHeight", "TextTruncate", "TextFit",
-        "TextTransparency", "PlaceholderText", "PlaceholderColor3",
-        "TextDirection", "ClearTextOnFocus",
-        "PaddingTop", "PaddingLeft", "PaddingRight", "PaddingBottom",
-        "CanvasPosition", "CanvasSize", "ElasticBehavior", 
-        "HorizontalScrollBarInset", "VerticalScrollBarInset",
-        "VerticalScrollBarPosition",
-        "BottomImage", "TopImage", "MidImage",
-        "ScrollBarImageColor3", "ScrollBarImageTransparency",
-        "ScrollBarThickness", "ScrollingDirection", "ScrollingEnabled",
-        "CornerRadius", 
-        "Scale", 
-        "Thickness", "ApplyStrokeMode", "Color",
-        "SortOrder", "VerticalAlignment", "HorizontalAlignment", 
-        "FillDirection", "Padding",
-        "ZIndexBehavior", "IgnoreGuiInset",
-        "Parent",
-    },
-    
-    serializers = {
-        ColorSequence = function(colorSequence)
-            local keypoints = colorSequence.Keypoints
-            local serializedKeypoints = {}
-            for _, keypoint in ipairs(keypoints) do
-                table.insert(serializedKeypoints, string.format("ColorSequenceKeypoint.new(%s, Color3.fromRGB(%d, %d, %d))",
-                    keypoint.Time,
-                    math.floor(keypoint.Value.R * 255),
-                    math.floor(keypoint.Value.G * 255),
-                    math.floor(keypoint.Value.B * 255)
-                ))
-            end
-            return string.format("ColorSequence.new({%s})", table.concat(serializedKeypoints, ", "))
-        end,
-        
-        NumberSequence = function(numberSequence)
-            local keypoints = numberSequence.Keypoints
-            local serializedKeypoints = {}
-            for _, keypoint in ipairs(keypoints) do
-                table.insert(serializedKeypoints, string.format("NumberSequenceKeypoint.new(%s, %s, %s)",
-                    keypoint.Time,
-                    keypoint.Value,
-                    keypoint.Envelope
-                ))
-            end
-            return string.format("NumberSequence.new({%s})", table.concat(serializedKeypoints, ", "))
-        end,
-        Color3 = function(color)
-            return string.format("Color3.fromRGB(%d, %d, %d)", 
-                math.floor(color.R * 255), 
-                math.floor(color.G * 255), 
-                math.floor(color.B * 255))
-        end,
-        UDim2 = function(udim)
-            return string.format("UDim2.new(%s, %s, %s, %s)", 
-                udim.X.Scale, udim.X.Offset, 
-                udim.Y.Scale, udim.Y.Offset)
-        end,
-        UDim = function(udim)
-            return string.format("UDim.new(%s, %s)", 
-                udim.Scale, udim.Offset)
-        end,
-        Rect = function(rect)
-            return string.format("Rect.new(%s, %s, %s, %s)", 
-                rect.Min.X, rect.Min.Y, rect.Max.X, rect.Max.Y)
-        end,
-        Vector2 = function(vector)
-            return string.format("Vector2.new(%s, %s)", vector.X, vector.Y)
-        end,
-        Enum = function(enum)
-            return tostring(enum)
-        end,
-        EnumItem = function(enumItem) 
-            return tostring(enumItem)
-        end,
-        Font = function(fontFace)
-            return string.format("Font.new(%q, Enum.FontWeight.%s, Enum.FontStyle.%s)", fontFace.Family, fontFace.Weight.Name, fontFace.Style.Name)
-        end,
-        number = function(value)
-            return tostring(value)
-        end,
-        boolean = function(value)
-            return tostring(value)
-        end,
-        string = function(value)
-            return string.format("%q", value)
-        end,
-    },
-    counters = {}
+local converter = {}
+
+do
+local propertylist = {
+    "Active", "AnchorPoint", "AutoButtonColor", "AutomaticSize", "BackgroundColor3", "BackgroundTransparency",
+    "BorderColor3", "BorderMode", "BorderSizePixel", "BorderTransparency", "BottomImage", "CanvasPosition",
+    "CanvasSize", "ClearTextOnFocus", "ClipsDescendants", "Color", "CornerRadius", "ElasticBehavior",
+    "FillDirection", "FontFace", "GroupColor3", "GroupTransparency", "HorizontalAlignment", "HorizontalScrollBarInset",
+    "IgnoreGuiInset", "Image", "ImageColor3", "ImageRectOffset", "ImageRectSize", "ImageTransparency",
+    "Interactable", "LayoutOrder", "LineHeight", "MidImage", "Name", "Padding", "PaddingBottom", "PaddingLeft",
+    "PaddingRight", "PaddingTop", "Parent", "PlaceholderColor3", "PlaceholderText", "Position", "RichText",
+    "Rotation", "Scale", "ScaleType", "ScrollBarImageColor3", "ScrollBarImageTransparency", "ScrollBarThickness",
+    "ScrollingDirection", "ScrollingEnabled", "SelectionImageObject", "SelectionOrder", "Size", "SizeConstraint",
+    "SliceCenter", "SliceScale", "SortOrder", "Text", "TextColor3", "TextDirection", "TextFit", "TextScaled",
+    "TextSize", "TextStrokeColor3", "TextStrokeTransparency", "TextTransparency", "TextTruncate", "TextWrapped",
+    "TextXAlignment", "TextYAlignment", "Thickness", "TileSize", "TopImage", "Transparency", "VerticalAlignment",
+    "VerticalScrollBarInset", "VerticalScrollBarPosition", "Visible", "ZIndex", "ZIndexBehavior"
 }
-
-function gui:genname(objectType)
-    gui.counters[objectType] = (gui.counters[objectType] or 0) + 1
-    return string.format("%s_%d", objectType, gui.counters[objectType])
-end
-
-function gui:serialize(object, parentVar)
-    local output = ""
-    local name = gui:genname(object.ClassName)
     
-    output = output .. string.format("local %s = Instance.new(%q)\n", name, object.ClassName)
-    output = output .. string.format("%s.Parent = %s\n", name, parentVar or "game.CoreGui")
+    local serializers = {
+        ColorSequence = function(seq)
+            local points = {}
+            for _, kp in ipairs(seq.Keypoints) do
+                table.insert(points, string.format("ColorSequenceKeypoint.new(%s, Color3.fromRGB(%d, %d, %d))",
+                    kp.Time, kp.Value.R*255, kp.Value.G*255, kp.Value.B*255))
+            end
+            return string.format("ColorSequence.new({%s})", table.concat(points, ", "))
+        end,
+        NumberSequence = function(seq)
+            local points = {}
+            for _, kp in ipairs(seq.Keypoints) do
+                table.insert(points, string.format("NumberSequenceKeypoint.new(%s, %s, %s)", kp.Time, kp.Value, kp.Envelope))
+            end
+            return string.format("NumberSequence.new({%s})", table.concat(points, ", "))
+        end,
+        Color3 = function(c) return string.format("Color3.fromRGB(%d, %d, %d)", c.R*255, c.G*255, c.B*255) end,
+        UDim2 = function(u) return string.format("UDim2.new(%s, %s, %s, %s)", u.X.Scale, u.X.Offset, u.Y.Scale, u.Y.Offset) end,
+        UDim = function(u) return string.format("UDim.new(%s, %s)", u.Scale, u.Offset) end,
+        Rect = function(r) return string.format("Rect.new(%s, %s, %s, %s)", r.Min.X, r.Min.Y, r.Max.X, r.Max.Y) end,
+        Vector2 = function(v) return string.format("Vector2.new(%s, %s)", v.X, v.Y) end,
+        Enum = function(e) return tostring(e) end,
+        EnumItem = function(e) return tostring(e) end,
+        Font = function(f) return string.format("Font.new(%q, Enum.FontWeight.%s, Enum.FontStyle.%s)", f.Family, f.Weight.Name, f.Style.Name) end,
+        number = function(n) return tostring(n) end,
+        boolean = function(b) return tostring(b) end,
+        string = function(s) return string.format("%q", s) end,
+    }
     
-    for _, property in next, gui.properties do
-        local success, value = pcall(function() return object[property] end)
-        if success and value ~= nil then
-            local serializer = gui.serializers[typeof(value)]
-            if serializer then
-                output = output .. string.format("%s.%s = %s\n", name, property, serializer(value))
+    local counters = {}
+    
+    function converter:newname(typ)
+        counters[typ] = (counters[typ] or 0) + 1
+        return string.format("%s_%d", typ, counters[typ])
+    end
+    
+    function converter:saveobj(obj, parentvar)
+        local code = ""
+        local name = self:newname(obj.ClassName)
+        
+        code = code .. string.format("local %s = Instance.new(%q)\n", name, obj.ClassName)
+        code = code .. string.format("%s.Parent = %s\n", name, parentvar or "game.CoreGui")
+        
+        for _, prop in next, propertylist do
+            local ok, val = pcall(function() return obj[prop] end)
+            if ok and val ~= nil then
+                local ser = serializers[typeof(val)]
+                if ser then
+                    code = code .. string.format("%s.%s = %s\n", name, prop, ser(val))
+                end
             end
         end
+        
+        for _, child in ipairs(obj:GetChildren()) do
+            code = code .. self:saveobj(child, name)
+        end
+        
+        return code
     end
     
-    for _, child in ipairs(object:GetChildren()) do
-        output = output .. gui:serialize(child, name)
+    function converter:write(obj, path)
+        local code = self:saveobj(obj)
+        writefile(path, code)
     end
-    
-    return output
 end
 
-function gui:save(object, filename)
-    local luaCode = gui:serialize(object)
-    writefile(filename, luaCode)
+if game.CoreGui:FindFirstChild("axomGui2Lua") then
+    game.CoreGui:FindFirstChild("axomGui2Lua"):Destroy()
 end
 
-function start()
-    local buttoncolor = Color3.new(1,1,1)
-    if game.CoreGui:FindFirstChild("axomGui2Lua") then
-        game.CoreGui:FindFirstChild("axomGui2Lua"):Destroy()
-    end
-    local screengui = Instance.new("ScreenGui", game.CoreGui)
-    screengui.Name = "axomGui2Lua"
-    
-    local size = UDim2.new(0,350,0,200)
-    
-    local canvas = Instance.new("CanvasGroup", screengui)
-    canvas.Size = size
-    canvas.Position = UDim2.new(0.5,0,0.5,0)
-    canvas.AnchorPoint = Vector2.new(0.5,0.5)
-    canvas.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    canvas.BackgroundTransparency = 0.6
-    canvas.ClipsDescendants = true
+local screengui = Instance.new("ScreenGui", game.CoreGui)
+screengui.Name = "axomGui2Lua"
 
-    local dragging, dragInput, dragStart, startPos
-    local function update(input)
-        local delta = input.Position - dragStart
-        canvas.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y
-            )
+local uisize = UDim2.new(0, 350, 0, 200)
+
+local main = Instance.new("CanvasGroup", screengui)
+main.Size = uisize
+main.Position = UDim2.new(0.5, 0, 0.5, 0)
+main.AnchorPoint = Vector2.new(0.5, 0.5)
+main.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+main.BackgroundTransparency = 0.6
+main.ClipsDescendants = true
+
+local maincorner = Instance.new("UICorner", main)
+maincorner.CornerRadius = UDim.new(0, 12)
+
+local mainpad = Instance.new("UIPadding", main)
+mainpad.PaddingTop = UDim.new(0, 10)
+mainpad.PaddingLeft = UDim.new(0, 10)
+mainpad.PaddingRight = UDim.new(0, 10)
+mainpad.PaddingBottom = UDim.new(0, 10)
+
+local layout = Instance.new("UIListLayout", main)
+layout.FillDirection = "Vertical"
+layout.SortOrder = "LayoutOrder"
+layout.Padding = UDim.new(0, 10)
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, 0, 0, 0)
+title.TextXAlignment = "Left"
+title.AutomaticSize = "Y"
+title.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.SemiBold)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Text = "axomGui2Lua"
+title.TextSize = 22
+title.TextWrapped = true
+title.LayoutOrder = 1
+
+local closebtn = Instance.new("ImageButton", title)
+closebtn.Size = UDim2.new(0, title.AbsoluteSize.Y, 0, title.AbsoluteSize.Y)
+closebtn.Position = UDim2.new(1, 0, 0, 0)
+closebtn.AnchorPoint = Vector2.new(1, 0)
+closebtn.BackgroundTransparency = 1
+closebtn.Image = "rbxassetid://10747384394"
+
+local isclosed = false
+
+closebtn.MouseButton1Click:Connect(function()
+    if not isclosed then
+        TweenService:Create(main, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, title.TextBounds.X + mainpad.PaddingLeft.Offset * 3 + title.TextBounds.Y, 0, title.TextBounds.Y + mainpad.PaddingTop.Offset * 2)
+        }):Play()
+        TweenService:Create(closebtn, TweenInfo.new(0.25), {Rotation = 45}):Play()
+    else
+        TweenService:Create(main, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = uisize}):Play()
+        TweenService:Create(closebtn, TweenInfo.new(0.25), {Rotation = 0}):Play()
     end
-    canvas.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging  = true
-            dragStart = input.Position
-            startPos  = canvas.Position
-            
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-    canvas.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
-        end
-    end)
-    
-    local corner = Instance.new("UICorner", canvas)
-    corner.CornerRadius = UDim.new(0,12)
-    
-    local padding = Instance.new("UIPadding", canvas)
-    padding.PaddingTop = UDim.new(0,10)
-    padding.PaddingLeft = UDim.new(0,10)
-    padding.PaddingRight = UDim.new(0,10)
-    padding.PaddingBottom = UDim.new(0,10)
-    
-    local layout = Instance.new("UIListLayout", canvas)
-    layout.FillDirection = "Vertical"
-    layout.SortOrder = "LayoutOrder"
-    layout.Padding = UDim.new(0,10)
-    
-    local title = Instance.new("TextLabel", canvas)
-    title.Size = UDim2.new(1,0,0,0)
-    title.TextXAlignment = "Left"
-    title.AutomaticSize = "Y"
-    title.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.SemiBold)
-    title.BackgroundTransparency = 1
-    title.TextColor3 = Color3.new(1,1,1)
-    title.Text = "axomGui2Lua"
-    title.TextSize = 22
-    title.TextWrapped = true
-    title.LayoutOrder = 1
-    
-    local closebtn = Instance.new("ImageButton", title)
-    closebtn.Size = UDim2.new(0,title.AbsoluteSize.Y,0,title.AbsoluteSize.Y)
-    closebtn.Position = UDim2.new(1,0,0,0)
-    closebtn.AnchorPoint= Vector2.new(1,0)
-    closebtn.BackgroundTransparency = 1
-    closebtn.Image = "rbxassetid://10747384394"
-    
-    local closed = false
-    
-    closebtn.MouseButton1Click:Connect(function()
-        if not closed then
-            TweenService:Create(canvas, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-                Size = UDim2.new(
-                    0,
-                    title.TextBounds.X + padding.PaddingLeft.Offset*3 + title.TextBounds.Y,
-                    0,
-                    title.TextBounds.Y + padding.PaddingTop.Offset*2
-                )
-            }):Play()
-            TweenService:Create(closebtn, TweenInfo.new(.25), {Rotation = 45}):Play()
-        else
-            TweenService:Create(canvas, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-                Size = size
-            }):Play()
-            
-            TweenService:Create(closebtn, TweenInfo.new(.25), {Rotation = 0}):Play()
-        end
-        closed = not closed
-    end)
-    
-    local inputbox = Instance.new("TextBox", canvas)
-    inputbox.Size = UDim2.new(1,0,0,40)
-    inputbox.TextWrapped = true
-    inputbox.TextXAlignment = Enum.TextXAlignment.Left
-    inputbox.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.SemiBold)
-    inputbox.Text = ""
-    inputbox.TextColor3 = Color3.new(1,1,1)
-    inputbox.PlaceholderText = "Enter path to ScreenGui..."
-    inputbox.TextSize = 18
-    inputbox.BackgroundColor3 = Color3.new(1,1,1)
-    inputbox.BackgroundTransparency = 0.95
-    inputbox.ClearTextOnFocus = false
-    inputbox.LayoutOrder = 2
-    
-    local inputcorner = Instance.new("UICorner", inputbox)
-    inputcorner.CornerRadius = UDim.new(0,8)
-    
-    local inputstroke = Instance.new("UIStroke", inputbox)
-    inputstroke.Thickness = 0.6
-    inputstroke.Color = Color3.new(1,1,1)
-    inputstroke.Transparency = 0.8
-    
-    local convertbtn = Instance.new("TextButton", canvas)
-    convertbtn.Size = UDim2.new(1,0,0,35)
-    convertbtn.Text = "Convert"
-    convertbtn.AutoButtonColor = false
-    convertbtn.TextColor3 = Color3.new(0,0,0)
-    convertbtn.BackgroundColor3 = buttoncolor
-    convertbtn.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.SemiBold)
-    convertbtn.TextSize = 18
-    convertbtn.LayoutOrder = 3
-    
-    convertbtn.MouseEnter:Connect(function()
-        TweenService:Create(convertbtn, TweenInfo.new(.1), {
-            BackgroundColor3 = Color3.new(
-                buttoncolor.R-.4,
-                buttoncolor.G-.4,
-                buttoncolor.B-.4
-            )
-        }):Play()
-    end)
-    convertbtn.MouseLeave:Connect(function()
-        TweenService:Create(convertbtn, TweenInfo.new(.1), {
-            BackgroundColor3 = buttoncolor
-        }):Play()
-    end)
-    
-    local function notify(msg)
+    isclosed = not isclosed
+end)
+
+local inputbox = Instance.new("TextBox", main)
+inputbox.Size = UDim2.new(1, 0, 0, 40)
+inputbox.TextWrapped = true
+inputbox.TextXAlignment = Enum.TextXAlignment.Left
+inputbox.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.SemiBold)
+inputbox.Text = ""
+inputbox.TextColor3 = Color3.new(1, 1, 1)
+inputbox.PlaceholderText = "Enter path to ScreenGui..."
+inputbox.TextSize = 18
+inputbox.BackgroundColor3 = Color3.new(1, 1, 1)
+inputbox.BackgroundTransparency = 0.95
+inputbox.ClearTextOnFocus = false
+inputbox.LayoutOrder = 2
+
+local inputcorner = Instance.new("UICorner", inputbox)
+inputcorner.CornerRadius = UDim.new(0, 8)
+
+local inputstroke = Instance.new("UIStroke", inputbox)
+inputstroke.Thickness = 0.6
+inputstroke.Color = Color3.new(1, 1, 1)
+inputstroke.Transparency = 0.8
+
+local btncolor = Color3.new(1, 1, 1)
+
+local convertbtn = Instance.new("TextButton", main)
+convertbtn.Size = UDim2.new(1, 0, 0, 35)
+convertbtn.Text = "Convert"
+convertbtn.AutoButtonColor = false
+convertbtn.TextColor3 = Color3.new(0, 0, 0)
+convertbtn.BackgroundColor3 = btncolor
+convertbtn.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.SemiBold)
+convertbtn.TextSize = 18
+convertbtn.LayoutOrder = 3
+
+convertbtn.MouseEnter:Connect(function()
+    TweenService:Create(convertbtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.new(btncolor.R - 0.4, btncolor.G - 0.4, btncolor.B - 0.4)}):Play()
+end)
+convertbtn.MouseLeave:Connect(function()
+    TweenService:Create(convertbtn, TweenInfo.new(0.1), {BackgroundColor3 = btncolor}):Play()
+end)
+
+convertbtn.MouseButton1Click:Connect(function()
+    local text = inputbox.Text
+    if text == "" then
         local notif = Instance.new("TextLabel", screengui)
-        notif.Size = UDim2.new(0,300,0,50)
-        notif.Position = UDim2.new(0.5,0,1,-60)
-        notif.AnchorPoint = Vector2.new(0.5,1)
-        notif.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        notif.Size = UDim2.new(0, 300, 0, 50)
+        notif.Position = UDim2.new(0.5, 0, 1, -60)
+        notif.AnchorPoint = Vector2.new(0.5, 1)
+        notif.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
         notif.BackgroundTransparency = 0.2
-        notif.TextColor3 = Color3.new(1,1,1)
-        notif.Text = msg
+        notif.TextColor3 = Color3.new(1, 1, 1)
+        notif.Text = "Error,Please enter a valid path that exists. it's not that hard"
         notif.TextSize = 14
         notif.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.SemiBold)
         notif.TextWrapped = true
         notif.ClipsDescendants = true
         
         local notifcorner = Instance.new("UICorner", notif)
-        notifcorner.CornerRadius = UDim.new(0,8)
+        notifcorner.CornerRadius = UDim.new(0, 8)
         
-        notif.BackgroundTransparency = 0.2
         TweenService:Create(notif, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
-        
         task.wait(3)
+        TweenService:Create(notif, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+        task.wait(0.3)
+        notif:Destroy()
+        return
+    end
+    
+    local ok, target = pcall(function()
+        return loadstring("return " .. text)()
+    end)
+    
+    if ok and target and target:IsA("ScreenGui") then
+        local path = string.format("axomGui2Lua/%s.lua", target.Name)
+        converter:write(target, path)
         
+        local notif = Instance.new("TextLabel", screengui)
+        notif.Size = UDim2.new(0, 300, 0, 50)
+        notif.Position = UDim2.new(0.5, 0, 1, -60)
+        notif.AnchorPoint = Vector2.new(0.5, 1)
+        notif.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        notif.BackgroundTransparency = 0.2
+        notif.TextColor3 = Color3.new(1, 1, 1)
+        notif.Text = "Saved to: " .. path
+        notif.TextSize = 14
+        notif.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.SemiBold)
+        notif.TextWrapped = true
+        notif.ClipsDescendants = true
+        
+        local notifcorner = Instance.new("UICorner", notif)
+        notifcorner.CornerRadius = UDim.new(0, 8)
+        
+        TweenService:Create(notif, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
+        task.wait(3)
+        TweenService:Create(notif, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+        task.wait(0.3)
+        notif:Destroy()
+    else
+        local notif = Instance.new("TextLabel", screengui)
+        notif.Size = UDim2.new(0, 300, 0, 50)
+        notif.Position = UDim2.new(0.5, 0, 1, -60)
+        notif.AnchorPoint = Vector2.new(0.5, 1)
+        notif.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        notif.BackgroundTransparency = 0.2
+        notif.TextColor3 = Color3.new(1, 1, 1)
+        notif.Text = "Error, Invalid ScreenGui path gng just put like CoreGui.ScreenGui but read it through Dex or smth"
+        notif.TextSize = 14
+        notif.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.SemiBold)
+        notif.TextWrapped = true
+        notif.ClipsDescendants = true
+        
+        local notifcorner = Instance.new("UICorner", notif)
+        notifcorner.CornerRadius = UDim.new(0, 8)
+        
+        TweenService:Create(notif, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
+        task.wait(3)
         TweenService:Create(notif, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
         task.wait(0.3)
         notif:Destroy()
     end
-    
-    convertbtn.MouseButton1Click:Connect(function()
-        local text = inputbox.Text
-        if text == "" then
-            notify("Error: Please enter a valid path")
-            return
-        end
+end)
+
+local btncorner = Instance.new("UICorner", convertbtn)
+btncorner.CornerRadius = UDim.new(0, 8)
+
+local dragging = false
+local draginput = nil
+local dragstart = nil
+local startpos = nil
+
+local function oninputbegan(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragstart = input.Position
+        startpos = main.Position
         
-        local success, target = pcall(function()
-            return loadstring("return " .. text)()
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
         end)
-        
-        if success and target and target:IsA("ScreenGui") then
-            local filename = string.format("axomGui2Lua/%s.lua", target.Name)
-            gui:save(target, filename)
-            notify("Saved to: " .. filename)
-        else
-            notify("Error: Invalid ScreenGui path")
-        end
-    end)
-    
-    local btncorner = Instance.new("UICorner", convertbtn)
-    btncorner.CornerRadius = UDim.new(0,8)
-    
-    local function updatesize()
-        local total = title.AbsoluteContentSizeY + inputbox.AbsoluteSizeY + convertbtn.AbsoluteSizeY + (padding.PaddingTop.Offset * 2) + (layout.Padding.Offset * 2)
-        canvas.Size = UDim2.new(0,350,0,math.max(200, total + 20))
-        size = canvas.Size
     end
-    
-    title:GetPropertyChangedSignal("AbsoluteContentSizeY"):Connect(updatesize)
-    inputbox:GetPropertyChangedSignal("AbsoluteSizeY"):Connect(updatesize)
-    convertbtn:GetPropertyChangedSignal("AbsoluteSizeY"):Connect(updatesize)
-    
-    task.wait()
-    updatesize()
 end
 
-start()
+local function oninputchanged(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        draginput = input
+    end
+end
+
+local function updatepos(input)
+    local delta = input.Position - dragstart
+    main.Position = UDim2.new(startpos.X.Scale, startpos.X.Offset + delta.X, startpos.Y.Scale, startpos.Y.Offset + delta.Y)
+end
+
+main.InputBegan:Connect(oninputbegan)
+main.InputChanged:Connect(oninputchanged)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == draginput and dragging then
+        updatepos(input)
+    end
+end)
+
+local function updatesize()
+    local total = title.AbsoluteContentSizeY + inputbox.AbsoluteSizeY + convertbtn.AbsoluteSizeY + (mainpad.PaddingTop.Offset * 2) + (layout.Padding.Offset * 2)
+    main.Size = UDim2.new(0, 350, 0, math.max(200, total + 20))
+    uisize = main.Size
+end
+
+title:GetPropertyChangedSignal("AbsoluteContentSizeY"):Connect(updatesize)
+inputbox:GetPropertyChangedSignal("AbsoluteSizeY"):Connect(updatesize)
+convertbtn:GetPropertyChangedSignal("AbsoluteSizeY"):Connect(updatesize)
+
+task.wait()
+updatesize()
