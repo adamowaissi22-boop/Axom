@@ -1,352 +1,323 @@
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "screengui"
-screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+local g = Instance.new("ScreenGui")
+g.Name = "screengui"
+g.ResetOnSpawn = false
 
-local player = game:GetService("Players").LocalPlayer
-local mouse = player:GetMouse()
+local p = game:GetService("Players").LocalPlayer
 
-local frame = Instance.new("Frame")
-frame.Name = "MainFrame"
-frame.Size = UDim2.new(0, 550, 0, 650)
-frame.Position = UDim2.new(0.5, -275, 0.5, -325)
-frame.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-frame.BackgroundTransparency = 0.6
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
-frame.Parent = screenGui
+local f = Instance.new("Frame")
+f.Size = UDim2.new(0, 500, 0, 600)
+f.Position = UDim2.new(0.5, -250, 0.5, -300)
+f.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
+f.BackgroundTransparency = 0.6
+f.BorderSizePixel = 0
+f.Active = true
+f.Draggable = true
+f.Parent = g
 
-local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 12)
-uiCorner.Parent = frame
+local c = Instance.new("UICorner")
+c.CornerRadius = UDim.new(0, 12)
+c.Parent = f
 
-local uiStroke = Instance.new("UIStroke")
-uiStroke.Color = Color3.fromRGB(255, 255, 255)
-uiStroke.Thickness = 2
-uiStroke.Transparency = 0.3
-uiStroke.Parent = frame
+local st = Instance.new("UIStroke")
+st.Color = Color3.fromRGB(255, 255, 255)
+st.Thickness = 2
+st.Transparency = 0.3
+st.Parent = f
 
-local uiPadding = Instance.new("UIPadding")
-uiPadding.PaddingLeft = UDim.new(0, 10)
-uiPadding.PaddingRight = UDim.new(0, 10)
-uiPadding.PaddingTop = UDim.new(0, 10)
-uiPadding.PaddingBottom = UDim.new(0, 10)
-uiPadding.Parent = frame
+local pd = Instance.new("UIPadding")
+pd.PaddingLeft = UDim.new(0, 10)
+pd.PaddingRight = UDim.new(0, 10)
+pd.PaddingTop = UDim.new(0, 10)
+pd.PaddingBottom = UDim.new(0, 10)
+pd.Parent = f
 
-local titleBar = Instance.new("Frame")
-titleBar.Name = "TitleBar"
-titleBar.Size = UDim2.new(1, 0, 0, 35)
-titleBar.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
-titleBar.BackgroundTransparency = 0.4
-titleBar.BorderSizePixel = 0
-titleBar.Parent = frame
+local tb = Instance.new("Frame")
+tb.Size = UDim2.new(1, 0, 0, 35)
+tb.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
+tb.BackgroundTransparency = 0.4
+tb.BorderSizePixel = 0
+tb.Parent = f
 
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 12)
-titleCorner.Parent = titleBar
+local tc = Instance.new("UICorner")
+tc.CornerRadius = UDim.new(0, 12)
+tc.Parent = tb
 
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -40, 1, 0)
-titleLabel.Position = UDim2.new(0, 5, 0, 0)
-titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "Universal Decompiler / Env Logger"
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.TextSize = 16
-titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.Parent = titleBar
+local tl = Instance.new("TextLabel")
+tl.Size = UDim2.new(1, -40, 1, 0)
+tl.Position = UDim2.new(0, 5, 0, 0)
+tl.BackgroundTransparency = 1
+tl.Text = "infant logger"
+tl.TextColor3 = Color3.fromRGB(255, 255, 255)
+tl.TextSize = 16
+tl.TextXAlignment = Enum.TextXAlignment.Left
+tl.Font = Enum.Font.GothamBold
+tl.Parent = tb
 
-local closeBtn = Instance.new("TextButton")
-closeBtn.Name = "CloseBtn"
-closeBtn.Size = UDim2.new(0, 30, 0, 30)
-closeBtn.Position = UDim2.new(1, -35, 0, 2.5)
-closeBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-closeBtn.BackgroundTransparency = 0.3
-closeBtn.Text = "X"
-closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeBtn.TextSize = 18
-closeBtn.TextScaled = true
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.BorderSizePixel = 0
-closeBtn.Parent = titleBar
+local close = Instance.new("TextButton")
+close.Size = UDim2.new(0, 30, 0, 30)
+close.Position = UDim2.new(1, -35, 0, 2.5)
+close.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+close.BackgroundTransparency = 0.3
+close.Text = "X"
+close.TextColor3 = Color3.fromRGB(255, 255, 255)
+close.TextSize = 18
+close.TextScaled = true
+close.Font = Enum.Font.GothamBold
+close.BorderSizePixel = 0
+close.Parent = tb
 
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 8)
-closeCorner.Parent = closeBtn
+local cc = Instance.new("UICorner")
+cc.CornerRadius = UDim.new(0, 8)
+cc.Parent = close
 
-local inputFrame = Instance.new("Frame")
-inputFrame.Name = "InputFrame"
-inputFrame.Size = UDim2.new(1, 0, 0, 120)
-inputFrame.Position = UDim2.new(0, 0, 0, 45)
-inputFrame.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
-inputFrame.BackgroundTransparency = 0.5
-inputFrame.BorderSizePixel = 0
-inputFrame.Parent = frame
+local inf = Instance.new("Frame")
+inf.Size = UDim2.new(1, 0, 0, 120)
+inf.Position = UDim2.new(0, 0, 0, 45)
+inf.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
+inf.BackgroundTransparency = 0.5
+inf.BorderSizePixel = 0
+inf.Parent = f
 
-local inputCorner = Instance.new("UICorner")
-inputCorner.CornerRadius = UDim.new(0, 10)
-inputCorner.Parent = inputFrame
+local ic = Instance.new("UICorner")
+ic.CornerRadius = UDim.new(0, 10)
+ic.Parent = inf
 
-local inputPadding = Instance.new("UIPadding")
-inputPadding.PaddingLeft = UDim.new(0, 8)
-inputPadding.PaddingRight = UDim.new(0, 8)
-inputPadding.PaddingTop = UDim.new(0, 8)
-inputPadding.PaddingBottom = UDim.new(0, 8)
-inputPadding.Parent = inputFrame
+local ip = Instance.new("UIPadding")
+ip.PaddingLeft = UDim.new(0, 8)
+ip.PaddingRight = UDim.new(0, 8)
+ip.PaddingTop = UDim.new(0, 8)
+ip.PaddingBottom = UDim.new(0, 8)
+ip.Parent = inf
 
-local textBox = Instance.new("TextBox")
-textBox.Name = "ScriptInput"
-textBox.Size = UDim2.new(1, 0, 1, 0)
-textBox.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-textBox.BackgroundTransparency = 0.2
-textBox.Text = ""
-textBox.PlaceholderText = "Paste script URL (loadstring) or raw Lua code here..."
-textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-textBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-textBox.TextSize = 13
-textBox.TextWrapped = true
-textBox.TextXAlignment = Enum.TextXAlignment.Left
-textBox.TextYAlignment = Enum.TextYAlignment.Top
-textBox.ClearTextOnFocus = false
-textBox.Font = Enum.Font.SourceSans
-textBox.Parent = inputFrame
+local box = Instance.new("TextBox")
+box.Size = UDim2.new(1, 0, 1, 0)
+box.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+box.BackgroundTransparency = 0.2
+box.Text = ""
+box.PlaceholderText = "paste url or code here"
+box.TextColor3 = Color3.fromRGB(255, 255, 255)
+box.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+box.TextSize = 13
+box.TextWrapped = true
+box.TextXAlignment = Enum.TextXAlignment.Left
+box.TextYAlignment = Enum.TextYAlignment.Top
+box.ClearTextOnFocus = false
+box.Font = Enum.Font.SourceSans
+box.Parent = inf
 
-local textBoxCorner = Instance.new("UICorner")
-textBoxCorner.CornerRadius = UDim.new(0, 8)
-textBoxCorner.Parent = textBox
+local bc = Instance.new("UICorner")
+bc.CornerRadius = UDim.new(0, 8)
+bc.Parent = box
 
-local buttonFrame = Instance.new("Frame")
-buttonFrame.Name = "ButtonFrame"
-buttonFrame.Size = UDim2.new(1, 0, 0, 45)
-buttonFrame.Position = UDim2.new(0, 0, 0, 175)
-buttonFrame.BackgroundTransparency = 1
-buttonFrame.Parent = frame
+local bf = Instance.new("Frame")
+bf.Size = UDim2.new(1, 0, 0, 45)
+bf.Position = UDim2.new(0, 0, 0, 175)
+bf.BackgroundTransparency = 1
+bf.Parent = f
 
-local executeBtn = Instance.new("TextButton")
-executeBtn.Name = "ExecuteBtn"
-executeBtn.Size = UDim2.new(0.48, 0, 1, -5)
-executeBtn.Position = UDim2.new(0, 0, 0, 2.5)
-executeBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-executeBtn.BackgroundTransparency = 0.3
-executeBtn.Text = "EXECUTE & LOG"
-executeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-executeBtn.TextSize = 14
-executeBtn.Font = Enum.Font.GothamBold
-executeBtn.BorderSizePixel = 0
-executeBtn.Parent = buttonFrame
+local run = Instance.new("TextButton")
+run.Size = UDim2.new(0.48, 0, 1, -5)
+run.Position = UDim2.new(0, 0, 0, 2.5)
+run.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+run.BackgroundTransparency = 0.3
+run.Text = "run & log"
+run.TextColor3 = Color3.fromRGB(255, 255, 255)
+run.TextSize = 14
+run.Font = Enum.Font.GothamBold
+run.BorderSizePixel = 0
+run.Parent = bf
 
-local executeCorner = Instance.new("UICorner")
-executeCorner.CornerRadius = UDim.new(0, 8)
-executeCorner.Parent = executeBtn
+local rc = Instance.new("UICorner")
+rc.CornerRadius = UDim.new(0, 8)
+rc.Parent = run
 
-local clearBtn = Instance.new("TextButton")
-clearBtn.Name = "ClearBtn"
-clearBtn.Size = UDim2.new(0.48, 0, 1, -5)
-clearBtn.Position = UDim2.new(0.52, 0, 0, 2.5)
-clearBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-clearBtn.BackgroundTransparency = 0.3
-clearBtn.Text = "CLEAR OUTPUT"
-clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-clearBtn.TextSize = 14
-clearBtn.Font = Enum.Font.GothamBold
-clearBtn.BorderSizePixel = 0
-clearBtn.Parent = buttonFrame
+local clr = Instance.new("TextButton")
+clr.Size = UDim2.new(0.48, 0, 1, -5)
+clr.Position = UDim2.new(0.52, 0, 0, 2.5)
+clr.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+clr.BackgroundTransparency = 0.3
+clr.Text = "clear"
+clr.TextColor3 = Color3.fromRGB(255, 255, 255)
+clr.TextSize = 14
+clr.Font = Enum.Font.GothamBold
+clr.BorderSizePixel = 0
+clr.Parent = bf
 
-local clearCorner = Instance.new("UICorner")
-clearCorner.CornerRadius = UDim.new(0, 8)
-clearCorner.Parent = clearBtn
+local clc = Instance.new("UICorner")
+clc.CornerRadius = UDim.new(0, 8)
+clc.Parent = clr
 
-local outputFrame = Instance.new("Frame")
-outputFrame.Name = "OutputFrame"
-outputFrame.Size = UDim2.new(1, 0, 1, -235)
-outputFrame.Position = UDim2.new(0, 0, 0, 230)
-outputFrame.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
-outputFrame.BackgroundTransparency = 0.5
-outputFrame.BorderSizePixel = 0
-outputFrame.Parent = frame
+local of = Instance.new("Frame")
+of.Size = UDim2.new(1, 0, 1, -235)
+of.Position = UDim2.new(0, 0, 0, 230)
+of.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
+of.BackgroundTransparency = 0.5
+of.BorderSizePixel = 0
+of.Parent = f
 
-local outputCorner = Instance.new("UICorner")
-outputCorner.CornerRadius = UDim.new(0, 10)
-outputCorner.Parent = outputFrame
+local oc = Instance.new("UICorner")
+oc.CornerRadius = UDim.new(0, 10)
+oc.Parent = of
 
-local outputPadding = Instance.new("UIPadding")
-outputPadding.PaddingLeft = UDim.new(0, 8)
-outputPadding.PaddingRight = UDim.new(0, 8)
-outputPadding.PaddingTop = UDim.new(0, 8)
-outputPadding.PaddingBottom = UDim.new(0, 8)
-outputPadding.Parent = outputFrame
+local op = Instance.new("UIPadding")
+op.PaddingLeft = UDim.new(0, 8)
+op.PaddingRight = UDim.new(0, 8)
+op.PaddingTop = UDim.new(0, 8)
+op.PaddingBottom = UDim.new(0, 8)
+op.Parent = of
 
-local scroller = Instance.new("ScrollingFrame")
-scroller.Name = "OutputScroller"
-scroller.Size = UDim2.new(1, 0, 1, 0)
-scroller.BackgroundTransparency = 1
-scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
-scroller.ScrollBarThickness = 6
-scroller.AutomaticCanvasSize = Enum.AutomaticSize.Y
-scroller.Parent = outputFrame
+local sc = Instance.new("ScrollingFrame")
+sc.Size = UDim2.new(1, 0, 1, 0)
+sc.BackgroundTransparency = 1
+sc.CanvasSize = UDim2.new(0, 0, 0, 0)
+sc.ScrollBarThickness = 6
+sc.AutomaticCanvasSize = Enum.AutomaticSize.Y
+sc.Parent = of
 
-local outputList = Instance.new("UIListLayout")
-outputList.Name = "OutputList"
-outputList.Padding = UDim.new(0, 4)
-outputList.SortOrder = Enum.SortOrder.LayoutOrder
-outputList.Parent = scroller
+local lst = Instance.new("UIListLayout")
+lst.Padding = UDim.new(0, 4)
+lst.SortOrder = Enum.SortOrder.LayoutOrder
+lst.Parent = sc
 
-local outputPadding2 = Instance.new("UIPadding")
-outputPadding2.PaddingLeft = UDim.new(0, 4)
-outputPadding2.PaddingRight = UDim.new(0, 4)
-outputPadding2.PaddingTop = UDim.new(0, 4)
-outputPadding2.PaddingBottom = UDim.new(0, 4)
-outputPadding2.Parent = scroller
+local sb = Instance.new("Frame")
+sb.Size = UDim2.new(1, 0, 0, 25)
+sb.Position = UDim2.new(0, 0, 1, -25)
+sb.BackgroundColor3 = Color3.fromRGB(0, 60, 150)
+sb.BackgroundTransparency = 0.5
+sb.BorderSizePixel = 0
+sb.Parent = f
 
-local statusBar = Instance.new("Frame")
-statusBar.Name = "StatusBar"
-statusBar.Size = UDim2.new(1, 0, 0, 25)
-statusBar.Position = UDim2.new(0, 0, 1, -25)
-statusBar.BackgroundColor3 = Color3.fromRGB(0, 60, 150)
-statusBar.BackgroundTransparency = 0.5
-statusBar.BorderSizePixel = 0
-statusBar.Parent = frame
+local sl = Instance.new("TextLabel")
+sl.Size = UDim2.new(1, -10, 1, 0)
+sl.Position = UDim2.new(0, 5, 0, 0)
+sl.BackgroundTransparency = 1
+sl.Text = "ready"
+sl.TextColor3 = Color3.fromRGB(200, 200, 200)
+sl.TextSize = 11
+sl.TextXAlignment = Enum.TextXAlignment.Left
+sl.Font = Enum.Font.SourceSans
+sl.Parent = sb
 
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, -10, 1, 0)
-statusLabel.Position = UDim2.new(0, 5, 0, 0)
-statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "Ready"
-statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-statusLabel.TextSize = 11
-statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-statusLabel.Font = Enum.Font.SourceSans
-statusLabel.Parent = statusBar
-
-local success, err = pcall(function()
-    screenGui.Parent = game:GetService("CoreGui")
+pcall(function()
+    g.Parent = game:GetService("CoreGui")
+end)
+pcall(function()
+    if not g.Parent then
+        g.Parent = p.PlayerGui
+    end
 end)
 
-if not success then
-    pcall(function()
-        screenGui.Parent = player.PlayerGui
-    end)
-end
+local drag = false
+local ds = nil
+local sp = nil
 
-local dragging = false
-local dragStart = nil
-local startPos = nil
-
-frame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        local objectPosition = frame.AbsolutePosition
-        local mousePosition = input.Position
-        if mousePosition.X >= objectPosition.X and mousePosition.X <= objectPosition.X + frame.AbsoluteSize.X and
-           mousePosition.Y >= objectPosition.Y and mousePosition.Y <= objectPosition.Y + titleBar.AbsoluteSize.Y then
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
+f.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        local op = f.AbsolutePosition
+        local mp = i.Position
+        if mp.X >= op.X and mp.X <= op.X + f.AbsoluteSize.X and
+           mp.Y >= op.Y and mp.Y <= op.Y + tb.AbsoluteSize.Y then
+            drag = true
+            ds = i.Position
+            sp = f.Position
         end
     end
 end)
 
-frame.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+f.InputChanged:Connect(function(i)
+    if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+        local delta = i.Position - ds
+        f.Position = UDim2.new(sp.X.Scale, sp.X.Offset + delta.X, sp.Y.Scale, sp.Y.Offset + delta.Y)
     end
 end)
 
-frame.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
+f.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        drag = false
     end
 end)
 
-closeBtn.MouseButton1Click:Connect(function()
-    screenGui:Destroy()
+close.MouseButton1Click:Connect(function()
+    g:Destroy()
 end)
 
-local function addoutput(text, color)
-    local label = Instance.new("TextLabel")
-    label.Text = text
-    label.TextColor3 = color or Color3.fromRGB(200, 200, 200)
-    label.TextSize = 12
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextWrapped = true
-    label.TextScaled = false
-    label.BackgroundTransparency = 1
-    label.Font = Enum.Font.SourceSans
-    label.Size = UDim2.new(1, 0, 0, 0)
-    label.AutomaticSize = Enum.AutomaticSize.Y
-    label.Parent = scroller
+function add(t, col)
+    local l = Instance.new("TextLabel")
+    l.Text = t
+    l.TextColor3 = col or Color3.fromRGB(200, 200, 200)
+    l.TextSize = 12
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.TextWrapped = true
+    l.BackgroundTransparency = 1
+    l.Font = Enum.Font.SourceSans
+    l.Size = UDim2.new(1, 0, 0, 0)
+    l.AutomaticSize = Enum.AutomaticSize.Y
+    l.Parent = sc
 end
 
-local function clearoutput()
-    for _, child in pairs(scroller:GetChildren()) do
-        if child:IsA("TextLabel") then
-            child:Destroy()
+function clear()
+    for _, v in pairs(sc:GetChildren()) do
+        if v:IsA("TextLabel") then
+            v:Destroy()
         end
     end
 end
 
-local logdata = {}
+local log = {}
 
-local function addtolog(category, value)
-    table.insert(logdata, {
-        category = category,
-        value = value,
-        timestamp = os.time()
-    })
+function cat(category, value)
+    table.insert(log, {cat = category, val = value, time = os.time()})
 end
 
-local function sanitizestring(str)
-    if type(str) ~= "string" then
-        return tostring(str)
+function esc(s)
+    if type(s) ~= "string" then
+        return tostring(s)
     end
-    str = str:gsub("\\", "\\\\")
-    str = str:gsub('"', '\\"')
-    str = str:gsub("\n", "\\n")
-    str = str:gsub("\r", "\\r")
-    str = str:gsub("\t", "\\t")
-    return str
+    s = s:gsub("\\", "\\\\")
+    s = s:gsub('"', '\\"')
+    s = s:gsub("\n", "\\n")
+    s = s:gsub("\r", "\\r")
+    s = s:gsub("\t", "\\t")
+    return s
 end
 
-local function serializevalue(val, depth)
-    depth = depth or 0
-    if depth > 5 then
+function ser(v, d)
+    d = d or 0
+    if d > 5 then
         return "..."
     end
-    
-    local valtype = typeof(val)
-    
-    if valtype == "string" then
-        return '"' .. sanitizestring(val) .. '"'
-    elseif valtype == "number" or valtype == "boolean" then
-        return tostring(val)
-    elseif valtype == "nil" then
+    local t = typeof(v)
+    if t == "string" then
+        return '"' .. esc(v) .. '"'
+    elseif t == "number" or t == "boolean" then
+        return tostring(v)
+    elseif t == "nil" then
         return "nil"
-    elseif valtype == "Instance" then
-        return 'game:GetService("' .. val.ClassName .. '")'
-    elseif valtype == "CFrame" then
-        local x, y, z = val:GetComponents()
+    elseif t == "Instance" then
+        return 'game:GetService("' .. v.ClassName .. '")'
+    elseif t == "CFrame" then
+        local x, y, z = v:GetComponents()
         return string.format("CFrame.new(%f, %f, %f)", x, y, z)
-    elseif valtype == "Vector3" then
-        return string.format("Vector3.new(%f, %f, %f)", val.X, val.Y, val.Z)
-    elseif valtype == "Vector2" then
-        return string.format("Vector2.new(%f, %f)", val.X, val.Y)
-    elseif valtype == "Color3" then
-        return string.format("Color3.new(%f, %f, %f)", val.R, val.G, val.B)
-    elseif valtype == "UDim2" then
-        return string.format("UDim2.new(%f, %d, %f, %d)", val.X.Scale, val.X.Offset, val.Y.Scale, val.Y.Offset)
-    elseif valtype == "EnumItem" then
-        return tostring(val)
-    elseif valtype == "RBXScriptSignal" then
+    elseif t == "Vector3" then
+        return string.format("Vector3.new(%f, %f, %f)", v.X, v.Y, v.Z)
+    elseif t == "Vector2" then
+        return string.format("Vector2.new(%f, %f)", v.X, v.Y)
+    elseif t == "Color3" then
+        return string.format("Color3.new(%f, %f, %f)", v.R, v.G, v.B)
+    elseif t == "UDim2" then
+        return string.format("UDim2.new(%f, %d, %f, %d)", v.X.Scale, v.X.Offset, v.Y.Scale, v.Y.Offset)
+    elseif t == "EnumItem" then
+        return tostring(v)
+    elseif t == "RBXScriptSignal" then
         return "signal"
-    elseif valtype == "RBXScriptConnection" then
+    elseif t == "RBXScriptConnection" then
         return "connection"
-    elseif valtype == "function" then
+    elseif t == "function" then
         return "function() end"
-    elseif valtype == "table" then
+    elseif t == "table" then
         local items = {}
-        for k, v in pairs(val) do
-            table.insert(items, "[" .. serializevalue(k, depth + 1) .. "] = " .. serializevalue(v, depth + 1))
+        for k, val in pairs(v) do
+            table.insert(items, "[" .. ser(k, d + 1) .. "] = " .. ser(val, d + 1))
             if #items >= 10 then
                 table.insert(items, "...")
                 break
@@ -354,266 +325,189 @@ local function serializevalue(val, depth)
         end
         return "{" .. table.concat(items, ", ") .. "}"
     else
-        return tostring(val)
+        return tostring(v)
     end
 end
 
-local function saveenvlog()
-    local success, err = pcall(function()
+function save()
+    local ok, err = pcall(function()
         if not isfolder then
-            addoutput("isfolder not available, cannot save", Color3.fromRGB(255, 100, 100))
+            add("isfolder missing", Color3.fromRGB(255, 100, 100))
             return
         end
-        
-        if not isfolder("axomenvlogger") then
-            makefolder("axomenvlogger")
+        if not isfolder("infant") then
+            makefolder("infant")
         end
-        
-        local filename = "axomenvlogger/envloggedscript1.lua"
-        
-        local filecontent = "-- Environment Logger Output\n-- Generated: " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n\n"
-        filecontent = filecontent .. "local loggedenv = {}\n\n"
-        
-        for _, entry in ipairs(logdata) do
-            filecontent = filecontent .. "-- [" .. entry.category .. "]\n"
-            local catname = entry.category:gsub("[^%w]", "")
-            if catname == "" then
-                catname = "entry" .. _
+        local name = "infant/logged.lua"
+        local data = "-- infant logger\n-- " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n\nreturn {\n"
+        for i, e in ipairs(log) do
+            local cn = e.cat:gsub("[^%w]", "")
+            if cn == "" then
+                cn = "e" .. i
             end
-            filecontent = filecontent .. "loggedenv." .. catname .. " = " .. serializevalue(entry.value) .. "\n\n"
+            data = data .. '  ["' .. e.cat .. '"] = ' .. ser(e.val) .. ',\n'
         end
-        
-        filecontent = filecontent .. "\nreturn loggedenv"
-        
-        writefile(filename, filecontent)
-        addoutput("Saved to: " .. filename, Color3.fromRGB(100, 255, 100))
-        statusLabel.Text = "Saved: " .. filename
+        data = data .. "}"
+        writefile(name, data)
+        add("saved to " .. name, Color3.fromRGB(100, 255, 100))
+        sl.Text = "saved"
     end)
-    
-    if not success then
-        addoutput("Save failed: " .. tostring(err), Color3.fromRGB(255, 100, 100))
-        statusLabel.Text = "Save failed"
+    if not ok then
+        add("save failed: " .. tostring(err), Color3.fromRGB(255, 100, 100))
+        sl.Text = "save failed"
     end
 end
 
-local function logglobals()
-    local globallist = {
-        "game", "workspace", "script", "shared", "Enum", "debug",
-        "task", "coroutine", "table", "string", "math", "os",
-        "Vector3", "Vector2", "CFrame", "Color3", "UDim2", "BrickColor",
-        "TweenInfo", "Ray", "Rect", "Region3", "Instance", "Random"
-    }
-    
-    for _, name in ipairs(globallist) do
-        local success, val = pcall(function()
-            return _G[name]
+function logglobals()
+    local list = {"game", "workspace", "script", "shared", "Enum", "debug", "task", "coroutine", "table", "string", "math", "os", "Vector3", "Vector2", "CFrame", "Color3", "UDim2", "BrickColor", "TweenInfo", "Ray", "Rect", "Region3", "Instance", "Random"}
+    for _, n in ipairs(list) do
+        local ok, v = pcall(function()
+            return _G[n]
         end)
-        if success and val ~= nil then
-            addtolog("global_" .. name, val)
+        if ok and v ~= nil then
+            cat("global_" .. n, v)
         end
     end
 end
 
-local function hookservices()
-    local services = {
-        "Players", "RunService", "ReplicatedStorage", "Workspace", "Lighting",
-        "ServerStorage", "ServerScriptService", "StarterGui", "StarterPack",
-        "StarterPlayer", "SoundService", "Chat", "UserInputService",
-        "TweenService", "HttpService", "MarketplaceService", "TeleportService",
-        "PathfindingService", "CollectionService", "PhysicsService",
-        "ProximityPromptService", "ContextActionService", "GuiService",
-        "Teams", "InsertService", "DataStoreService", "MessagingService",
-        "TextService", "TextChatService", "ContentProvider", "Debris"
-    }
-    
-    for _, servicename in ipairs(services) do
-        local success, service = pcall(function()
-            return game:GetService(servicename)
+function hookservices()
+    local svcs = {"Players", "RunService", "ReplicatedStorage", "Workspace", "Lighting", "ServerStorage", "ServerScriptService", "StarterGui", "StarterPack", "StarterPlayer", "SoundService", "Chat", "UserInputService", "TweenService", "HttpService", "MarketplaceService", "TeleportService", "PathfindingService", "CollectionService", "PhysicsService", "ProximityPromptService", "ContextActionService", "GuiService", "Teams", "InsertService", "DataStoreService", "MessagingService", "TextService", "TextChatService", "ContentProvider", "Debris"}
+    for _, n in ipairs(svcs) do
+        local ok, sv = pcall(function()
+            return game:GetService(n)
         end)
-        if success and service then
-            addtolog("service_" .. servicename, service)
+        if ok and sv then
+            cat("service_" .. n, sv)
         end
     end
 end
 
-local function hookremotes()
-    local success, replicatedstorage = pcall(function()
+function hookremotes()
+    local ok, rs = pcall(function()
         return game:GetService("ReplicatedStorage")
     end)
-    
-    if success and replicatedstorage then
-        local function scanremotes(folder)
-            for _, child in pairs(folder:GetChildren()) do
-                if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
-                    addtolog("remote_" .. child.Name, child)
-                elseif child:IsA("Folder") or child:IsA("Model") then
-                    scanremotes(child)
+    if ok and rs then
+        function scan(p)
+            for _, c in pairs(p:GetChildren()) do
+                if c:IsA("RemoteEvent") or c:IsA("RemoteFunction") then
+                    cat("remote_" .. c.Name, c)
+                elseif c:IsA("Folder") or c:IsA("Model") then
+                    scan(c)
                 end
             end
         end
-        scanremotes(replicatedstorage)
+        scan(rs)
     end
 end
 
-local function hookproperties(instance, path)
-    path = path or instance.ClassName
-    local success, properties = pcall(function()
-        return instance:GetProperties()
+function hookprops(inst, path)
+    path = path or inst.ClassName
+    local ok, props = pcall(function()
+        return inst:GetProperties()
     end)
-    
-    if success and properties then
-        for _, prop in ipairs(properties) do
-            local success2, value = pcall(function()
-                return instance[prop]
+    if ok and props then
+        for _, prop in ipairs(props) do
+            local ok2, val = pcall(function()
+                return inst[prop]
             end)
-            if success2 then
-                addtolog("property_" .. path .. "_" .. prop, value)
+            if ok2 then
+                cat("prop_" .. path .. "_" .. prop, val)
             end
         end
     end
 end
 
-local function hookinstances()
-    local instances = {}
-    local function scan(parent)
-        for _, child in pairs(parent:GetChildren()) do
-            if #instances < 50 then
-                table.insert(instances, child)
-                hookproperties(child, child.ClassName .. "_" .. child.Name)
-                scan(child)
+function hookinstances()
+    local total = 0
+    local function scan(p)
+        for _, c in pairs(p:GetChildren()) do
+            if total < 50 then
+                total = total + 1
+                hookprops(c, c.ClassName .. "_" .. c.Name)
+                scan(c)
             end
         end
     end
-    
-    local success, workspace = pcall(function()
+    local ok, ws = pcall(function()
         return game:GetService("Workspace")
     end)
-    
-    if success then
-        scan(workspace)
+    if ok then
+        scan(ws)
     end
-    
-    local success2, players = pcall(function()
+    local ok2, pl = pcall(function()
         return game:GetService("Players")
     end)
-    
-    if success2 then
-        scan(players)
+    if ok2 then
+        scan(pl)
     end
-    
-    addtolog("total_instances_scanned", #instances)
+    cat("instances_scanned", total)
 end
 
-local function setupenvlogger()
-    local env = getfenv()
-    local metatable = {}
-    
-    metatable.__index = function(t, k)
-        local original = rawget(env, k)
-        addtolog("index_" .. tostring(k), original)
-        return original
-    end
-    
-    metatable.__newindex = function(t, k, v)
-        addtolog("newindex_" .. tostring(k), v)
-        rawset(env, k, v)
-    end
-    
-    setmetatable(env, metatable)
-end
-
-local function runscript(scriptcontent)
-    logdata = {}
-    addtolog("execution_start", os.date("%Y-%m-%d %H:%M:%S"))
-    addtolog("script_length", #scriptcontent)
-    
-    addoutput("Starting environment logging...", Color3.fromRGB(100, 200, 255))
-    statusLabel.Text = "Logging environment..."
-    
+function runcode(code)
+    log = {}
+    cat("start", os.date("%Y-%m-%d %H:%M:%S"))
+    cat("length", #code)
+    add("logging environment...", Color3.fromRGB(100, 200, 255))
+    sl.Text = "logging..."
     logglobals()
     hookservices()
     hookremotes()
     hookinstances()
-    setupenvlogger()
-    
-    addoutput("Executing script...", Color3.fromRGB(255, 200, 100))
-    statusLabel.Text = "Executing script..."
-    
-    local func, err = loadstring(scriptcontent)
-    if not func then
-        addoutput("Load error: " .. tostring(err), Color3.fromRGB(255, 100, 100))
-        statusLabel.Text = "Load error"
+    add("running script...", Color3.fromRGB(255, 200, 100))
+    sl.Text = "running..."
+    local fn, err = loadstring(code)
+    if not fn then
+        add("load error: " .. tostring(err), Color3.fromRGB(255, 100, 100))
+        sl.Text = "load error"
         return false
     end
-    
-    local success, result = pcall(func)
-    if not success then
-        addoutput("Execution error: " .. tostring(result), Color3.fromRGB(255, 100, 100))
-        statusLabel.Text = "Execution error"
+    local ok, res = pcall(fn)
+    if not ok then
+        add("run error: " .. tostring(res), Color3.fromRGB(255, 100, 100))
+        sl.Text = "run error"
         return false
     end
-    
-    addtolog("execution_end", os.date("%Y-%m-%d %H:%M:%S"))
-    addoutput("Script executed successfully", Color3.fromRGB(100, 255, 100))
-    statusLabel.Text = "Execution complete"
-    
-    saveenvlog()
-    
+    cat("end", os.date("%Y-%m-%d %H:%M:%S"))
+    add("done", Color3.fromRGB(100, 255, 100))
+    sl.Text = "done"
+    save()
     return true
 end
 
-local function processinput()
-    local input = textBox.Text
-    if input == nil or input == "" then
-        addoutput("Please paste a script URL or Lua code", Color3.fromRGB(255, 200, 100))
+function process()
+    local inp = box.Text
+    if inp == nil or inp == "" then
+        add("paste something first", Color3.fromRGB(255, 200, 100))
         return
     end
-    
-    addoutput("Processing input...", Color3.fromRGB(100, 200, 255))
-    statusLabel.Text = "Processing..."
-    
-    if string.match(input, "^https?://") then
-        addoutput("Fetching URL: " .. input, Color3.fromRGB(200, 200, 100))
-        statusLabel.Text = "Fetching script..."
-        
-        local success, result = pcall(function()
-            return game:GetService("HttpService"):GetAsync(input)
+    add("processing...", Color3.fromRGB(100, 200, 255))
+    sl.Text = "processing..."
+    if string.match(inp, "^https?://") then
+        add("fetching " .. inp, Color3.fromRGB(200, 200, 100))
+        sl.Text = "fetching..."
+        local ok, res = pcall(function()
+            return game:GetService("HttpService"):GetAsync(inp)
         end)
-        
-        if success and result then
-            addoutput("Fetched " .. #result .. " bytes", Color3.fromRGB(100, 255, 100))
-            if string.match(result, "^loadstring") or string.match(result, "return") then
-                local loadfunc, loaderr = loadstring(result)
-                if loadfunc then
-                    local execsuccess, execresult = pcall(loadfunc)
-                    if execsuccess and type(execresult) == "function" then
-                        runscript(string.dump(execresult))
-                    else
-                        runscript(result)
-                    end
-                else
-                    runscript(result)
-                end
-            else
-                runscript(result)
-            end
+        if ok and res then
+            add("got " .. #res .. " bytes", Color3.fromRGB(100, 255, 100))
+            runcode(res)
         else
-            addoutput("Failed to fetch URL: " .. tostring(result), Color3.fromRGB(255, 100, 100))
-            statusLabel.Text = "Fetch failed"
+            add("fetch failed: " .. tostring(res), Color3.fromRGB(255, 100, 100))
+            sl.Text = "fetch failed"
         end
     else
-        runscript(input)
+        runcode(inp)
     end
 end
 
-executeBtn.MouseButton1Click:Connect(function()
-    processinput()
+run.MouseButton1Click:Connect(function()
+    process()
 end)
 
-clearBtn.MouseButton1Click:Connect(function()
-    clearoutput()
-    addoutput("Output cleared", Color3.fromRGB(200, 200, 200))
+clr.MouseButton1Click:Connect(function()
+    clear()
+    add("cleared", Color3.fromRGB(200, 200, 200))
 end)
 
-addoutput("Universal Decompiler / Env Logger Ready", Color3.fromRGB(100, 255, 255))
-addoutput("Paste your script or loadstring URL above", Color3.fromRGB(200, 200, 200))
+add("infant logger ready", Color3.fromRGB(100, 255, 255))
+add("paste url or code above", Color3.fromRGB(200, 200, 200))
