@@ -219,388 +219,400 @@ statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 statusLabel.Font = Enum.Font.SourceSans
 statusLabel.Parent = statusBar
 
-screenGui.Parent = game:GetService("CoreGui")
+local success, err = pcall(function()
+    screenGui.Parent = game:GetService("CoreGui")
+end)
+
+if not success then
+    pcall(function()
+        screenGui.Parent = player.PlayerGui
+    end)
+end
 
 local dragging = false
 local dragStart = nil
 local startPos = nil
 
 frame.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		local objectPosition = frame.AbsolutePosition
-		local mousePosition = input.Position
-		if mousePosition.X >= objectPosition.X and mousePosition.X <= objectPosition.X + frame.AbsoluteSize.X and
-		   mousePosition.Y >= objectPosition.Y and mousePosition.Y <= objectPosition.Y + titleBar.AbsoluteSize.Y then
-			dragging = true
-			dragStart = input.Position
-			startPos = frame.Position
-		end
-	end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        local objectPosition = frame.AbsolutePosition
+        local mousePosition = input.Position
+        if mousePosition.X >= objectPosition.X and mousePosition.X <= objectPosition.X + frame.AbsoluteSize.X and
+           mousePosition.Y >= objectPosition.Y and mousePosition.Y <= objectPosition.Y + titleBar.AbsoluteSize.Y then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+        end
+    end
 end)
 
 frame.InputChanged:Connect(function(input)
-	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - dragStart
-		frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
 end)
 
 frame.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = false
-	end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
 end)
 
 closeBtn.MouseButton1Click:Connect(function()
-	screenGui:Destroy()
+    screenGui:Destroy()
 end)
 
 local function addoutput(text, color)
-	local label = Instance.new("TextLabel")
-	label.Text = text
-	label.TextColor3 = color or Color3.fromRGB(200, 200, 200)
-	label.TextSize = 12
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.TextWrapped = true
-	label.TextScaled = false
-	label.BackgroundTransparency = 1
-	label.Font = Enum.Font.SourceSans
-	label.Size = UDim2.new(1, 0, 0, 0)
-	label.AutomaticSize = Enum.AutomaticSize.Y
-	label.Parent = scroller
+    local label = Instance.new("TextLabel")
+    label.Text = text
+    label.TextColor3 = color or Color3.fromRGB(200, 200, 200)
+    label.TextSize = 12
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextWrapped = true
+    label.TextScaled = false
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.SourceSans
+    label.Size = UDim2.new(1, 0, 0, 0)
+    label.AutomaticSize = Enum.AutomaticSize.Y
+    label.Parent = scroller
 end
 
 local function clearoutput()
-	for _, child in pairs(scroller:GetChildren()) do
-		if child:IsA("TextLabel") then
-			child:Destroy()
-		end
-	end
+    for _, child in pairs(scroller:GetChildren()) do
+        if child:IsA("TextLabel") then
+            child:Destroy()
+        end
+    end
 end
 
 local logdata = {}
 
 local function addtolog(category, value)
-	table.insert(logdata, {
-		category = category,
-		value = value,
-		timestamp = os.time()
-	})
+    table.insert(logdata, {
+        category = category,
+        value = value,
+        timestamp = os.time()
+    })
 end
 
 local function sanitizestring(str)
-	if type(str) ~= "string" then
-		return tostring(str)
-	end
-	str = str:gsub("\\", "\\\\")
-	str = str:gsub('"', '\\"')
-	str = str:gsub("\n", "\\n")
-	str = str:gsub("\r", "\\r")
-	str = str:gsub("\t", "\\t")
-	return str
+    if type(str) ~= "string" then
+        return tostring(str)
+    end
+    str = str:gsub("\\", "\\\\")
+    str = str:gsub('"', '\\"')
+    str = str:gsub("\n", "\\n")
+    str = str:gsub("\r", "\\r")
+    str = str:gsub("\t", "\\t")
+    return str
 end
 
 local function serializevalue(val, depth)
-	depth = depth or 0
-	if depth > 5 then
-		return "..."
-	end
-	
-	local valtype = typeof(val)
-	
-	if valtype == "string" then
-		return '"' .. sanitizestring(val) .. '"'
-	elseif valtype == "number" or valtype == "boolean" then
-		return tostring(val)
-	elseif valtype == "nil" then
-		return "nil"
-	elseif valtype == "Instance" then
-		return 'game:GetService("' .. val.ClassName .. '")'
-	elseif valtype == "CFrame" then
-		local x, y, z = val:GetComponents()
-		return string.format("CFrame.new(%f, %f, %f)", x, y, z)
-	elseif valtype == "Vector3" then
-		return string.format("Vector3.new(%f, %f, %f)", val.X, val.Y, val.Z)
-	elseif valtype == "Vector2" then
-		return string.format("Vector2.new(%f, %f)", val.X, val.Y)
-	elseif valtype == "Color3" then
-		return string.format("Color3.new(%f, %f, %f)", val.R, val.G, val.B)
-	elseif valtype == "UDim2" then
-		return string.format("UDim2.new(%f, %d, %f, %d)", val.X.Scale, val.X.Offset, val.Y.Scale, val.Y.Offset)
-	elseif valtype == "EnumItem" then
-		return tostring(val)
-	elseif valtype == "RBXScriptSignal" then
-		return "signal"
-	elseif valtype == "RBXScriptConnection" then
-		return "connection"
-	elseif valtype == "function" then
-		return "function() end"
-	elseif valtype == "table" then
-		local items = {}
-		for k, v in pairs(val) do
-			table.insert(items, "[" .. serializevalue(k, depth + 1) .. "] = " .. serializevalue(v, depth + 1))
-			if #items >= 10 then
-				table.insert(items, "...")
-				break
-			end
-		}
-		return "{" .. table.concat(items, ", ") .. "}"
-	else
-		return tostring(val)
-	end
+    depth = depth or 0
+    if depth > 5 then
+        return "..."
+    end
+    
+    local valtype = typeof(val)
+    
+    if valtype == "string" then
+        return '"' .. sanitizestring(val) .. '"'
+    elseif valtype == "number" or valtype == "boolean" then
+        return tostring(val)
+    elseif valtype == "nil" then
+        return "nil"
+    elseif valtype == "Instance" then
+        return 'game:GetService("' .. val.ClassName .. '")'
+    elseif valtype == "CFrame" then
+        local x, y, z = val:GetComponents()
+        return string.format("CFrame.new(%f, %f, %f)", x, y, z)
+    elseif valtype == "Vector3" then
+        return string.format("Vector3.new(%f, %f, %f)", val.X, val.Y, val.Z)
+    elseif valtype == "Vector2" then
+        return string.format("Vector2.new(%f, %f)", val.X, val.Y)
+    elseif valtype == "Color3" then
+        return string.format("Color3.new(%f, %f, %f)", val.R, val.G, val.B)
+    elseif valtype == "UDim2" then
+        return string.format("UDim2.new(%f, %d, %f, %d)", val.X.Scale, val.X.Offset, val.Y.Scale, val.Y.Offset)
+    elseif valtype == "EnumItem" then
+        return tostring(val)
+    elseif valtype == "RBXScriptSignal" then
+        return "signal"
+    elseif valtype == "RBXScriptConnection" then
+        return "connection"
+    elseif valtype == "function" then
+        return "function() end"
+    elseif valtype == "table" then
+        local items = {}
+        for k, v in pairs(val) do
+            table.insert(items, "[" .. serializevalue(k, depth + 1) .. "] = " .. serializevalue(v, depth + 1))
+            if #items >= 10 then
+                table.insert(items, "...")
+                break
+            end
+        end
+        return "{" .. table.concat(items, ", ") .. "}"
+    else
+        return tostring(val)
+    end
 end
 
 local function saveenvlog()
-	local success, err = pcall(function()
-		if not isfolder then
-			addoutput("Error: isfolder not available", Color3.fromRGB(255, 100, 100))
-			return
-		end
-		
-		if not isfolder("axomenvlogger") then
-			makefolder("axomenvlogger")
-		end
-		
-		local filename = "axomenvlogger/envloggedscript1.lua"
-		
-		local filecontent = "-- Environment Logger Output\n-- Generated: " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n\n"
-		filecontent = filecontent .. "local loggedenv = {}\n\n"
-		
-		for _, entry in ipairs(logdata) do
-			filecontent = filecontent .. "-- [" .. entry.category .. "]\n"
-			filecontent = filecontent .. "loggedenv." .. entry.category:gsub("[^%w]", "") .. " = " .. serializevalue(entry.value) .. "\n\n"
-		end
-		
-		filecontent = filecontent .. "\nreturn loggedenv"
-		
-		writefile(filename, filecontent)
-		addoutput("Saved to: " .. filename, Color3.fromRGB(100, 255, 100))
-		statusLabel.Text = "Saved: " .. filename
-	end)
-	
-	if not success then
-		addoutput("Save failed: " .. tostring(err), Color3.fromRGB(255, 100, 100))
-		statusLabel.Text = "Save failed"
-	end
+    local success, err = pcall(function()
+        if not isfolder then
+            addoutput("isfolder not available, cannot save", Color3.fromRGB(255, 100, 100))
+            return
+        end
+        
+        if not isfolder("axomenvlogger") then
+            makefolder("axomenvlogger")
+        end
+        
+        local filename = "axomenvlogger/envloggedscript1.lua"
+        
+        local filecontent = "-- Environment Logger Output\n-- Generated: " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n\n"
+        filecontent = filecontent .. "local loggedenv = {}\n\n"
+        
+        for _, entry in ipairs(logdata) do
+            filecontent = filecontent .. "-- [" .. entry.category .. "]\n"
+            local catname = entry.category:gsub("[^%w]", "")
+            if catname == "" then
+                catname = "entry" .. _
+            end
+            filecontent = filecontent .. "loggedenv." .. catname .. " = " .. serializevalue(entry.value) .. "\n\n"
+        end
+        
+        filecontent = filecontent .. "\nreturn loggedenv"
+        
+        writefile(filename, filecontent)
+        addoutput("Saved to: " .. filename, Color3.fromRGB(100, 255, 100))
+        statusLabel.Text = "Saved: " .. filename
+    end)
+    
+    if not success then
+        addoutput("Save failed: " .. tostring(err), Color3.fromRGB(255, 100, 100))
+        statusLabel.Text = "Save failed"
+    end
 end
 
 local function logglobals()
-	local globallist = {
-		"game", "workspace", "script", "shared", "Enum", "debug",
-		"task", "coroutine", "table", "string", "math", "os",
-		"Vector3", "Vector2", "CFrame", "Color3", "UDim2", "BrickColor",
-		"TweenInfo", "Ray", "Rect", "Region3", "Instance", "Random"
-	}
-	
-	for _, name in ipairs(globallist) do
-		local success, val = pcall(function()
-			return _G[name]
-		end)
-		if success and val ~= nil then
-			addtolog("global_" .. name, val)
-		end
-	end
+    local globallist = {
+        "game", "workspace", "script", "shared", "Enum", "debug",
+        "task", "coroutine", "table", "string", "math", "os",
+        "Vector3", "Vector2", "CFrame", "Color3", "UDim2", "BrickColor",
+        "TweenInfo", "Ray", "Rect", "Region3", "Instance", "Random"
+    }
+    
+    for _, name in ipairs(globallist) do
+        local success, val = pcall(function()
+            return _G[name]
+        end)
+        if success and val ~= nil then
+            addtolog("global_" .. name, val)
+        end
+    end
 end
 
 local function hookservices()
-	local services = {
-		"Players", "RunService", "ReplicatedStorage", "Workspace", "Lighting",
-		"ServerStorage", "ServerScriptService", "StarterGui", "StarterPack",
-		"StarterPlayer", "SoundService", "Chat", "UserInputService",
-		"TweenService", "HttpService", "MarketplaceService", "TeleportService",
-		"PathfindingService", "CollectionService", "PhysicsService",
-		"ProximityPromptService", "ContextActionService", "GuiService",
-		"Teams", "InsertService", "DataStoreService", "MessagingService",
-		"TextService", "TextChatService", "ContentProvider", "Debris"
-	}
-	
-	for _, servicename in ipairs(services) do
-		local success, service = pcall(function()
-			return game:GetService(servicename)
-		end)
-		if success and service then
-			addtolog("service_" .. servicename, service)
-		end
-	end
+    local services = {
+        "Players", "RunService", "ReplicatedStorage", "Workspace", "Lighting",
+        "ServerStorage", "ServerScriptService", "StarterGui", "StarterPack",
+        "StarterPlayer", "SoundService", "Chat", "UserInputService",
+        "TweenService", "HttpService", "MarketplaceService", "TeleportService",
+        "PathfindingService", "CollectionService", "PhysicsService",
+        "ProximityPromptService", "ContextActionService", "GuiService",
+        "Teams", "InsertService", "DataStoreService", "MessagingService",
+        "TextService", "TextChatService", "ContentProvider", "Debris"
+    }
+    
+    for _, servicename in ipairs(services) do
+        local success, service = pcall(function()
+            return game:GetService(servicename)
+        end)
+        if success and service then
+            addtolog("service_" .. servicename, service)
+        end
+    end
 end
 
 local function hookremotes()
-	local success, replicatedstorage = pcall(function()
-		return game:GetService("ReplicatedStorage")
-	end)
-	
-	if success and replicatedstorage then
-		local function scanremotes(folder)
-			for _, child in pairs(folder:GetChildren()) do
-				if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
-					addtolog("remote_" .. child.Name, child)
-				elseif child:IsA("Folder") or child:IsA("Model") then
-					scanremotes(child)
-				end
-			end
-		end
-		scanremotes(replicatedstorage)
-	end
+    local success, replicatedstorage = pcall(function()
+        return game:GetService("ReplicatedStorage")
+    end)
+    
+    if success and replicatedstorage then
+        local function scanremotes(folder)
+            for _, child in pairs(folder:GetChildren()) do
+                if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
+                    addtolog("remote_" .. child.Name, child)
+                elseif child:IsA("Folder") or child:IsA("Model") then
+                    scanremotes(child)
+                end
+            end
+        end
+        scanremotes(replicatedstorage)
+    end
 end
 
 local function hookproperties(instance, path)
-	path = path or instance.ClassName
-	local success, properties = pcall(function()
-		return instance:GetProperties()
-	end)
-	
-	if success and properties then
-		for _, prop in ipairs(properties) do
-			local success2, value = pcall(function()
-				return instance[prop]
-			end)
-			if success2 then
-				addtolog("property_" .. path .. "_" .. prop, value)
-			end
-		end
-	end
+    path = path or instance.ClassName
+    local success, properties = pcall(function()
+        return instance:GetProperties()
+    end)
+    
+    if success and properties then
+        for _, prop in ipairs(properties) do
+            local success2, value = pcall(function()
+                return instance[prop]
+            end)
+            if success2 then
+                addtolog("property_" .. path .. "_" .. prop, value)
+            end
+        end
+    end
 end
 
 local function hookinstances()
-	local instances = {}
-	local function scan(parent)
-		for _, child in pairs(parent:GetChildren()) do
-			if #instances < 50 then
-				table.insert(instances, child)
-				hookproperties(child, child.ClassName .. "_" .. child.Name)
-				scan(child)
-			end
-		end
-	end
-	
-	local success, workspace = pcall(function()
-		return game:GetService("Workspace")
-	end)
-	
-	if success then
-		scan(workspace)
-	end
-	
-	local success2, players = pcall(function()
-		return game:GetService("Players")
-	end)
-	
-	if success2 then
-		scan(players)
-	end
-	
-	addtolog("total_instances_scanned", #instances)
+    local instances = {}
+    local function scan(parent)
+        for _, child in pairs(parent:GetChildren()) do
+            if #instances < 50 then
+                table.insert(instances, child)
+                hookproperties(child, child.ClassName .. "_" .. child.Name)
+                scan(child)
+            end
+        end
+    end
+    
+    local success, workspace = pcall(function()
+        return game:GetService("Workspace")
+    end)
+    
+    if success then
+        scan(workspace)
+    end
+    
+    local success2, players = pcall(function()
+        return game:GetService("Players")
+    end)
+    
+    if success2 then
+        scan(players)
+    end
+    
+    addtolog("total_instances_scanned", #instances)
 end
 
 local function setupenvlogger()
-	local env = getfenv()
-	local metatable = {}
-	
-	metatable.__index = function(t, k)
-		local original = rawget(env, k)
-		addtolog("index_" .. tostring(k), original)
-		return original
-	end
-	
-	metatable.__newindex = function(t, k, v)
-		addtolog("newindex_" .. tostring(k), v)
-		rawset(env, k, v)
-	end
-	
-	setmetatable(env, metatable)
+    local env = getfenv()
+    local metatable = {}
+    
+    metatable.__index = function(t, k)
+        local original = rawget(env, k)
+        addtolog("index_" .. tostring(k), original)
+        return original
+    end
+    
+    metatable.__newindex = function(t, k, v)
+        addtolog("newindex_" .. tostring(k), v)
+        rawset(env, k, v)
+    end
+    
+    setmetatable(env, metatable)
 end
 
 local function runscript(scriptcontent)
-	logdata = {}
-	addtolog("execution_start", os.date("%Y-%m-%d %H:%M:%S"))
-	addtolog("script_length", #scriptcontent)
-	
-	addoutput("Starting environment logging...", Color3.fromRGB(100, 200, 255))
-	statusLabel.Text = "Logging environment..."
-	
-	logglobals()
-	hookservices()
-	hookremotes()
-	hookinstances()
-	setupenvlogger()
-	
-	addoutput("Executing script...", Color3.fromRGB(255, 200, 100))
-	statusLabel.Text = "Executing script..."
-	
-	local func, err = loadstring(scriptcontent)
-	if not func then
-		addoutput("Load error: " .. tostring(err), Color3.fromRGB(255, 100, 100))
-		statusLabel.Text = "Load error"
-		return false
-	end
-	
-	local success, result = pcall(func)
-	if not success then
-		addoutput("Execution error: " .. tostring(result), Color3.fromRGB(255, 100, 100))
-		statusLabel.Text = "Execution error"
-		return false
-	end
-	
-	addtolog("execution_end", os.date("%Y-%m-%d %H:%M:%S"))
-	addoutput("Script executed successfully", Color3.fromRGB(100, 255, 100))
-	statusLabel.Text = "Execution complete"
-	
-	saveenvlog()
-	
-	return true
+    logdata = {}
+    addtolog("execution_start", os.date("%Y-%m-%d %H:%M:%S"))
+    addtolog("script_length", #scriptcontent)
+    
+    addoutput("Starting environment logging...", Color3.fromRGB(100, 200, 255))
+    statusLabel.Text = "Logging environment..."
+    
+    logglobals()
+    hookservices()
+    hookremotes()
+    hookinstances()
+    setupenvlogger()
+    
+    addoutput("Executing script...", Color3.fromRGB(255, 200, 100))
+    statusLabel.Text = "Executing script..."
+    
+    local func, err = loadstring(scriptcontent)
+    if not func then
+        addoutput("Load error: " .. tostring(err), Color3.fromRGB(255, 100, 100))
+        statusLabel.Text = "Load error"
+        return false
+    end
+    
+    local success, result = pcall(func)
+    if not success then
+        addoutput("Execution error: " .. tostring(result), Color3.fromRGB(255, 100, 100))
+        statusLabel.Text = "Execution error"
+        return false
+    end
+    
+    addtolog("execution_end", os.date("%Y-%m-%d %H:%M:%S"))
+    addoutput("Script executed successfully", Color3.fromRGB(100, 255, 100))
+    statusLabel.Text = "Execution complete"
+    
+    saveenvlog()
+    
+    return true
 end
 
 local function processinput()
-	local input = textBox.Text
-	if input == nil or input == "" then
-		addoutput("Please paste a script URL or Lua code", Color3.fromRGB(255, 200, 100))
-		return
-	end
-	
-	addoutput("Processing input...", Color3.fromRGB(100, 200, 255))
-	statusLabel.Text = "Processing..."
-	
-	if string.match(input, "^https?://") then
-		addoutput("Fetching URL: " .. input, Color3.fromRGB(200, 200, 100))
-		statusLabel.Text = "Fetching script..."
-		
-		local success, result = pcall(function()
-			return game:GetService("HttpService"):GetAsync(input)
-		end)
-		
-		if success and result then
-			addoutput("Fetched " .. #result .. " bytes", Color3.fromRGB(100, 255, 100))
-			if string.match(result, "^loadstring") or string.match(result, "return") then
-				local loadfunc, loaderr = loadstring(result)
-				if loadfunc then
-					local execsuccess, execresult = pcall(loadfunc)
-					if execsuccess and type(execresult) == "function" then
-						runscript(string.dump(execresult))
-					else
-						runscript(result)
-					end
-				else
-					runscript(result)
-				end
-			else
-				runscript(result)
-			end
-		else
-			addoutput("Failed to fetch URL: " .. tostring(result), Color3.fromRGB(255, 100, 100))
-			statusLabel.Text = "Fetch failed"
-		end
-	else
-		runscript(input)
-	end
+    local input = textBox.Text
+    if input == nil or input == "" then
+        addoutput("Please paste a script URL or Lua code", Color3.fromRGB(255, 200, 100))
+        return
+    end
+    
+    addoutput("Processing input...", Color3.fromRGB(100, 200, 255))
+    statusLabel.Text = "Processing..."
+    
+    if string.match(input, "^https?://") then
+        addoutput("Fetching URL: " .. input, Color3.fromRGB(200, 200, 100))
+        statusLabel.Text = "Fetching script..."
+        
+        local success, result = pcall(function()
+            return game:GetService("HttpService"):GetAsync(input)
+        end)
+        
+        if success and result then
+            addoutput("Fetched " .. #result .. " bytes", Color3.fromRGB(100, 255, 100))
+            if string.match(result, "^loadstring") or string.match(result, "return") then
+                local loadfunc, loaderr = loadstring(result)
+                if loadfunc then
+                    local execsuccess, execresult = pcall(loadfunc)
+                    if execsuccess and type(execresult) == "function" then
+                        runscript(string.dump(execresult))
+                    else
+                        runscript(result)
+                    end
+                else
+                    runscript(result)
+                end
+            else
+                runscript(result)
+            end
+        else
+            addoutput("Failed to fetch URL: " .. tostring(result), Color3.fromRGB(255, 100, 100))
+            statusLabel.Text = "Fetch failed"
+        end
+    else
+        runscript(input)
+    end
 end
 
 executeBtn.MouseButton1Click:Connect(function()
-	processinput()
+    processinput()
 end)
 
 clearBtn.MouseButton1Click:Connect(function()
-	clearoutput()
-	addoutput("Output cleared", Color3.fromRGB(200, 200, 200))
+    clearoutput()
+    addoutput("Output cleared", Color3.fromRGB(200, 200, 200))
 end)
 
 addoutput("Universal Decompiler / Env Logger Ready", Color3.fromRGB(100, 255, 255))
