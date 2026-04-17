@@ -5,8 +5,8 @@ g.ResetOnSpawn = false
 local p = game:GetService("Players").LocalPlayer
 
 local f = Instance.new("Frame")
-f.Size = UDim2.new(0, 550, 0, 650)
-f.Position = UDim2.new(0.5, -275, 0.5, -325)
+f.Size = UDim2.new(0, 700, 0, 750)
+f.Position = UDim2.new(0.5, -350, 0.5, -375)
 f.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
 f.BackgroundTransparency = 0.6
 f.BorderSizePixel = 0
@@ -32,7 +32,7 @@ pd.PaddingBottom = UDim.new(0, 10)
 pd.Parent = f
 
 local tb = Instance.new("Frame")
-tb.Size = UDim2.new(1, 0, 0, 35)
+tb.Size = UDim2.new(1, 0, 0, 40)
 tb.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
 tb.BackgroundTransparency = 0.4
 tb.BorderSizePixel = 0
@@ -43,19 +43,19 @@ tc.CornerRadius = UDim.new(0, 12)
 tc.Parent = tb
 
 local tl = Instance.new("TextLabel")
-tl.Size = UDim2.new(1, -40, 1, 0)
+tl.Size = UDim2.new(1, -80, 1, 0)
 tl.Position = UDim2.new(0, 5, 0, 0)
 tl.BackgroundTransparency = 1
 tl.Text = "axomenvlogger"
 tl.TextColor3 = Color3.fromRGB(255, 255, 255)
-tl.TextSize = 16
+tl.TextSize = 18
 tl.TextXAlignment = Enum.TextXAlignment.Left
 tl.Font = Enum.Font.GothamBold
 tl.Parent = tb
 
 local close = Instance.new("TextButton")
-close.Size = UDim2.new(0, 30, 0, 30)
-close.Position = UDim2.new(1, -35, 0, 2.5)
+close.Size = UDim2.new(0, 35, 0, 35)
+close.Position = UDim2.new(1, -40, 0, 2.5)
 close.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 close.BackgroundTransparency = 0.3
 close.Text = "X"
@@ -71,8 +71,8 @@ cc.CornerRadius = UDim.new(0, 8)
 cc.Parent = close
 
 local inf = Instance.new("Frame")
-inf.Size = UDim2.new(1, 0, 0, 120)
-inf.Position = UDim2.new(0, 0, 0, 45)
+inf.Size = UDim2.new(1, 0, 0, 100)
+inf.Position = UDim2.new(0, 0, 0, 50)
 inf.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
 inf.BackgroundTransparency = 0.5
 inf.BorderSizePixel = 0
@@ -111,7 +111,7 @@ bc.Parent = box
 
 local bf = Instance.new("Frame")
 bf.Size = UDim2.new(1, 0, 0, 45)
-bf.Position = UDim2.new(0, 0, 0, 175)
+bf.Position = UDim2.new(0, 0, 0, 160)
 bf.BackgroundTransparency = 1
 bf.Parent = f
 
@@ -147,9 +147,44 @@ local clc = Instance.new("UICorner")
 clc.CornerRadius = UDim.new(0, 8)
 clc.Parent = clr
 
+local outputheader = Instance.new("Frame")
+outputheader.Size = UDim2.new(1, 0, 0, 30)
+outputheader.Position = UDim2.new(0, 0, 0, 215)
+outputheader.BackgroundColor3 = Color3.fromRGB(0, 60, 150)
+outputheader.BackgroundTransparency = 0.5
+outputheader.BorderSizePixel = 0
+outputheader.Parent = f
+
+local headerlabel = Instance.new("TextLabel")
+headerlabel.Size = UDim2.new(1, -40, 1, 0)
+headerlabel.Position = UDim2.new(0, 5, 0, 0)
+headerlabel.BackgroundTransparency = 1
+headerlabel.Text = "output"
+headerlabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+headerlabel.TextSize = 12
+headerlabel.TextXAlignment = Enum.TextXAlignment.Left
+headerlabel.Font = Enum.Font.GothamBold
+headerlabel.Parent = outputheader
+
+local copyall = Instance.new("TextButton")
+copyall.Size = UDim2.new(0, 60, 1, -4)
+copyall.Position = UDim2.new(1, -65, 0, 2)
+copyall.BackgroundColor3 = Color3.fromRGB(100, 100, 200)
+copyall.BackgroundTransparency = 0.3
+copyall.Text = "copy all"
+copyall.TextColor3 = Color3.fromRGB(255, 255, 255)
+copyall.TextSize = 10
+copyall.Font = Enum.Font.GothamBold
+copyall.BorderSizePixel = 0
+copyall.Parent = outputheader
+
+local copyallcorner = Instance.new("UICorner")
+copyallcorner.CornerRadius = UDim.new(0, 4)
+copyallcorner.Parent = copyall
+
 local of = Instance.new("Frame")
 of.Size = UDim2.new(1, 0, 1, -260)
-of.Position = UDim2.new(0, 0, 0, 230)
+of.Position = UDim2.new(0, 0, 0, 245)
 of.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
 of.BackgroundTransparency = 0.5
 of.BorderSizePixel = 0
@@ -180,15 +215,15 @@ lst.SortOrder = Enum.SortOrder.LayoutOrder
 lst.Parent = sc
 
 local sb = Instance.new("Frame")
-sb.Size = UDim2.new(1, 0, 0, 50)
-sb.Position = UDim2.new(0, 0, 1, -50)
+sb.Size = UDim2.new(1, 0, 0, 55)
+sb.Position = UDim2.new(0, 0, 1, -55)
 sb.BackgroundColor3 = Color3.fromRGB(0, 60, 150)
 sb.BackgroundTransparency = 0.5
 sb.BorderSizePixel = 0
 sb.Parent = f
 
 local statusframe = Instance.new("Frame")
-statusframe.Size = UDim2.new(0.9, 0, 1, -8)
+statusframe.Size = UDim2.new(0.88, 0, 1, -8)
 statusframe.Position = UDim2.new(0, 4, 0, 4)
 statusframe.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 statusframe.BackgroundTransparency = 0.3
@@ -200,7 +235,7 @@ statuscorner.CornerRadius = UDim.new(0, 6)
 statuscorner.Parent = statusframe
 
 local sl = Instance.new("TextLabel")
-sl.Size = UDim2.new(1, -30, 1, 0)
+sl.Size = UDim2.new(1, -35, 1, 0)
 sl.Position = UDim2.new(0, 5, 0, 0)
 sl.BackgroundTransparency = 1
 sl.Text = "ready"
@@ -211,8 +246,8 @@ sl.Font = Enum.Font.SourceSans
 sl.Parent = statusframe
 
 local copybtn = Instance.new("TextButton")
-copybtn.Size = UDim2.new(0, 25, 0, 25)
-copybtn.Position = UDim2.new(1, -30, 0, 2)
+copybtn.Size = UDim2.new(0, 30, 0, 30)
+copybtn.Position = UDim2.new(1, -35, 0, 2)
 copybtn.BackgroundColor3 = Color3.fromRGB(100, 100, 200)
 copybtn.BackgroundTransparency = 0.3
 copybtn.Text = "C"
@@ -269,19 +304,13 @@ close.MouseButton1Click:Connect(function()
     g:Destroy()
 end)
 
-copybtn.MouseButton1Click:Connect(function()
-    setclipboard(sl.Text)
-    local old = copybtn.Text
-    copybtn.Text = "✓"
-    task.wait(1)
-    copybtn.Text = old
-end)
+local outputtexts = {}
 
 function add(t, col)
     local l = Instance.new("TextLabel")
     l.Text = t
     l.TextColor3 = col or Color3.fromRGB(200, 200, 200)
-    l.TextSize = 12
+    l.TextSize = 11
     l.TextXAlignment = Enum.TextXAlignment.Left
     l.TextWrapped = true
     l.BackgroundTransparency = 1
@@ -289,6 +318,7 @@ function add(t, col)
     l.Size = UDim2.new(1, 0, 0, 0)
     l.AutomaticSize = Enum.AutomaticSize.Y
     l.Parent = sc
+    table.insert(outputtexts, t)
 end
 
 function clear()
@@ -297,7 +327,25 @@ function clear()
             v:Destroy()
         end
     end
+    outputtexts = {}
 end
+
+copyall.MouseButton1Click:Connect(function()
+    local full = table.concat(outputtexts, "\n")
+    setclipboard(full)
+    local old = copyall.Text
+    copyall.Text = "copied"
+    task.wait(1)
+    copyall.Text = old
+end)
+
+copybtn.MouseButton1Click:Connect(function()
+    setclipboard(sl.Text)
+    local old = copybtn.Text
+    copybtn.Text = "✓"
+    task.wait(1)
+    copybtn.Text = old
+end)
 
 local envlog = {}
 
@@ -377,7 +425,8 @@ function saveenvlog()
         local name = "axomenvlogger/envloggedscript1.lua"
         local data = "-- axomenvlogger output\n-- " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n\nreturn {\n"
         for i, e in ipairs(envlog) do
-            data = data .. '  ["' .. e.cat .. '"] = ' .. ser(e.val) .. ',\n'
+            local safeval = ser(e.val)
+            data = data .. '  ["' .. e.cat .. '"] = ' .. safeval .. ',\n'
         end
         data = data .. "}"
         writefile(name, data)
@@ -391,7 +440,7 @@ function saveenvlog()
 end
 
 function captureglobals()
-    local list = {"game", "workspace", "script", "shared", "Enum", "debug", "task", "coroutine", "table", "string", "math", "os", "Vector3", "Vector2", "CFrame", "Color3", "UDim2", "BrickColor", "TweenInfo", "Ray", "Rect", "Region3", "Instance", "Random"}
+    local list = {"game", "workspace", "script", "shared", "Enum", "debug", "task", "coroutine", "table", "string", "math", "os", "Vector3", "Vector2", "CFrame", "Color3", "UDim2", "BrickColor", "TweenInfo", "Ray", "Rect", "Region3", "Instance", "Random", "ColorSequence", "NumberSequence", "NumberRange", "PhysicalProperties", "RaycastParams", "OverlapParams", "PathWaypoint", "Axes", "Faces"}
     for _, n in ipairs(list) do
         local ok, v = pcall(function()
             return _G[n]
@@ -403,7 +452,7 @@ function captureglobals()
 end
 
 function captureservices()
-    local svcs = {"Players", "RunService", "ReplicatedStorage", "Workspace", "Lighting", "ServerStorage", "ServerScriptService", "StarterGui", "StarterPack", "StarterPlayer", "SoundService", "Chat", "UserInputService", "TweenService", "HttpService", "MarketplaceService", "TeleportService", "PathfindingService", "CollectionService", "PhysicsService", "ProximityPromptService", "ContextActionService", "GuiService", "Teams", "InsertService", "DataStoreService", "MessagingService", "TextService", "TextChatService", "ContentProvider", "Debris"}
+    local svcs = {"Players", "RunService", "ReplicatedStorage", "Workspace", "Lighting", "ServerStorage", "ServerScriptService", "StarterGui", "StarterPack", "StarterPlayer", "SoundService", "Chat", "UserInputService", "TweenService", "HttpService", "MarketplaceService", "TeleportService", "PathfindingService", "CollectionService", "PhysicsService", "ProximityPromptService", "ContextActionService", "GuiService", "Teams", "InsertService", "DataStoreService", "MessagingService", "TextService", "TextChatService", "ContentProvider", "Debris", "Selection", "SelectionService", "MaterialService", "Terrain", "NetworkClient", "NetworkServer", "ReplicatedFirst", "CoreGui", "StarterPlayerScripts", "StarterCharacterScripts", "StarterGuiScripts", "VoiceChatService", "FriendService", "GroupService", "BadgeService", "PointsService", "SocialService", "CreatorTagService"}
     for _, n in ipairs(svcs) do
         local ok, sv = pcall(function()
             return game:GetService(n)
@@ -414,22 +463,22 @@ function captureservices()
     end
 end
 
-function captureremotes()
-    local ok, rs = pcall(function()
-        return game:GetService("ReplicatedStorage")
-    end)
-    if ok and rs then
-        local function scan(p)
-            for _, c in pairs(p:GetChildren()) do
-                if c:IsA("RemoteEvent") or c:IsA("RemoteFunction") then
-                    capture("remote_" .. c.Name, c)
-                elseif c:IsA("Folder") or c:IsA("Model") then
-                    scan(c)
-                end
+function captureallremotes()
+    local function scanremotes(folder, path)
+        for _, c in pairs(folder:GetChildren()) do
+            if c:IsA("RemoteEvent") or c:IsA("RemoteFunction") then
+                capture("remote_" .. path .. "_" .. c.Name, c)
+            elseif c:IsA("Folder") or c:IsA("Model") or c:IsA("Tool") or c:IsA("Part") then
+                scanremotes(c, path .. "_" .. c.Name)
             end
         end
-        scan(rs)
     end
+    local ok, rs = pcall(function() return game:GetService("ReplicatedStorage") end)
+    if ok and rs then scanremotes(rs, "ReplicatedStorage") end
+    local ok2, ls = pcall(function() return game:GetService("Lighting") end)
+    if ok2 and ls then scanremotes(ls, "Lighting") end
+    local ok3, ws = pcall(function() return game:GetService("Workspace") end)
+    if ok3 and ws then scanremotes(ws, "Workspace") end
 end
 
 function capturebytecode(func)
@@ -445,109 +494,148 @@ function capturebytecode(func)
     return "cannot dump"
 end
 
-function captureproperties(inst, path)
+function captureallproperties(inst, path, depth)
+    depth = depth or 0
+    if depth > 8 then return end
     path = path or inst.ClassName
-    local ok, props = pcall(function()
-        return inst:GetProperties()
-    end)
+    local ok, props = pcall(function() return inst:GetProperties() end)
     if ok and props then
         for _, prop in ipairs(props) do
-            local ok2, val = pcall(function()
-                return inst[prop]
-            end)
+            local ok2, val = pcall(function() return inst[prop] end)
             if ok2 then
                 if typeof(val) == "function" then
                     local bc = capturebytecode(val)
-                    capture("property_" .. path .. "_" .. prop .. "_bytecode", bc)
+                    capture("bytecode_" .. path .. "_" .. prop, bc)
                 end
                 capture("property_" .. path .. "_" .. prop, val)
             end
         end
     end
+    local ok2, children = pcall(function() return inst:GetChildren() end)
+    if ok2 then
+        for _, child in ipairs(children) do
+            captureallproperties(child, path .. "_" .. child.Name, depth + 1)
+        end
+    end
 end
 
-function captureinstances()
+function captureallinstances()
     local total = 0
-    local function scan(p)
-        for _, c in pairs(p:GetChildren()) do
-            if total < 100 then
+    local function scanall(parent, path, depth)
+        if depth > 6 then return end
+        for _, c in pairs(parent:GetChildren()) do
+            if total < 500 then
                 total = total + 1
-                captureproperties(c, c.ClassName .. "_" .. c.Name)
-                scan(c)
+                capture("instance_" .. path .. "_" .. c.Name, c)
+                capture("class_" .. c.Name, c.ClassName)
+                captureallproperties(c, c.ClassName .. "_" .. c.Name, depth + 1)
+                if c:IsA("BasePart") then
+                    capture("part_position_" .. c.Name, c.Position)
+                    capture("part_size_" .. c.Name, c.Size)
+                    capture("part_material_" .. c.Name, c.Material)
+                    capture("part_color_" .. c.Name, c.Color)
+                    if c:IsA("WedgePart") or c:IsA("CornerWedgePart") then
+                        capture("wedge_" .. c.Name, true)
+                    end
+                end
+                if c:IsA("Weld") or c:IsA("WeldConstraint") then
+                    capture("weld_" .. c.Name, {Part0 = c.Part0, Part1 = c.Part1})
+                end
+                if c:IsA("Motor6D") then
+                    capture("motor_" .. c.Name, {Part0 = c.Part0, Part1 = c.Part1, C0 = c.C0, C1 = c.C1})
+                end
+                if c:IsA("Script") or c:IsA("LocalScript") or c:IsA("ModuleScript") then
+                    capture("script_source_" .. c.Name, c.Source)
+                    local bc = capturebytecode(loadstring(c.Source))
+                    capture("script_bytecode_" .. c.Name, bc)
+                end
+                if c:IsA("Tool") then
+                    capture("tool_grip_" .. c.Name, {Grip = c.Grip, GripForward = c.GripForward, GripPos = c.GripPos, GripRight = c.GripRight, GripUp = c.GripUp})
+                end
+                if c:IsA("Humanoid") then
+                    capture("humanoid_stats_" .. c.Name, {Health = c.Health, MaxHealth = c.MaxHealth, WalkSpeed = c.WalkSpeed, JumpPower = c.JumpPower})
+                end
+                if c:IsA("AnimationTrack") then
+                    capture("animation_" .. c.Name, {Animation = c.Animation, Length = c.Length, Speed = c.Speed})
+                end
+                scanall(c, path .. "_" .. c.Name, depth + 1)
             end
         end
     end
-    local ok, ws = pcall(function()
-        return game:GetService("Workspace")
-    end)
-    if ok then
-        scan(ws)
-    end
-    local ok2, pl = pcall(function()
-        return game:GetService("Players")
-    end)
-    if ok2 then
-        scan(pl)
-    end
-    local ok3, rs = pcall(function()
-        return game:GetService("ReplicatedStorage")
-    end)
-    if ok3 then
-        scan(rs)
-    end
-    capture("instances_scanned", total)
+    local ok, ws = pcall(function() return game:GetService("Workspace") end)
+    if ok then scanall(ws, "Workspace", 0) end
+    local ok2, pl = pcall(function() return game:GetService("Players") end)
+    if ok2 then scanall(pl, "Players", 0) end
+    local ok3, rs = pcall(function() return game:GetService("ReplicatedStorage") end)
+    if ok3 then scanall(rs, "ReplicatedStorage", 0) end
+    local ok4, ss = pcall(function() return game:GetService("ServerStorage") end)
+    if ok4 then scanall(ss, "ServerStorage", 0) end
+    local ok5, sg = pcall(function() return game:GetService("StarterGui") end)
+    if ok5 then scanall(sg, "StarterGui", 0) end
+    local ok6, sp = pcall(function() return game:GetService("StarterPack") end)
+    if ok6 then scanall(sp, "StarterPack", 0) end
+    capture("total_instances_captured", total)
 end
 
-function capturefunctions()
+function captureallfunctions()
     local gc = getgc()
     local count = 0
     for _, obj in ipairs(gc) do
-        if type(obj) == "function" and count < 50 then
+        if type(obj) == "function" and count < 200 then
             count = count + 1
             local info = debug.getinfo(obj)
-            local name = info and info.name or "anonymous"
+            local name = info and info.name or "anonymous_" .. count
             local bc = capturebytecode(obj)
-            capture("function_" .. name .. "_bytecode", bc)
-            capture("function_" .. name, obj)
+            capture("function_bytecode_" .. name, bc)
+            capture("function_source_" .. name, info and info.source or "unknown")
+            capture("function_defined_" .. name, info and info.defined or "unknown")
+            capture("function_linedefined_" .. name, info and info.linedefined or 0)
         end
     end
-    capture("functions_captured", count)
+    capture("total_functions_captured", count)
 end
 
-function safehookenvironment()
-    local env = getfenv()
-    if env == nil then
-        add("no environment to hook", Color3.fromRGB(255, 200, 100))
-        return
-    end
-    local mt = getmetatable(env)
-    if mt ~= nil then
-        add("environment already has metatable, skipping hook", Color3.fromRGB(255, 200, 100))
-        return
-    end
-    local success, err = pcall(function()
-        local newmt = {}
-        newmt.__index = function(t, k)
-            local original = rawget(env, k)
-            if type(original) == "function" then
-                local bc = capturebytecode(original)
-                capture("index_" .. tostring(k) .. "_bytecode", bc)
-            end
-            capture("index_" .. tostring(k), original)
-            return original
-        end
-        newmt.__newindex = function(t, k, v)
+function captureallglobals()
+    for k, v in pairs(_G) do
+        if type(k) == "string" and k ~= "" then
+            capture("globalvalue_" .. k, v)
             if type(v) == "function" then
                 local bc = capturebytecode(v)
-                capture("newindex_" .. tostring(k) .. "_bytecode", bc)
+                capture("globalbytecode_" .. k, bc)
             end
-            capture("newindex_" .. tostring(k), v)
-            rawset(env, k, v)
         end
-        setmetatable(env, newmt)
-    end)
-    if not success then
-        add("hook skipped: " .. tostring(err), Color3.fromRGB(255, 200, 100))
+    end
+end
+
+function captureallsignals()
+    local services = {"RunService", "Players", "Workspace", "ReplicatedStorage"}
+    for _, srvname in ipairs(services) do
+        local ok, srv = pcall(function() return game:GetService(srvname) end)
+        if ok and srv then
+            local ok2, events = pcall(function() return srv:GetEvents() end)
+            if ok2 and events then
+                for _, ev in ipairs(events) do
+                    capture("signal_" .. srvname .. "_" .. ev, ev)
+                end
+            end
+        end
+    end
+end
+
+function captureallterrain()
+    local ok, terrain = pcall(function() return game:GetService("Terrain") end)
+    if ok and terrain then
+        capture("terrain_watercolor", terrain.WaterColor)
+        capture("terrain_decoration", terrain.Decoration)
+        local ok2, size = pcall(function() return terrain.Size end)
+        if ok2 then capture("terrain_size", size) end
+    end
+end
+
+function captureallmaterials()
+    local materials = {"Plastic", "Metal", "Wood", "Glass", "Concrete", "CorrodedMetal", "DiamondPlate", "Ice", "Grass", "Sand", "Brick", "Granite", "Marble", "Slate", "Basalt", "CrackedLava", "Neon", "Foil", "ForceField", "Glow", "SmoothPlastic", "Fabric", "Cardboard", "Plaster"}
+    for _, mat in ipairs(materials) do
+        capture("material_" .. mat, mat)
     end
 end
 
@@ -558,17 +646,22 @@ function runscript(code)
     add("capturing environment...", Color3.fromRGB(100, 200, 255))
     sl.Text = "capturing environment..."
     pcall(function() captureglobals() end)
+    pcall(function() captureallglobals() end)
     pcall(function() captureservices() end)
-    pcall(function() captureremotes() end)
-    pcall(function() captureinstances() end)
-    pcall(function() capturefunctions() end)
-    pcall(function() safehookenvironment() end)
+    pcall(function() captureallremotes() end)
+    pcall(function() captureallinstances() end)
+    pcall(function() captureallfunctions() end)
+    pcall(function() captureallsignals() end)
+    pcall(function() captureallterrain() end)
+    pcall(function() captureallmaterials() end)
+    add("captured " .. #envlog .. " items", Color3.fromRGB(100, 255, 100))
     add("executing script...", Color3.fromRGB(255, 200, 100))
     sl.Text = "executing script..."
     local fn, err = loadstring(code)
     if not fn then
         add("load error: " .. tostring(err), Color3.fromRGB(255, 100, 100))
         sl.Text = "load error"
+        saveenvlog()
         return false
     end
     local bc = capturebytecode(fn)
@@ -577,6 +670,7 @@ function runscript(code)
     if not ok then
         add("execution error: " .. tostring(res), Color3.fromRGB(255, 100, 100))
         sl.Text = "execution error"
+        saveenvlog()
         return false
     end
     capture("execution_end", os.date("%Y-%m-%d %H:%M:%S"))
@@ -621,5 +715,6 @@ clr.MouseButton1Click:Connect(function()
     add("output cleared", Color3.fromRGB(200, 200, 200))
 end)
 
-add("axomenvlogger ready", Color3.fromRGB(100, 255, 255))
+add("axomenvlogger ready - massive capture mode", Color3.fromRGB(100, 255, 255))
+add("captures: services, remotes, instances, parts, welds, motors, scripts, functions, signals, terrain, materials", Color3.fromRGB(200, 200, 200))
 add("paste script url or code above", Color3.fromRGB(200, 200, 200))
