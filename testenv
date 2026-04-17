@@ -5,8 +5,8 @@ g.ResetOnSpawn = false
 local p = game:GetService("Players").LocalPlayer
 
 local f = Instance.new("Frame")
-f.Size = UDim2.new(0, 500, 0, 600)
-f.Position = UDim2.new(0.5, -250, 0.5, -300)
+f.Size = UDim2.new(0, 550, 0, 650)
+f.Position = UDim2.new(0.5, -275, 0.5, -325)
 f.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
 f.BackgroundTransparency = 0.6
 f.BorderSizePixel = 0
@@ -148,7 +148,7 @@ clc.CornerRadius = UDim.new(0, 8)
 clc.Parent = clr
 
 local of = Instance.new("Frame")
-of.Size = UDim2.new(1, 0, 1, -235)
+of.Size = UDim2.new(1, 0, 1, -260)
 of.Position = UDim2.new(0, 0, 0, 230)
 of.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
 of.BackgroundTransparency = 0.5
@@ -180,15 +180,27 @@ lst.SortOrder = Enum.SortOrder.LayoutOrder
 lst.Parent = sc
 
 local sb = Instance.new("Frame")
-sb.Size = UDim2.new(1, 0, 0, 25)
-sb.Position = UDim2.new(0, 0, 1, -25)
+sb.Size = UDim2.new(1, 0, 0, 50)
+sb.Position = UDim2.new(0, 0, 1, -50)
 sb.BackgroundColor3 = Color3.fromRGB(0, 60, 150)
 sb.BackgroundTransparency = 0.5
 sb.BorderSizePixel = 0
 sb.Parent = f
 
+local statusframe = Instance.new("Frame")
+statusframe.Size = UDim2.new(0.9, 0, 1, -8)
+statusframe.Position = UDim2.new(0, 4, 0, 4)
+statusframe.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+statusframe.BackgroundTransparency = 0.3
+statusframe.BorderSizePixel = 0
+statusframe.Parent = sb
+
+local statuscorner = Instance.new("UICorner")
+statuscorner.CornerRadius = UDim.new(0, 6)
+statuscorner.Parent = statusframe
+
 local sl = Instance.new("TextLabel")
-sl.Size = UDim2.new(1, -10, 1, 0)
+sl.Size = UDim2.new(1, -30, 1, 0)
 sl.Position = UDim2.new(0, 5, 0, 0)
 sl.BackgroundTransparency = 1
 sl.Text = "ready"
@@ -196,7 +208,23 @@ sl.TextColor3 = Color3.fromRGB(200, 200, 200)
 sl.TextSize = 11
 sl.TextXAlignment = Enum.TextXAlignment.Left
 sl.Font = Enum.Font.SourceSans
-sl.Parent = sb
+sl.Parent = statusframe
+
+local copybtn = Instance.new("TextButton")
+copybtn.Size = UDim2.new(0, 25, 0, 25)
+copybtn.Position = UDim2.new(1, -30, 0, 2)
+copybtn.BackgroundColor3 = Color3.fromRGB(100, 100, 200)
+copybtn.BackgroundTransparency = 0.3
+copybtn.Text = "C"
+copybtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+copybtn.TextSize = 12
+copybtn.Font = Enum.Font.GothamBold
+copybtn.BorderSizePixel = 0
+copybtn.Parent = statusframe
+
+local copycorner = Instance.new("UICorner")
+copycorner.CornerRadius = UDim.new(0, 4)
+copycorner.Parent = copybtn
 
 pcall(function()
     g.Parent = game:GetService("CoreGui")
@@ -239,6 +267,14 @@ end)
 
 close.MouseButton1Click:Connect(function()
     g:Destroy()
+end)
+
+copybtn.MouseButton1Click:Connect(function()
+    setclipboard(sl.Text)
+    local old = copybtn.Text
+    copybtn.Text = "✓"
+    task.wait(1)
+    copybtn.Text = old
 end)
 
 function add(t, col)
@@ -383,7 +419,7 @@ function captureremotes()
         return game:GetService("ReplicatedStorage")
     end)
     if ok and rs then
-        function scan(p)
+        local function scan(p)
             for _, c in pairs(p:GetChildren()) do
                 if c:IsA("RemoteEvent") or c:IsA("RemoteFunction") then
                     capture("remote_" .. c.Name, c)
@@ -394,21 +430,19 @@ function captureremotes()
         end
         scan(rs)
     end
-    local ok2, ls = pcall(function()
-        return game:GetService("Lighting")
-    end)
-    if ok2 and ls then
-        function scan2(p)
-            for _, c in pairs(p:GetChildren()) do
-                if c:IsA("RemoteEvent") or c:IsA("RemoteFunction") then
-                    capture("remote_" .. c.Name, c)
-                elseif c:IsA("Folder") or c:IsA("Model") then
-                    scan2(c)
-                end
-            end
-        end
-        scan2(ls)
+end
+
+function capturebytecode(func)
+    if type(func) ~= "function" then
+        return "not a function"
     end
+    local ok, bytecode = pcall(function()
+        return string.dump(func)
+    end)
+    if ok and bytecode then
+        return bytecode
+    end
+    return "cannot dump"
 end
 
 function captureproperties(inst, path)
@@ -422,6 +456,10 @@ function captureproperties(inst, path)
                 return inst[prop]
             end)
             if ok2 then
+                if typeof(val) == "function" then
+                    local bc = capturebytecode(val)
+                    capture("property_" .. path .. "_" .. prop .. "_bytecode", bc)
+                end
                 capture("property_" .. path .. "_" .. prop, val)
             end
         end
@@ -460,19 +498,57 @@ function captureinstances()
     capture("instances_scanned", total)
 end
 
-function hookenvironment()
+function capturefunctions()
+    local gc = getgc()
+    local count = 0
+    for _, obj in ipairs(gc) do
+        if type(obj) == "function" and count < 50 then
+            count = count + 1
+            local info = debug.getinfo(obj)
+            local name = info and info.name or "anonymous"
+            local bc = capturebytecode(obj)
+            capture("function_" .. name .. "_bytecode", bc)
+            capture("function_" .. name, obj)
+        end
+    end
+    capture("functions_captured", count)
+end
+
+function safehookenvironment()
     local env = getfenv()
-    local mt = {}
-    mt.__index = function(t, k)
-        local original = rawget(env, k)
-        capture("index_" .. tostring(k), original)
-        return original
+    if env == nil then
+        add("no environment to hook", Color3.fromRGB(255, 200, 100))
+        return
     end
-    mt.__newindex = function(t, k, v)
-        capture("newindex_" .. tostring(k), v)
-        rawset(env, k, v)
+    local mt = getmetatable(env)
+    if mt ~= nil then
+        add("environment already has metatable, skipping hook", Color3.fromRGB(255, 200, 100))
+        return
     end
-    setmetatable(env, mt)
+    local success, err = pcall(function()
+        local newmt = {}
+        newmt.__index = function(t, k)
+            local original = rawget(env, k)
+            if type(original) == "function" then
+                local bc = capturebytecode(original)
+                capture("index_" .. tostring(k) .. "_bytecode", bc)
+            end
+            capture("index_" .. tostring(k), original)
+            return original
+        end
+        newmt.__newindex = function(t, k, v)
+            if type(v) == "function" then
+                local bc = capturebytecode(v)
+                capture("newindex_" .. tostring(k) .. "_bytecode", bc)
+            end
+            capture("newindex_" .. tostring(k), v)
+            rawset(env, k, v)
+        end
+        setmetatable(env, newmt)
+    end)
+    if not success then
+        add("hook skipped: " .. tostring(err), Color3.fromRGB(255, 200, 100))
+    end
 end
 
 function runscript(code)
@@ -481,11 +557,12 @@ function runscript(code)
     capture("script_length", #code)
     add("capturing environment...", Color3.fromRGB(100, 200, 255))
     sl.Text = "capturing environment..."
-    captureglobals()
-    captureservices()
-    captureremotes()
-    captureinstances()
-    hookenvironment()
+    pcall(function() captureglobals() end)
+    pcall(function() captureservices() end)
+    pcall(function() captureremotes() end)
+    pcall(function() captureinstances() end)
+    pcall(function() capturefunctions() end)
+    pcall(function() safehookenvironment() end)
     add("executing script...", Color3.fromRGB(255, 200, 100))
     sl.Text = "executing script..."
     local fn, err = loadstring(code)
@@ -494,6 +571,8 @@ function runscript(code)
         sl.Text = "load error"
         return false
     end
+    local bc = capturebytecode(fn)
+    capture("script_bytecode", bc)
     local ok, res = pcall(fn)
     if not ok then
         add("execution error: " .. tostring(res), Color3.fromRGB(255, 100, 100))
@@ -523,21 +602,7 @@ function processinput()
         end)
         if ok and res then
             add("fetched " .. #res .. " bytes", Color3.fromRGB(100, 255, 100))
-            if string.match(res, "^loadstring") or string.match(res, "return") then
-                local fn, err = loadstring(res)
-                if fn then
-                    local ok2, result = pcall(fn)
-                    if ok2 and type(result) == "function" then
-                        runscript(string.dump(result))
-                    else
-                        runscript(res)
-                    end
-                else
-                    runscript(res)
-                end
-            else
-                runscript(res)
-            end
+            runscript(res)
         else
             add("fetch failed: " .. tostring(res), Color3.fromRGB(255, 100, 100))
             sl.Text = "fetch failed"
