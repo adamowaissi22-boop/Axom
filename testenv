@@ -1,9 +1,7 @@
 local g = Instance.new("ScreenGui")
 g.Name = "screengui"
 g.ResetOnSpawn = false
-
 local p = game:GetService("Players").LocalPlayer
-
 local f = Instance.new("Frame")
 f.Size = UDim2.new(0, 700, 0, 750)
 f.Position = UDim2.new(0.5, -350, 0.5, -375)
@@ -13,35 +11,29 @@ f.BorderSizePixel = 0
 f.Active = true
 f.Draggable = true
 f.Parent = g
-
 local c = Instance.new("UICorner")
 c.CornerRadius = UDim.new(0, 12)
 c.Parent = f
-
 local st = Instance.new("UIStroke")
 st.Color = Color3.fromRGB(255, 255, 255)
 st.Thickness = 2
 st.Transparency = 0.3
 st.Parent = f
-
 local pd = Instance.new("UIPadding")
 pd.PaddingLeft = UDim.new(0, 10)
 pd.PaddingRight = UDim.new(0, 10)
 pd.PaddingTop = UDim.new(0, 10)
 pd.PaddingBottom = UDim.new(0, 10)
 pd.Parent = f
-
 local tb = Instance.new("Frame")
 tb.Size = UDim2.new(1, 0, 0, 40)
 tb.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
 tb.BackgroundTransparency = 0.4
 tb.BorderSizePixel = 0
 tb.Parent = f
-
 local tc = Instance.new("UICorner")
 tc.CornerRadius = UDim.new(0, 12)
 tc.Parent = tb
-
 local tl = Instance.new("TextLabel")
 tl.Size = UDim2.new(1, -80, 1, 0)
 tl.Position = UDim2.new(0, 5, 0, 0)
@@ -52,7 +44,6 @@ tl.TextSize = 18
 tl.TextXAlignment = Enum.TextXAlignment.Left
 tl.Font = Enum.Font.GothamBold
 tl.Parent = tb
-
 local close = Instance.new("TextButton")
 close.Size = UDim2.new(0, 35, 0, 35)
 close.Position = UDim2.new(1, -40, 0, 2.5)
@@ -65,11 +56,9 @@ close.TextScaled = true
 close.Font = Enum.Font.GothamBold
 close.BorderSizePixel = 0
 close.Parent = tb
-
 local cc = Instance.new("UICorner")
 cc.CornerRadius = UDim.new(0, 8)
 cc.Parent = close
-
 local inf = Instance.new("Frame")
 inf.Size = UDim2.new(1, 0, 0, 100)
 inf.Position = UDim2.new(0, 0, 0, 50)
@@ -77,18 +66,15 @@ inf.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
 inf.BackgroundTransparency = 0.5
 inf.BorderSizePixel = 0
 inf.Parent = f
-
 local ic = Instance.new("UICorner")
 ic.CornerRadius = UDim.new(0, 10)
 ic.Parent = inf
-
 local ip = Instance.new("UIPadding")
 ip.PaddingLeft = UDim.new(0, 8)
 ip.PaddingRight = UDim.new(0, 8)
 ip.PaddingTop = UDim.new(0, 8)
 ip.PaddingBottom = UDim.new(0, 8)
 ip.Parent = inf
-
 local box = Instance.new("TextBox")
 box.Size = UDim2.new(1, 0, 1, 0)
 box.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
@@ -104,17 +90,14 @@ box.TextYAlignment = Enum.TextYAlignment.Top
 box.ClearTextOnFocus = false
 box.Font = Enum.Font.SourceSans
 box.Parent = inf
-
 local bc = Instance.new("UICorner")
 bc.CornerRadius = UDim.new(0, 8)
 bc.Parent = box
-
 local bf = Instance.new("Frame")
 bf.Size = UDim2.new(1, 0, 0, 45)
 bf.Position = UDim2.new(0, 0, 0, 160)
 bf.BackgroundTransparency = 1
 bf.Parent = f
-
 local run = Instance.new("TextButton")
 run.Size = UDim2.new(0.48, 0, 1, -5)
 run.Position = UDim2.new(0, 0, 0, 2.5)
@@ -126,11 +109,9 @@ run.TextSize = 14
 run.Font = Enum.Font.GothamBold
 run.BorderSizePixel = 0
 run.Parent = bf
-
 local rc = Instance.new("UICorner")
 rc.CornerRadius = UDim.new(0, 8)
 rc.Parent = run
-
 local clr = Instance.new("TextButton")
 clr.Size = UDim2.new(0.48, 0, 1, -5)
 clr.Position = UDim2.new(0.52, 0, 0, 2.5)
@@ -142,11 +123,9 @@ clr.TextSize = 14
 clr.Font = Enum.Font.GothamBold
 clr.BorderSizePixel = 0
 clr.Parent = bf
-
 local clc = Instance.new("UICorner")
 clc.CornerRadius = UDim.new(0, 8)
 clc.Parent = clr
-
 local outputheader = Instance.new("Frame")
 outputheader.Size = UDim2.new(1, 0, 0, 30)
 outputheader.Position = UDim2.new(0, 0, 0, 215)
@@ -154,7 +133,6 @@ outputheader.BackgroundColor3 = Color3.fromRGB(0, 60, 150)
 outputheader.BackgroundTransparency = 0.5
 outputheader.BorderSizePixel = 0
 outputheader.Parent = f
-
 local headerlabel = Instance.new("TextLabel")
 headerlabel.Size = UDim2.new(1, -40, 1, 0)
 headerlabel.Position = UDim2.new(0, 5, 0, 0)
@@ -165,7 +143,6 @@ headerlabel.TextSize = 12
 headerlabel.TextXAlignment = Enum.TextXAlignment.Left
 headerlabel.Font = Enum.Font.GothamBold
 headerlabel.Parent = outputheader
-
 local copyall = Instance.new("TextButton")
 copyall.Size = UDim2.new(0, 60, 1, -4)
 copyall.Position = UDim2.new(1, -65, 0, 2)
@@ -177,11 +154,9 @@ copyall.TextSize = 10
 copyall.Font = Enum.Font.GothamBold
 copyall.BorderSizePixel = 0
 copyall.Parent = outputheader
-
 local copyallcorner = Instance.new("UICorner")
 copyallcorner.CornerRadius = UDim.new(0, 4)
 copyallcorner.Parent = copyall
-
 local of = Instance.new("Frame")
 of.Size = UDim2.new(1, 0, 1, -260)
 of.Position = UDim2.new(0, 0, 0, 245)
@@ -189,18 +164,15 @@ of.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
 of.BackgroundTransparency = 0.5
 of.BorderSizePixel = 0
 of.Parent = f
-
 local oc = Instance.new("UICorner")
 oc.CornerRadius = UDim.new(0, 10)
 oc.Parent = of
-
 local op = Instance.new("UIPadding")
 op.PaddingLeft = UDim.new(0, 8)
 op.PaddingRight = UDim.new(0, 8)
 op.PaddingTop = UDim.new(0, 8)
 op.PaddingBottom = UDim.new(0, 8)
 op.Parent = of
-
 local sc = Instance.new("ScrollingFrame")
 sc.Size = UDim2.new(1, 0, 1, 0)
 sc.BackgroundTransparency = 1
@@ -208,12 +180,10 @@ sc.CanvasSize = UDim2.new(0, 0, 0, 0)
 sc.ScrollBarThickness = 6
 sc.AutomaticCanvasSize = Enum.AutomaticSize.Y
 sc.Parent = of
-
 local lst = Instance.new("UIListLayout")
 lst.Padding = UDim.new(0, 4)
 lst.SortOrder = Enum.SortOrder.LayoutOrder
 lst.Parent = sc
-
 local sb = Instance.new("Frame")
 sb.Size = UDim2.new(1, 0, 0, 55)
 sb.Position = UDim2.new(0, 0, 1, -55)
@@ -221,7 +191,6 @@ sb.BackgroundColor3 = Color3.fromRGB(0, 60, 150)
 sb.BackgroundTransparency = 0.5
 sb.BorderSizePixel = 0
 sb.Parent = f
-
 local statusframe = Instance.new("Frame")
 statusframe.Size = UDim2.new(0.88, 0, 1, -8)
 statusframe.Position = UDim2.new(0, 4, 0, 4)
@@ -229,11 +198,9 @@ statusframe.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 statusframe.BackgroundTransparency = 0.3
 statusframe.BorderSizePixel = 0
 statusframe.Parent = sb
-
 local statuscorner = Instance.new("UICorner")
 statuscorner.CornerRadius = UDim.new(0, 6)
 statuscorner.Parent = statusframe
-
 local sl = Instance.new("TextLabel")
 sl.Size = UDim2.new(1, -35, 1, 0)
 sl.Position = UDim2.new(0, 5, 0, 0)
@@ -244,7 +211,6 @@ sl.TextSize = 11
 sl.TextXAlignment = Enum.TextXAlignment.Left
 sl.Font = Enum.Font.SourceSans
 sl.Parent = statusframe
-
 local copybtn = Instance.new("TextButton")
 copybtn.Size = UDim2.new(0, 30, 0, 30)
 copybtn.Position = UDim2.new(1, -35, 0, 2)
@@ -256,11 +222,9 @@ copybtn.TextSize = 12
 copybtn.Font = Enum.Font.GothamBold
 copybtn.BorderSizePixel = 0
 copybtn.Parent = statusframe
-
 local copycorner = Instance.new("UICorner")
 copycorner.CornerRadius = UDim.new(0, 4)
 copycorner.Parent = copybtn
-
 pcall(function()
     g.Parent = game:GetService("CoreGui")
 end)
@@ -269,11 +233,9 @@ pcall(function()
         g.Parent = p.PlayerGui
     end
 end)
-
 local drag = false
 local ds = nil
 local sp = nil
-
 f.InputBegan:Connect(function(i)
     if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
         local op = f.AbsolutePosition
@@ -286,26 +248,21 @@ f.InputBegan:Connect(function(i)
         end
     end
 end)
-
 f.InputChanged:Connect(function(i)
     if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
         local delta = i.Position - ds
         f.Position = UDim2.new(sp.X.Scale, sp.X.Offset + delta.X, sp.Y.Scale, sp.Y.Offset + delta.Y)
     end
 end)
-
 f.InputEnded:Connect(function(i)
     if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
         drag = false
     end
 end)
-
 close.MouseButton1Click:Connect(function()
     g:Destroy()
 end)
-
 local outputtexts = {}
-
 function add(t, col)
     local l = Instance.new("TextLabel")
     l.Text = t
@@ -320,7 +277,6 @@ function add(t, col)
     l.Parent = sc
     table.insert(outputtexts, t)
 end
-
 function clear()
     for _, v in pairs(sc:GetChildren()) do
         if v:IsA("TextLabel") then
@@ -329,7 +285,6 @@ function clear()
     end
     outputtexts = {}
 end
-
 copyall.MouseButton1Click:Connect(function()
     local full = table.concat(outputtexts, "\n")
     setclipboard(full)
@@ -338,7 +293,6 @@ copyall.MouseButton1Click:Connect(function()
     task.wait(1)
     copyall.Text = old
 end)
-
 copybtn.MouseButton1Click:Connect(function()
     setclipboard(sl.Text)
     local old = copybtn.Text
@@ -346,13 +300,10 @@ copybtn.MouseButton1Click:Connect(function()
     task.wait(1)
     copybtn.Text = old
 end)
-
 local envlog = {}
-
 function capture(category, value)
     table.insert(envlog, {cat = category, val = value, time = os.time()})
 end
-
 function esc(s)
     if type(s) ~= "string" then
         return tostring(s)
@@ -364,7 +315,6 @@ function esc(s)
     s = s:gsub("\t", "\\t")
     return s
 end
-
 function ser(v, d)
     d = d or 0
     if d > 5 then
@@ -412,33 +362,23 @@ function ser(v, d)
         return tostring(v)
     end
 end
-
 function saveenvlog()
     local ok, err = pcall(function()
-        if not isfolder then
-            add("isfolder missing", Color3.fromRGB(255, 100, 100))
-            return
-        end
-        if not isfolder("axomenvlogger") then
-            makefolder("axomenvlogger")
-        end
-        local name = "axomenvlogger/envloggedscript1.lua"
         local data = "-- axomenvlogger output\n-- " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n\nreturn {\n"
         for i, e in ipairs(envlog) do
             local safeval = ser(e.val)
             data = data .. '  ["' .. e.cat .. '"] = ' .. safeval .. ',\n'
         end
         data = data .. "}"
-        writefile(name, data)
-        add("saved to " .. name, Color3.fromRGB(100, 255, 100))
-        sl.Text = "saved to axomenvlogger/envloggedscript1.lua"
+        writefile("envloggedscript.txt", data)
+        add("saved to envloggedscript.txt", Color3.fromRGB(100, 255, 100))
+        sl.Text = "saved to envloggedscript.txt"
     end)
     if not ok then
         add("save failed: " .. tostring(err), Color3.fromRGB(255, 100, 100))
         sl.Text = "save failed"
     end
 end
-
 function captureglobals()
     local list = {"game", "workspace", "script", "shared", "Enum", "debug", "task", "coroutine", "table", "string", "math", "os", "Vector3", "Vector2", "CFrame", "Color3", "UDim2", "BrickColor", "TweenInfo", "Ray", "Rect", "Region3", "Instance", "Random", "ColorSequence", "NumberSequence", "NumberRange", "PhysicalProperties", "RaycastParams", "OverlapParams", "PathWaypoint", "Axes", "Faces"}
     for _, n in ipairs(list) do
@@ -450,7 +390,6 @@ function captureglobals()
         end
     end
 end
-
 function captureservices()
     local svcs = {"Players", "RunService", "ReplicatedStorage", "Workspace", "Lighting", "ServerStorage", "ServerScriptService", "StarterGui", "StarterPack", "StarterPlayer", "SoundService", "Chat", "UserInputService", "TweenService", "HttpService", "MarketplaceService", "TeleportService", "PathfindingService", "CollectionService", "PhysicsService", "ProximityPromptService", "ContextActionService", "GuiService", "Teams", "InsertService", "DataStoreService", "MessagingService", "TextService", "TextChatService", "ContentProvider", "Debris", "Selection", "SelectionService", "MaterialService", "Terrain", "NetworkClient", "NetworkServer", "ReplicatedFirst", "CoreGui", "StarterPlayerScripts", "StarterCharacterScripts", "StarterGuiScripts", "VoiceChatService", "FriendService", "GroupService", "BadgeService", "PointsService", "SocialService", "CreatorTagService"}
     for _, n in ipairs(svcs) do
@@ -462,7 +401,6 @@ function captureservices()
         end
     end
 end
-
 function captureallremotes()
     local function scanremotes(folder, path)
         for _, c in pairs(folder:GetChildren()) do
@@ -480,7 +418,6 @@ function captureallremotes()
     local ok3, ws = pcall(function() return game:GetService("Workspace") end)
     if ok3 and ws then scanremotes(ws, "Workspace") end
 end
-
 function capturebytecode(func)
     if type(func) ~= "function" then
         return "not a function"
@@ -493,7 +430,6 @@ function capturebytecode(func)
     end
     return "cannot dump"
 end
-
 function captureallproperties(inst, path, depth)
     depth = depth or 0
     if depth > 8 then return end
@@ -518,7 +454,6 @@ function captureallproperties(inst, path, depth)
         end
     end
 end
-
 function captureallinstances()
     local total = 0
     local function scanall(parent, path, depth)
@@ -576,28 +511,26 @@ function captureallinstances()
     if ok6 then scanall(sp, "StarterPack", 0) end
     capture("total_instances_captured", total)
 end
-
 function captureallfunctions()
     local gc = getgc()
     local count = 0
     for _, obj in ipairs(gc) do
         if type(obj) == "function" and count < 200 then
-            count = count + 1
             local info = debug.getinfo(obj)
-            local name = info and info.name or "anonymous_" .. count
-            local bc = capturebytecode(obj)
-            capture("function_bytecode_" .. name, bc)
-            capture("function_source_" .. name, info and info.source or "unknown")
-            capture("function_defined_" .. name, info and info.defined or "unknown")
-            capture("function_linedefined_" .. name, info and info.linedefined or 0)
+            if info and info.source and not string.match(info.source or "", "axomenvlogger") then
+                count = count + 1
+                local name = info and info.name or "anonymous_" .. count
+                local bc = capturebytecode(obj)
+                capture("function_bytecode_" .. name, bc)
+                capture("function_source_" .. name, info and info.source or "unknown")
+            end
         end
     end
     capture("total_functions_captured", count)
 end
-
 function captureallglobals()
     for k, v in pairs(_G) do
-        if type(k) == "string" and k ~= "" then
+        if type(k) == "string" and k ~= "" and not string.match(k, "axomenvlogger") then
             capture("globalvalue_" .. k, v)
             if type(v) == "function" then
                 local bc = capturebytecode(v)
@@ -606,7 +539,6 @@ function captureallglobals()
         end
     end
 end
-
 function captureallsignals()
     local services = {"RunService", "Players", "Workspace", "ReplicatedStorage"}
     for _, srvname in ipairs(services) do
@@ -621,7 +553,6 @@ function captureallsignals()
         end
     end
 end
-
 function captureallterrain()
     local ok, terrain = pcall(function() return game:GetService("Terrain") end)
     if ok and terrain then
@@ -631,14 +562,12 @@ function captureallterrain()
         if ok2 then capture("terrain_size", size) end
     end
 end
-
 function captureallmaterials()
     local materials = {"Plastic", "Metal", "Wood", "Glass", "Concrete", "CorrodedMetal", "DiamondPlate", "Ice", "Grass", "Sand", "Brick", "Granite", "Marble", "Slate", "Basalt", "CrackedLava", "Neon", "Foil", "ForceField", "Glow", "SmoothPlastic", "Fabric", "Cardboard", "Plaster"}
     for _, mat in ipairs(materials) do
         capture("material_" .. mat, mat)
     end
 end
-
 function runscript(code)
     envlog = {}
     capture("execution_start", os.date("%Y-%m-%d %H:%M:%S"))
@@ -679,7 +608,6 @@ function runscript(code)
     saveenvlog()
     return true
 end
-
 function processinput()
     local inp = box.Text
     if inp == nil or inp == "" then
@@ -705,16 +633,13 @@ function processinput()
         runscript(inp)
     end
 end
-
 run.MouseButton1Click:Connect(function()
     processinput()
 end)
-
 clr.MouseButton1Click:Connect(function()
     clear()
     add("output cleared", Color3.fromRGB(200, 200, 200))
 end)
-
-add("axomenvlogger ready - massive capture mode", Color3.fromRGB(100, 255, 255))
+add("axomenvlogger ready", Color3.fromRGB(100, 255, 255))
 add("captures: services, remotes, instances, parts, welds, motors, scripts, functions, signals, terrain, materials", Color3.fromRGB(200, 200, 200))
 add("paste script url or code above", Color3.fromRGB(200, 200, 200))
