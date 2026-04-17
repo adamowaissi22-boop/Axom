@@ -1,332 +1,102 @@
 local ScreenGui = Instance.new("ScreenGui")
-local MainFrame = Instance.new("Frame")
-local Title = Instance.new("TextLabel")
-local DecalSpamButton = Instance.new("TextButton")
-local UICorner = Instance.new("UICorner")
-local UIStroke = Instance.new("UIStroke")
-local CloseButton = Instance.new("TextButton")
+local frame = Instance.new("Frame")
+local title = Instance.new("TextLabel")
+local spam = Instance.new("TextButton")
+local corner = Instance.new("UICorner")
+local stroke = Instance.new("UIStroke")
+local close = Instance.new("TextButton")
 
 ScreenGui.Name = "ScreenGui"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-MainFrame.Name = "MainFrame"
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
-MainFrame.Size = UDim2.new(0, 300, 0, 150)
-MainFrame.Active = true
-MainFrame.Draggable = true
+frame.Name = "frame"
+frame.Parent = ScreenGui
+frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+frame.BorderSizePixel = 0
+frame.Position = UDim2.new(0.3, 0, 0.3, 0)
+frame.Size = UDim2.new(0, 300, 0, 150)
+frame.Active = true
+frame.Draggable = true
 
-UICorner.CornerRadius = UDim.new(0, 8)
-UICorner.Parent = MainFrame
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = frame
 
-UIStroke.Thickness = 2
-UIStroke.Color = Color3.fromRGB(200, 200, 200)
-UIStroke.Parent = MainFrame
+stroke.Thickness = 2
+stroke.Color = Color3.fromRGB(200, 200, 200)
+stroke.Parent = frame
 
-Title.Name = "Title"
-Title.Parent = MainFrame
-Title.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Position = UDim2.new(0, 0, 0, 0)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Font = Enum.Font.Highway
-Title.Text = "Axomic Decal Spam Script"
-Title.TextColor3 = Color3.fromRGB(255, 0, 0)
-Title.TextScaled = true
-Title.TextSize = 20
-Title.TextWrapped = true
+title.Name = "title"
+title.Parent = frame
+title.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+title.BackgroundTransparency = 1
+title.Position = UDim2.new(0, 0, 0, 0)
+title.Size = UDim2.new(1, 0, 0, 40)
+title.Font = Enum.Font.Highway
+title.Text = "Axomic Decal Spam Script"
+title.TextColor3 = Color3.fromRGB(255, 0, 0)
+title.TextScaled = true
+title.TextSize = 20
+title.TextWrapped = true
 
-CloseButton.Name = "CloseButton"
-CloseButton.Parent = MainFrame
-CloseButton.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
-CloseButton.BackgroundTransparency = 0.8
-CloseButton.Position = UDim2.new(0.9, 0, 0.025, 0)
-CloseButton.Size = UDim2.new(0, 30, 0, 30)
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.Text = "X"
-CloseButton.TextColor3 = Color3.fromRGB(255, 0, 0)
-CloseButton.TextSize = 16
-CloseButton.TextWrapped = true
+close.Name = "close"
+close.Parent = frame
+close.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+close.BackgroundTransparency = 0.8
+close.Position = UDim2.new(0.9, 0, 0.025, 0)
+close.Size = UDim2.new(0, 30, 0, 30)
+close.Font = Enum.Font.GothamBold
+close.Text = "X"
+close.TextColor3 = Color3.fromRGB(255, 0, 0)
+close.TextSize = 16
+close.TextWrapped = true
 
-DecalSpamButton.Name = "DecalSpamButton"
-DecalSpamButton.Parent = MainFrame
-DecalSpamButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-DecalSpamButton.BackgroundTransparency = 0.2
-DecalSpamButton.Position = UDim2.new(0.15, 0, 0.35, 0)
-DecalSpamButton.Size = UDim2.new(0.7, 0, 0.5, 0)
-DecalSpamButton.Font = Enum.Font.SourceSansBold
-DecalSpamButton.Text = "Decal Spam"
-DecalSpamButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-DecalSpamButton.TextScaled = true
-DecalSpamButton.TextWrapped = true
+spam.Name = "spam"
+spam.Parent = frame
+spam.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+spam.BackgroundTransparency = 0.2
+spam.Position = UDim2.new(0.15, 0, 0.35, 0)
+spam.Size = UDim2.new(0.7, 0, 0.5, 0)
+spam.Font = Enum.Font.SourceSansBold
+spam.Text = "Decal Spam"
+spam.TextColor3 = Color3.fromRGB(255, 255, 255)
+spam.TextScaled = true
+spam.TextWrapped = true
 
-CloseButton.MouseButton1Click:Connect(function()
+close.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
-DecalSpamButton.MouseButton1Click:Connect(function()
-    local player = game.Players.LocalPlayer
-    local char = player.Character
-    local tool
-    for i,v in player:GetDescendants() do
-        if v.Name == "SyncAPI" then
-            tool = v.Parent
-        end
-    end
-    for i,v in game.ReplicatedStorage:GetDescendants() do
-        if v.Name == "SyncAPI" then
-            tool = v.Parent
-        end
-    end
-    remote = tool.SyncAPI.ServerEndpoint
-    function _(args)
-        remote:InvokeServer(unpack(args))
-    end
-    function SetCollision(part,boolean)
-        local args = {
-            [1] = "SyncCollision",
-            [2] = {
-                [1] = {
-                    ["Part"] = part,
-                    ["CanCollide"] = boolean
-                }
-            }
-        }
-        _(args)
-    end
-    function SetAnchor(boolean,part)
-        local args = {
-            [1] = "SyncAnchor",
-            [2] = {
-                [1] = {
-                    ["Part"] = part,
-                    ["Anchored"] = boolean
-                }
-            }
-        }
-        _(args)
-    end
-    function CreatePart(cf,parent)
-        local args = {
-            [1] = "CreatePart",
-            [2] = "Normal",
-            [3] = cf,
-            [4] = parent
-        }
-        _(args)
-    end
-    function DestroyPart(part)
-        local args = {
-            [1] = "Remove",
-            [2] = {
-                [1] = part
-            }
-        }
-        _(args)
-    end
-    function MovePart(part,cf)
-        local args = {
-            [1] = "SyncMove",
-            [2] = {
-                [1] = {
-                    ["Part"] = part,
-                    ["CFrame"] = cf
-                }
-            }
-        }
-        _(args)
-    end
-    function Resize(part,size,cf)
-        local args = {
-            [1] = "SyncResize",
-            [2] = {
-                [1] = {
-                    ["Part"] = part,
-                    ["CFrame"] = cf,
-                    ["Size"] = size
-                }
-            }
-        }
-        _(args)
-    end
-    function AddMesh(part)
-        local args = {
-            [1] = "CreateMeshes",
-            [2] = {
-                [1] = {
-                    ["Part"] = part
-                }
-            }
-        }
-        _(args)
-    end
-    function SetMesh(part,meshid)
-        local args = {
-            [1] = "SyncMesh",
-            [2] = {
-                [1] = {
-                    ["Part"] = part,
-                    ["MeshId"] = "rbxassetid://"..meshid
-                }
-            }
-        }
-        _(args)
-    end
-    function SetTexture(part, texid)
-        local args = {
-            [1] = "SyncMesh",
-            [2] = {
-                [1] = {
-                    ["Part"] = part,
-                    ["TextureId"] = "rbxassetid://"..texid
-                }
-            }
-        }
-        _(args)
-    end
-    function SetName(part, stringg)
-        local args = {
-            [1] = "SetName",
-            [2] = {
-                [1] = part
-            },
-            [3] = stringg
-        }
-        _(args)
-    end
-    function MeshResize(part,size)
-        local args = {
-            [1] = "SyncMesh",
-            [2] = {
-                [1] = {
-                    ["Part"] = part,
-                    ["Scale"] = size
-                }
-            }
-        }
-        _(args)
-    end
-    function Weld(part1, part2,lead)
-        local args = {
-            [1] = "CreateWelds",
-            [2] = {
-                [1] = part1,
-                [2] = part2
-            },
-            [3] = lead
-        }
-        _(args)
-    end
-    function SetLocked(part,boolean)
-        local args = {
-            [1] = "SetLocked",
-            [2] = {
-                [1] = part
-            },
-            [3] = boolean
-        }
-        _(args)
-    end
-    function SetTrans(part,int)
-        local args = {
-            [1] = "SyncMaterial",
-            [2] = {
-                [1] = {
-                    ["Part"] = part,
-                    ["Transparency"] = int
-                }
-            }
-        }
-        _(args)
-    end
-    function CreateSpotlight(part)
-        local args = {
-            [1] = "CreateLights",
-            [2] = {
-                [1] = {
-                    ["Part"] = part,
-                    ["LightType"] = "SpotLight"
-                }
-            }
-        }
-        _(args)
-    end
-    function SyncLighting(part,brightness)
-        local args = {
-            [1] = "SyncLighting",
-            [2] = {
-                [1] = {
-                    ["Part"] = part,
-                    ["LightType"] = "SpotLight",
-                    ["Brightness"] = brightness
-                }
-            }
-        }
-        _(args)
-    end
-    function Color(part,color)
-        local args = {
-            [1] = "SyncColor",
-            [2] = {
-                [1] = {
-                    ["Part"] = part,
-                    ["Color"] = color,
-                    ["UnionColoring"] = false
-                }
-            }
-        }
-        _(args)
-    end
-    function SpawnDecal(part,side)
-        local args = {
-            [1] = "CreateTextures",
-            [2] = {
-                [1] = {
-                    ["Part"] = part,
-                    ["Face"] = side,
-                    ["TextureType"] = "Decal"
-                }
-            }
-        }
-        _(args)
-    end
-    function AddDecal(part,asset,side)
-        local args = {
-            [1] = "SyncTexture",
-            [2] = {
-                [1] = {
-                    ["Part"] = part,
-                    ["Face"] = side,
-                    ["TextureType"] = "Decal",
-                    ["Texture"] = "rbxassetid://".. asset
-                }
-            }
-        }
-        _(args)
-    end
-    function spam(id)
-        for i,v in game.workspace:GetDescendants() do
-            if v:IsA("BasePart") then
+spam.MouseButton1Click:Connect(function()
+    local p = game.Players.LocalPlayer
+    local t
+    for _,v in p:GetDescendants() do if v.Name == "SyncAPI" then t = v.Parent end end
+    for _,v in game.ReplicatedStorage:GetDescendants() do if v.Name == "SyncAPI" then t = v.Parent end end
+    local r = t.SyncAPI.ServerEndpoint
+    
+    local function _(a) r:InvokeServer(unpack(a)) end
+    
+    local function col(p,b) _({"SyncCollision",{{["Part"]=p,["CanCollide"]=b}}}) end
+    local function anc(p,b) _({"SyncAnchor",{{["Part"]=p,["Anchored"]=b}}}) end
+    local function kill(p) _({"Remove",{p}}) end
+    local function lock(p,b) _({"SetLocked",{p},b}) end
+    local function dec(p,s) _({"CreateTextures",{{["Part"]=p,["Face"]=s,["TextureType"]="Decal"}}}) end
+    local function add(p,a,s) _({"SyncTexture",{{["Part"]=p,["Face"]=s,["TextureType"]="Decal",["Texture"]="rbxassetid://"..a}}}) end
+    
+    local function nuke(id)
+        local parts = {}
+        for _,v in game.workspace:GetDescendants() do if v:IsA("BasePart") then table.insert(parts, v) end end
+        for _,v in pairs(parts) do
+            lock(v, false)
+            local faces = {Enum.NormalId.Front, Enum.NormalId.Back, Enum.NormalId.Right, Enum.NormalId.Left, Enum.NormalId.Bottom, Enum.NormalId.Top}
+            for _,face in pairs(faces) do
                 spawn(function()
-                    SetLocked(v,false)
-                    SpawnDecal(v,Enum.NormalId.Front)
-                    AddDecal(v,id,Enum.NormalId.Front)
-                    SpawnDecal(v,Enum.NormalId.Back)
-                    AddDecal(v,id,Enum.NormalId.Back)
-                    SpawnDecal(v,Enum.NormalId.Right)
-                    AddDecal(v,id,Enum.NormalId.Right)
-                    SpawnDecal(v,Enum.NormalId.Left)
-                    AddDecal(v,id,Enum.NormalId.Left)
-                    SpawnDecal(v,Enum.NormalId.Bottom)
-                    AddDecal(v,id,Enum.NormalId.Bottom)
-                    SpawnDecal(v,Enum.NormalId.Top)
-                    AddDecal(v,id,Enum.NormalId.Top)
+                    dec(v, face)
+                    add(v, id, face)
                 end)
             end
-        end 
+        end
     end
-    spam(71007442178709)
+    
+    nuke(71007442178709)
 end)
