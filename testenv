@@ -317,6 +317,9 @@ function newmockinstance(class, parent)
                 conn.Disconnect = function()
                     log(class .. "_connection:Disconnect()")
                 end
+                if cb then
+                    pcall(cb)
+                end
                 return conn
             end
         elseif k == "FireServer" then
@@ -429,12 +432,15 @@ sandboxmt.__index = function(t, k)
         end
         tasktbl.spawn = function(f)
             log("task.spawn(function() end)")
+            if f then pcall(f) end
         end
         tasktbl.delay = function(t, f)
             log("task.delay(" .. tostring(t) .. ", function() end)")
+            if f then pcall(f) end
         end
         tasktbl.defer = function(f)
             log("task.defer(function() end)")
+            if f then pcall(f) end
         end
         return tasktbl
     elseif k == "wait" then
@@ -445,10 +451,12 @@ sandboxmt.__index = function(t, k)
     elseif k == "spawn" then
         return function(f)
             log("spawn(function() end)")
+            if f then pcall(f) end
         end
     elseif k == "delay" then
         return function(t, f)
             log("delay(" .. tostring(t) .. ", function() end)")
+            if f then pcall(f) end
         end
     elseif k == "tick" then
         log("tick()")
@@ -498,9 +506,9 @@ sandboxmt.__index = function(t, k)
             log('loadstring("' .. short .. '")')
             local fn, err = loadstring(str)
             if fn then
-                return function()
-                    log("loadstring_result()")
-                    return fn()
+                return function(...)
+                    log("executing loaded function...")
+                    return fn(...)
                 end
             end
             return nil, err
