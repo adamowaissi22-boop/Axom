@@ -251,215 +251,393 @@ function clear()
     end
     outputtexts = {}
 end
-local capturedcalls = {}
-function record(call)
-    table.insert(capturedcalls, call)
-    add(call, Color3.fromRGB(180, 180, 180))
+local actions = {}
+function log(msg)
+    table.insert(actions, msg)
+    add(msg, Color3.fromRGB(180, 180, 180))
 end
-function createsandbox()
-    local env = {}
+local mockinstances = {}
+local mockids = 0
+function newmockinstance(class, parent)
+    mockids = mockids + 1
+    local id = mockids
+    local inst = {}
+    mockinstances[id] = inst
+    inst.ClassName = class
+    inst.Name = class .. id
+    inst.Parent = parent
+    inst.Children = {}
+    inst.Properties = {}
     local mt = {}
     mt.__index = function(t, k)
-        if k == "game" then
-            record('game')
-            local gp = {}
-            local gmt = {}
-            gmt.__index = function(gt, gk)
-                if gk == "GetService" then
-                    return function(self, sn)
-                        record('game:GetService("' .. tostring(sn) .. '")')
-                        local sp = {}
-                        local smt = {}
-                        smt.__index = function(st, sk)
-                            if sk == "WaitForChild" then
-                                return function(self, cn)
-                                    record(tostring(sn) .. ':WaitForChild("' .. tostring(cn) .. '")')
-                                    return createsandbox()
-                                end
-                            elseif sk == "FindFirstChild" then
-                                return function(self, cn)
-                                    record(tostring(sn) .. ':FindFirstChild("' .. tostring(cn) .. '")')
-                                    return createsandbox()
-                                end
-                            elseif sk == "GetChildren" then
-                                return function(self)
-                                    record(tostring(sn) .. ":GetChildren()")
-                                    return {}
-                                end
-                            elseif sk == "Connect" then
-                                return function(self, cb)
-                                    record(tostring(sn) .. ":Connect(function() end)")
-                                    local conn = {}
-                                    conn.Disconnect = function()
-                                        record(tostring(sn) .. "_connection:Disconnect()")
-                                    end
-                                    return conn
-                                end
-                            elseif sk == "FireServer" then
-                                return function(self, ...)
-                                    record(tostring(sn) .. ":FireServer(...)")
-                                end
-                            elseif sk == "InvokeServer" then
-                                return function(self, ...)
-                                    record(tostring(sn) .. ":InvokeServer(...)")
-                                    return {}
-                                end
-                            else
-                                record(tostring(sn) .. "." .. tostring(sk))
-                                return createsandbox()
-                            end
-                        end
-                        smt.__newindex = function(st, sk, sv)
-                            record(tostring(sn) .. "." .. tostring(sk) .. " = " .. tostring(sv))
-                        end
-                        setmetatable(sp, smt)
-                        return sp
-                    end
-                elseif gk == "HttpGet" then
-                    return function(self, url)
-                        record('game:HttpGet("' .. tostring(url) .. '")')
-                        return ""
-                    end
-                elseif gk == "HttpPost" then
-                    return function(self, url, data)
-                        record('game:HttpPost("' .. tostring(url) .. '")')
-                        return ""
-                    end
-                else
-                    record("game." .. tostring(gk))
-                    return createsandbox()
-                end
-            end
-            gmt.__newindex = function(gt, gk, gv)
-                record("game." .. tostring(gk) .. " = " .. tostring(gv))
-            end
-            setmetatable(gp, gmt)
-            return gp
-        elseif k == "Instance" then
-            record("Instance")
-            local ip = {}
-            local imt = {}
-            imt.__index = function(it, ik)
-                if ik == "new" then
-                    return function(self, cn, p)
-                        record('Instance.new("' .. tostring(cn) .. '")')
-                        local np = {}
-                        local nmt = {}
-                        nmt.__index = function(nt, nk)
-                            if nk == "Parent" then
-                                record(tostring(cn) .. ".Parent")
-                                return createsandbox()
-                            elseif nk == "Name" then
-                                record(tostring(cn) .. ".Name")
-                                return ""
-                            else
-                                record(tostring(cn) .. "." .. tostring(nk))
-                                return createsandbox()
-                            end
-                        end
-                        nmt.__newindex = function(nt, nk, nv)
-                            record(tostring(cn) .. "." .. tostring(nk) .. " = " .. tostring(nv))
-                        end
-                        setmetatable(np, nmt)
-                        return np
-                    end
-                end
-                return createsandbox()
-            end
-            setmetatable(ip, imt)
-            return ip
-        elseif k == "workspace" or k == "Workspace" then
-            record("workspace")
-            return createsandbox()
-        elseif k == "script" then
-            record("script")
-            return {}
-        elseif k == "print" then
-            return function(...)
-                local a = {...}
-                local s = {}
-                for i, v in ipairs(a) do
-                    table.insert(s, tostring(v))
-                end
-                record('print(' .. table.concat(s, ", ") .. ')')
-            end
-        elseif k == "warn" then
-            return function(...)
-                local a = {...}
-                local s = {}
-                for i, v in ipairs(a) do
-                    table.insert(s, tostring(v))
-                end
-                record('warn(' .. table.concat(s, ", ") .. ')')
-            end
-        elseif k == "task" then
-            record("task")
-            local tp = {}
-            tp.wait = function(t)
-                record("task.wait(" .. tostring(t) .. ")")
-                return t or 0.03
-            end
-            tp.spawn = function(f)
-                record("task.spawn(function() end)")
-            end
-            tp.delay = function(t, f)
-                record("task.delay(" .. tostring(t) .. ", function() end)")
-            end
-            return tp
-        elseif k == "wait" then
-            return function(t)
-                record("wait(" .. tostring(t) .. ")")
-                return t or 0.03
-            end
-        elseif k == "spawn" then
-            return function(f)
-                record("spawn(function() end)")
-            end
-        elseif k == "delay" then
-            return function(t, f)
-                record("delay(" .. tostring(t) .. ", function() end)")
-            end
-        elseif k == "tick" then
-            record("tick()")
-            return os.clock()
-        elseif k == "time" then
-            record("time()")
-            return os.time()
-        elseif k == "getfenv" then
+        if k == "Parent" then
+            return inst.Parent
+        elseif k == "Name" then
+            return inst.Name
+        elseif k == "ClassName" then
+            return inst.ClassName
+        elseif k == "GetChildren" then
             return function()
-                record("getfenv()")
-                return env
+                log(class .. ":GetChildren()")
+                return inst.Children
             end
-        elseif k == "setfenv" then
-            return function(f, e)
-                record("setfenv()")
-            end
-        elseif k == "loadstring" or k == "load" then
-            return function(s, n)
-                record('loadstring("' .. tostring(s):sub(1, 50) .. '...")')
-                return function()
-                    record("loadstring_result()")
+        elseif k == "FindFirstChild" then
+            return function(self, name)
+                log(class .. ':FindFirstChild("' .. name .. '")')
+                for _, child in pairs(inst.Children) do
+                    if child.Name == name then
+                        return child
+                    end
                 end
+                return nil
+            end
+        elseif k == "WaitForChild" then
+            return function(self, name, timeout)
+                log(class .. ':WaitForChild("' .. name .. '")')
+                return newmockinstance("Folder", inst)
+            end
+        elseif k == "Destroy" then
+            return function()
+                log(class .. ":Destroy()")
+            end
+        elseif k == "Clone" then
+            return function()
+                log(class .. ":Clone()")
+                return newmockinstance(class, nil)
+            end
+        elseif k == "GetService" then
+            return function(self, name)
+                log('game:GetService("' .. name .. '")')
+                return newmockinstance(name, nil)
+            end
+        elseif k == "Connect" then
+            return function(self, cb)
+                log(class .. ":Connect(function() end)")
+                local conn = {}
+                conn.Disconnect = function()
+                    log(class .. "_connection:Disconnect()")
+                end
+                return conn
+            end
+        elseif k == "FireServer" then
+            return function(self, ...)
+                log(class .. ":FireServer(...)")
+            end
+        elseif k == "InvokeServer" then
+            return function(self, ...)
+                log(class .. ":InvokeServer(...)")
+                return {}
+            end
+        elseif k == "HttpGet" then
+            return function(self, url)
+                log('game:HttpGet("' .. tostring(url) .. '")')
+                return ""
+            end
+        elseif k == "HttpPost" then
+            return function(self, url, data)
+                log('game:HttpPost("' .. tostring(url) .. '")')
+                return ""
+            end
+        elseif k == "JSONEncode" then
+            return function(self, data)
+                log('HttpService:JSONEncode(...)')
+                return "{}"
+            end
+        elseif k == "JSONDecode" then
+            return function(self, data)
+                log('HttpService:JSONDecode(...)')
+                return {}
+            end
+        elseif k == "GenerateGUID" then
+            return function(self)
+                log('HttpService:GenerateGUID()')
+                return "00000000-0000-0000-0000-000000000000"
             end
         else
-            record("_G." .. tostring(k))
+            if inst.Properties[k] ~= nil then
+                return inst.Properties[k]
+            end
+            log(class .. "." .. tostring(k))
             return nil
         end
     end
     mt.__newindex = function(t, k, v)
-        record("_G." .. tostring(k) .. " = " .. tostring(v))
-        rawset(t, k, v)
+        inst.Properties[k] = v
+        if k == "Parent" and v then
+            if v.Children then
+                table.insert(v.Children, inst)
+            end
+        end
+        log(class .. "." .. tostring(k) .. " = " .. tostring(v))
     end
-    setmetatable(env, mt)
-    return env
+    setmetatable(inst, mt)
+    return inst
 end
+local sandbox = {}
+local sandboxmt = {}
+sandboxmt.__index = function(t, k)
+    if k == "game" then
+        log("game")
+        local gameinst = newmockinstance("DataModel", nil)
+        return gameinst
+    elseif k == "workspace" or k == "Workspace" then
+        log("workspace")
+        return newmockinstance("Workspace", nil)
+    elseif k == "script" then
+        log("script")
+        local scr = newmockinstance("LocalScript", nil)
+        scr.Name = "DumpedScript"
+        scr.ClassName = "LocalScript"
+        return scr
+    elseif k == "Instance" then
+        log("Instance")
+        local instclass = {}
+        instclass.new = function(self, classname, parent)
+            log('Instance.new("' .. classname .. '")')
+            return newmockinstance(classname, parent)
+        end
+        return instclass
+    elseif k == "print" then
+        return function(...)
+            local args = {...}
+            local strs = {}
+            for i, v in ipairs(args) do
+                table.insert(strs, tostring(v))
+            end
+            log('print(' .. table.concat(strs, ", ") .. ')')
+        end
+    elseif k == "warn" then
+        return function(...)
+            local args = {...}
+            local strs = {}
+            for i, v in ipairs(args) do
+                table.insert(strs, tostring(v))
+            end
+            log('warn(' .. table.concat(strs, ", ") .. ')')
+        end
+    elseif k == "error" then
+        return function(msg, level)
+            log('error("' .. tostring(msg) .. '")')
+            error(msg, level)
+        end
+    elseif k == "task" then
+        log("task")
+        local tasktbl = {}
+        tasktbl.wait = function(t)
+            log("task.wait(" .. tostring(t) .. ")")
+            return t or 0.03
+        end
+        tasktbl.spawn = function(f)
+            log("task.spawn(function() end)")
+        end
+        tasktbl.delay = function(t, f)
+            log("task.delay(" .. tostring(t) .. ", function() end)")
+        end
+        tasktbl.defer = function(f)
+            log("task.defer(function() end)")
+        end
+        return tasktbl
+    elseif k == "wait" then
+        return function(t)
+            log("wait(" .. tostring(t) .. ")")
+            return t or 0.03
+        end
+    elseif k == "spawn" then
+        return function(f)
+            log("spawn(function() end)")
+        end
+    elseif k == "delay" then
+        return function(t, f)
+            log("delay(" .. tostring(t) .. ", function() end)")
+        end
+    elseif k == "tick" then
+        log("tick()")
+        return os.clock()
+    elseif k == "time" then
+        log("time()")
+        return os.time()
+    elseif k == "typeof" then
+        return function(v)
+            log("typeof(...)")
+            if type(v) == "table" and v.ClassName then
+                return v.ClassName
+            end
+            return type(v)
+        end
+    elseif k == "type" then
+        return function(v)
+            log("type(...)")
+            if type(v) == "table" and v.ClassName then
+                return "userdata"
+            end
+            return type(v)
+        end
+    elseif k == "getfenv" then
+        return function()
+            log("getfenv()")
+            return sandbox
+        end
+    elseif k == "setfenv" then
+        return function(f, e)
+            log("setfenv()")
+        end
+    elseif k == "getmetatable" then
+        return function(obj)
+            log("getmetatable()")
+            return nil
+        end
+    elseif k == "setmetatable" then
+        return function(obj, mt)
+            log("setmetatable()")
+            return obj
+        end
+    elseif k == "loadstring" or k == "load" then
+        return function(str, name)
+            local short = tostring(str):sub(1, 50)
+            if #tostring(str) > 50 then short = short .. "..." end
+            log('loadstring("' .. short .. '")')
+            local fn, err = loadstring(str)
+            if fn then
+                return function()
+                    log("loadstring_result()")
+                    return fn()
+                end
+            end
+            return nil, err
+        end
+    elseif k == "pcall" then
+        return function(f, ...)
+            log("pcall(...)")
+            local args = {...}
+            return pcall(f, table.unpack(args))
+        end
+    elseif k == "xpcall" then
+        return function(f, errh, ...)
+            log("xpcall(...)")
+            local args = {...}
+            return xpcall(f, errh, table.unpack(args))
+        end
+    elseif k == "Enum" then
+        log("Enum")
+        local enums = {}
+        local enummt = {}
+        enummt.__index = function(t, name)
+            log('Enum.' .. tostring(name))
+            return name
+        end
+        setmetatable(enums, enummt)
+        return enums
+    elseif k == "Vector3" then
+        log("Vector3")
+        return function(x, y, z)
+            return {X = x or 0, Y = y or 0, Z = z or 0}
+        end
+    elseif k == "Vector2" then
+        log("Vector2")
+        return function(x, y)
+            return {X = x or 0, Y = y or 0}
+        end
+    elseif k == "CFrame" then
+        log("CFrame")
+        return function(...)
+            return {components = {...}}
+        end
+    elseif k == "Color3" then
+        log("Color3")
+        return function(r, g, b)
+            return {R = r or 1, G = g or 1, B = b or 1}
+        end
+    elseif k == "UDim2" then
+        log("UDim2")
+        return function(xs, xo, ys, yo)
+            return {X = {Scale = xs or 0, Offset = xo or 0}, Y = {Scale = ys or 0, Offset = yo or 0}}
+        end
+    elseif k == "BrickColor" then
+        log("BrickColor")
+        return function(c)
+            return {Name = tostring(c), Color = Color3.new(1, 1, 1)}
+        end
+    elseif k == "TweenInfo" then
+        log("TweenInfo")
+        return function(...)
+            return {}
+        end
+    elseif k == "Ray" then
+        log("Ray")
+        return function(origin, direction)
+            return {Origin = origin, Direction = direction}
+        end
+    elseif k == "Rect" then
+        log("Rect")
+        return function(min, max)
+            return {Min = min, Max = max}
+        end
+    elseif k == "Region3" then
+        log("Region3")
+        return function(min, max)
+            return {Min = min, Max = max}
+        end
+    elseif k == "table" then
+        return table
+    elseif k == "string" then
+        return string
+    elseif k == "math" then
+        return math
+    elseif k == "os" then
+        local ostbl = {}
+        ostbl.time = function()
+            log("os.time()")
+            return os.time()
+        end
+        ostbl.date = function(fmt, t)
+            log("os.date()")
+            return os.date(fmt, t)
+        end
+        ostbl.clock = function()
+            log("os.clock()")
+            return os.clock()
+        end
+        ostbl.difftime = function(t2, t1)
+            log("os.difftime()")
+            return os.difftime(t2, t1)
+        end
+        return ostbl
+    elseif k == "coroutine" then
+        return coroutine
+    elseif k == "debug" then
+        local debugtbl = {}
+        debugtbl.getinfo = function()
+            log("debug.getinfo()")
+            return {}
+        end
+        debugtbl.getupvalue = function()
+            log("debug.getupvalue()")
+            return nil
+        end
+        debugtbl.setupvalue = function()
+            log("debug.setupvalue()")
+        end
+        return debugtbl
+    elseif k == "_G" then
+        return sandbox
+    else
+        log("_G." .. tostring(k))
+        return nil
+    end
+end
+sandboxmt.__newindex = function(t, k, v)
+    log("_G." .. tostring(k) .. " = " .. tostring(v))
+    rawset(t, k, v)
+end
+setmetatable(sandbox, sandboxmt)
+sandbox._G = sandbox
 function saveoutput()
     local out = "-- envlogged by axom env logger | https://discord.gg/FgR3MXqZy9\n"
-    for _, call in ipairs(capturedcalls) do
-        out = out .. call .. "\n"
+    for _, line in ipairs(actions) do
+        out = out .. line .. "\n"
     end
     if not isfolder then
-        add("isfolder not available", Color3.fromRGB(255, 100, 100))
+        add("isfolder missing", Color3.fromRGB(255, 100, 100))
         return
     end
     if not isfolder("axomenvlogger") then
@@ -475,10 +653,11 @@ function processinput()
         add("paste code first", Color3.fromRGB(255, 200, 100))
         return
     end
-    capturedcalls = {}
+    actions = {}
+    mockinstances = {}
+    mockids = 0
     add("creating sandbox...", Color3.fromRGB(100, 200, 255))
     sl.Text = "creating sandbox..."
-    local env = createsandbox()
     add("loading script...", Color3.fromRGB(255, 200, 100))
     sl.Text = "loading..."
     local fn, err = loadstring(inp)
@@ -489,7 +668,7 @@ function processinput()
     end
     add("executing in sandbox...", Color3.fromRGB(255, 200, 100))
     sl.Text = "executing..."
-    setfenv(fn, env)
+    setfenv(fn, sandbox)
     local ok, res = pcall(fn)
     if not ok then
         add("execution error: " .. tostring(res), Color3.fromRGB(255, 100, 100))
@@ -498,7 +677,7 @@ function processinput()
         add("execution complete", Color3.fromRGB(100, 255, 100))
         sl.Text = "complete"
     end
-    add("captured " .. #capturedcalls .. " api calls", Color3.fromRGB(100, 200, 255))
+    add("captured " .. #actions .. " actions", Color3.fromRGB(100, 200, 255))
     saveoutput()
 end
 run.MouseButton1Click:Connect(function()
@@ -506,7 +685,7 @@ run.MouseButton1Click:Connect(function()
 end)
 clr.MouseButton1Click:Connect(function()
     clear()
-    capturedcalls = {}
+    actions = {}
     add("cleared", Color3.fromRGB(200, 200, 200))
 end)
 add("axomenvlogger ready", Color3.fromRGB(100, 255, 255))
