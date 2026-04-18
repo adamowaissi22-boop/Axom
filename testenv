@@ -103,7 +103,7 @@ run.Size = UDim2.new(0.48, 0, 1, -5)
 run.Position = UDim2.new(0, 0, 0, 2.5)
 run.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
 run.BackgroundTransparency = 0.3
-run.Text = "deobfuscate & reconstruct"
+run.Text = "env log"
 run.TextColor3 = Color3.fromRGB(255, 255, 255)
 run.TextSize = 14
 run.Font = Enum.Font.GothamBold
@@ -251,273 +251,223 @@ function clear()
     end
     outputtexts = {}
 end
-local loglines = {}
-function log(msg)
-    table.insert(loglines, msg)
-    add(msg, Color3.fromRGB(150, 150, 150))
-end
-local function buildscript()
-    local out = {}
-    for i, line in ipairs(loglines) do
-        table.insert(out, line)
-    end
-    return table.concat(out, "\n")
-end
-local sandbox = {}
 local capturedcalls = {}
-local function recordcall(funcname, ...)
-    local args = {...}
-    local argstr = {}
-    for i, v in ipairs(args) do
-        if type(v) == "string" then
-            table.insert(argstr, '"' .. v .. '"')
-        else
-            table.insert(argstr, tostring(v))
-        end
-    end
-    table.insert(capturedcalls, funcname .. "(" .. table.concat(argstr, ", ") .. ")")
+function record(call)
+    table.insert(capturedcalls, call)
+    add(call, Color3.fromRGB(180, 180, 180))
 end
-local function createsandbox()
+function createsandbox()
     local env = {}
     local mt = {}
     mt.__index = function(t, k)
         if k == "game" then
-            recordcall("game", k)
-            local gameproxy = {}
-            local gamemt = {}
-            gamemt.__index = function(gt, gk)
+            record('game')
+            local gp = {}
+            local gmt = {}
+            gmt.__index = function(gt, gk)
                 if gk == "GetService" then
-                    return function(self, servicename)
-                        recordcall("game:GetService", servicename)
-                        local serviceproxy = {}
-                        local servicemt = {}
-                        servicemt.__index = function(st, sk)
+                    return function(self, sn)
+                        record('game:GetService("' .. tostring(sn) .. '")')
+                        local sp = {}
+                        local smt = {}
+                        smt.__index = function(st, sk)
                             if sk == "WaitForChild" then
-                                return function(self, childname)
-                                    recordcall(servicename .. ":WaitForChild", childname)
+                                return function(self, cn)
+                                    record(tostring(sn) .. ':WaitForChild("' .. tostring(cn) .. '")')
                                     return createsandbox()
                                 end
                             elseif sk == "FindFirstChild" then
-                                return function(self, childname)
-                                    recordcall(servicename .. ":FindFirstChild", childname)
+                                return function(self, cn)
+                                    record(tostring(sn) .. ':FindFirstChild("' .. tostring(cn) .. '")')
                                     return createsandbox()
                                 end
                             elseif sk == "GetChildren" then
                                 return function(self)
-                                    recordcall(servicename .. ":GetChildren")
+                                    record(tostring(sn) .. ":GetChildren()")
                                     return {}
                                 end
                             elseif sk == "Connect" then
-                                return function(self, callback)
-                                    recordcall(servicename .. ":Connect")
+                                return function(self, cb)
+                                    record(tostring(sn) .. ":Connect(function() end)")
                                     local conn = {}
                                     conn.Disconnect = function()
-                                        recordcall(servicename .. "_connection:Disconnect")
+                                        record(tostring(sn) .. "_connection:Disconnect()")
                                     end
                                     return conn
                                 end
                             elseif sk == "FireServer" then
                                 return function(self, ...)
-                                    recordcall(servicename .. ":FireServer", ...)
+                                    record(tostring(sn) .. ":FireServer(...)")
                                 end
                             elseif sk == "InvokeServer" then
                                 return function(self, ...)
-                                    recordcall(servicename .. ":InvokeServer", ...)
+                                    record(tostring(sn) .. ":InvokeServer(...)")
                                     return {}
                                 end
                             else
-                                recordcall(servicename .. "." .. tostring(sk))
+                                record(tostring(sn) .. "." .. tostring(sk))
                                 return createsandbox()
                             end
                         end
-                        servicemt.__newindex = function(st, sk, sv)
-                            recordcall(servicename .. "." .. tostring(sk) .. " = " .. tostring(sv))
+                        smt.__newindex = function(st, sk, sv)
+                            record(tostring(sn) .. "." .. tostring(sk) .. " = " .. tostring(sv))
                         end
-                        setmetatable(serviceproxy, servicemt)
-                        return serviceproxy
-                    end
-                elseif gk == "GetPropertyChangedSignal" then
-                    return function(self, prop)
-                        recordcall("game:GetPropertyChangedSignal", prop)
-                        return createsandbox()
+                        setmetatable(sp, smt)
+                        return sp
                     end
                 elseif gk == "HttpGet" then
                     return function(self, url)
-                        recordcall("game:HttpGet", url)
+                        record('game:HttpGet("' .. tostring(url) .. '")')
                         return ""
                     end
                 elseif gk == "HttpPost" then
                     return function(self, url, data)
-                        recordcall("game:HttpPost", url, data)
+                        record('game:HttpPost("' .. tostring(url) .. '")')
                         return ""
                     end
                 else
-                    recordcall("game." .. tostring(gk))
+                    record("game." .. tostring(gk))
                     return createsandbox()
                 end
             end
-            gamemt.__newindex = function(gt, gk, gv)
-                recordcall("game." .. tostring(gk) .. " = " .. tostring(gv))
+            gmt.__newindex = function(gt, gk, gv)
+                record("game." .. tostring(gk) .. " = " .. tostring(gv))
             end
-            setmetatable(gameproxy, gamemt)
-            return gameproxy
+            setmetatable(gp, gmt)
+            return gp
         elseif k == "Instance" then
-            local instanceproxy = {}
-            local instancemt = {}
-            instancemt.__index = function(it, ik)
+            record("Instance")
+            local ip = {}
+            local imt = {}
+            imt.__index = function(it, ik)
                 if ik == "new" then
-                    return function(self, classname, parent)
-                        recordcall("Instance.new", classname, parent)
-                        local newproxy = {}
-                        local newmt = {}
-                        newmt.__index = function(nt, nk)
+                    return function(self, cn, p)
+                        record('Instance.new("' .. tostring(cn) .. '")')
+                        local np = {}
+                        local nmt = {}
+                        nmt.__index = function(nt, nk)
                             if nk == "Parent" then
-                                recordcall(classname .. ".Parent")
+                                record(tostring(cn) .. ".Parent")
                                 return createsandbox()
                             elseif nk == "Name" then
-                                recordcall(classname .. ".Name")
+                                record(tostring(cn) .. ".Name")
                                 return ""
-                            elseif nk == "ClassName" then
-                                recordcall(classname .. ".ClassName")
-                                return classname
                             else
-                                recordcall(classname .. "." .. tostring(nk))
+                                record(tostring(cn) .. "." .. tostring(nk))
                                 return createsandbox()
                             end
                         end
-                        newmt.__newindex = function(nt, nk, nv)
-                            recordcall(classname .. "." .. tostring(nk) .. " = " .. tostring(nv))
+                        nmt.__newindex = function(nt, nk, nv)
+                            record(tostring(cn) .. "." .. tostring(nk) .. " = " .. tostring(nv))
                         end
-                        setmetatable(newproxy, newmt)
-                        return newproxy
+                        setmetatable(np, nmt)
+                        return np
                     end
                 end
                 return createsandbox()
             end
-            setmetatable(instanceproxy, instancemt)
-            return instanceproxy
+            setmetatable(ip, imt)
+            return ip
         elseif k == "workspace" or k == "Workspace" then
-            recordcall("workspace")
+            record("workspace")
             return createsandbox()
         elseif k == "script" then
-            recordcall("script")
-            local scriptproxy = {}
-            scriptproxy.Name = "DumpedScript"
-            scriptproxy.ClassName = "LocalScript"
-            scriptproxy.Parent = sandbox.game
-            return scriptproxy
+            record("script")
+            return {}
         elseif k == "print" then
             return function(...)
-                local args = {...}
-                local out = {}
-                for i, v in ipairs(args) do
-                    table.insert(out, tostring(v))
+                local a = {...}
+                local s = {}
+                for i, v in ipairs(a) do
+                    table.insert(s, tostring(v))
                 end
-                recordcall("print", table.concat(out, ", "))
+                record('print(' .. table.concat(s, ", ") .. ')')
             end
         elseif k == "warn" then
             return function(...)
-                local args = {...}
-                local out = {}
-                for i, v in ipairs(args) do
-                    table.insert(out, tostring(v))
+                local a = {...}
+                local s = {}
+                for i, v in ipairs(a) do
+                    table.insert(s, tostring(v))
                 end
-                recordcall("warn", table.concat(out, ", "))
+                record('warn(' .. table.concat(s, ", ") .. ')')
             end
         elseif k == "task" then
-            local taskproxy = {}
-            taskproxy.wait = function(t)
-                recordcall("task.wait", t)
+            record("task")
+            local tp = {}
+            tp.wait = function(t)
+                record("task.wait(" .. tostring(t) .. ")")
                 return t or 0.03
             end
-            taskproxy.spawn = function(f)
-                recordcall("task.spawn")
+            tp.spawn = function(f)
+                record("task.spawn(function() end)")
             end
-            taskproxy.delay = function(t, f)
-                recordcall("task.delay", t)
+            tp.delay = function(t, f)
+                record("task.delay(" .. tostring(t) .. ", function() end)")
             end
-            return taskproxy
+            return tp
         elseif k == "wait" then
             return function(t)
-                recordcall("wait", t)
+                record("wait(" .. tostring(t) .. ")")
                 return t or 0.03
             end
         elseif k == "spawn" then
             return function(f)
-                recordcall("spawn")
+                record("spawn(function() end)")
             end
         elseif k == "delay" then
             return function(t, f)
-                recordcall("delay", t)
+                record("delay(" .. tostring(t) .. ", function() end)")
             end
         elseif k == "tick" then
-            recordcall("tick")
+            record("tick()")
             return os.clock()
         elseif k == "time" then
-            recordcall("time")
+            record("time()")
             return os.time()
-        elseif k == "typeof" then
-            return function(v)
-                recordcall("typeof", v)
-                return "Instance"
-            end
         elseif k == "getfenv" then
             return function()
-                recordcall("getfenv")
+                record("getfenv()")
                 return env
             end
         elseif k == "setfenv" then
-            return function(f, newenv)
-                recordcall("setfenv")
+            return function(f, e)
+                record("setfenv()")
             end
         elseif k == "loadstring" or k == "load" then
-            return function(str, name)
-                recordcall("loadstring", str)
+            return function(s, n)
+                record('loadstring("' .. tostring(s):sub(1, 50) .. '...")')
                 return function()
-                    recordcall("loadstring_result")
-                    return nil
+                    record("loadstring_result()")
                 end
             end
         else
-            recordcall("_G." .. tostring(k))
-            return env[k]
+            record("_G." .. tostring(k))
+            return nil
         end
     end
     mt.__newindex = function(t, k, v)
-        recordcall("_G." .. tostring(k) .. " = " .. tostring(v))
+        record("_G." .. tostring(k) .. " = " .. tostring(v))
         rawset(t, k, v)
     end
     setmetatable(env, mt)
-    env._G = env
-    env.game = nil
-    env.Instance = nil
-    env.workspace = nil
-    env.script = nil
-    env.print = nil
-    env.warn = nil
-    env.task = nil
-    env.wait = nil
-    env.spawn = nil
-    env.delay = nil
-    env.tick = nil
-    env.time = nil
-    env.typeof = nil
-    env.getfenv = nil
-    env.setfenv = nil
-    env.loadstring = nil
-    env.load = nil
-    sandbox = env
     return env
 end
-function reconstructsource()
-    local out = {}
+function saveoutput()
+    local out = "-- envlogged by axom env logger | https://discord.gg/FgR3MXqZy9\n"
     for _, call in ipairs(capturedcalls) do
-        table.insert(out, call)
+        out = out .. call .. "\n"
     end
-    if #out == 0 then
-        table.insert(out, "-- no api calls captured")
+    if not isfolder then
+        add("isfolder not available", Color3.fromRGB(255, 100, 100))
+        return
     end
-    return table.concat(out, "\n")
+    if not isfolder("axomenvlogger") then
+        makefolder("axomenvlogger")
+    end
+    writefile("axomenvlogger/envloggedscript.txt", out)
+    add("saved to axomenvlogger/envloggedscript.txt", Color3.fromRGB(100, 255, 100))
+    sl.Text = "saved"
 end
 function processinput()
     local inp = box.Text
@@ -525,11 +475,10 @@ function processinput()
         add("paste code first", Color3.fromRGB(255, 200, 100))
         return
     end
-    loglines = {}
     capturedcalls = {}
-    add("creating sandbox environment...", Color3.fromRGB(100, 200, 255))
+    add("creating sandbox...", Color3.fromRGB(100, 200, 255))
     sl.Text = "creating sandbox..."
-    local sandboxenv = createsandbox()
+    local env = createsandbox()
     add("loading script...", Color3.fromRGB(255, 200, 100))
     sl.Text = "loading..."
     local fn, err = loadstring(inp)
@@ -540,7 +489,7 @@ function processinput()
     end
     add("executing in sandbox...", Color3.fromRGB(255, 200, 100))
     sl.Text = "executing..."
-    setfenv(fn, sandboxenv)
+    setfenv(fn, env)
     local ok, res = pcall(fn)
     if not ok then
         add("execution error: " .. tostring(res), Color3.fromRGB(255, 100, 100))
@@ -549,28 +498,16 @@ function processinput()
         add("execution complete", Color3.fromRGB(100, 255, 100))
         sl.Text = "complete"
     end
-    local reconstructed = reconstructsource()
-    local output = "-- envlogged by axom env logger | https://discord.gg/FgR3MXqZy9\n" .. reconstructed
-    local saveok, saveerr = pcall(function()
-        writefile("envloggedscript.txt", output)
-        add("saved to envloggedscript.txt", Color3.fromRGB(100, 255, 100))
-    end)
-    if not saveok then
-        add("save failed: " .. tostring(saveerr), Color3.fromRGB(255, 100, 100))
-    end
-    add("--- reconstructed script ---", Color3.fromRGB(200, 200, 255))
-    for _, line in ipairs(capturedcalls) do
-        add(line, Color3.fromRGB(180, 180, 180))
-    end
+    add("captured " .. #capturedcalls .. " api calls", Color3.fromRGB(100, 200, 255))
+    saveoutput()
 end
 run.MouseButton1Click:Connect(function()
     processinput()
 end)
 clr.MouseButton1Click:Connect(function()
     clear()
-    loglines = {}
     capturedcalls = {}
     add("cleared", Color3.fromRGB(200, 200, 200))
 end)
-add("axomenvlogger ready - sandbox environment logger", Color3.fromRGB(100, 255, 255))
+add("axomenvlogger ready", Color3.fromRGB(100, 255, 255))
 add("paste obfuscated lua code above", Color3.fromRGB(200, 200, 200))
