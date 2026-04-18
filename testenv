@@ -3,8 +3,8 @@ g.Name = "screengui"
 g.ResetOnSpawn = false
 local p = game:GetService("Players").LocalPlayer
 local f = Instance.new("Frame")
-f.Size = UDim2.new(0, 700, 0, 750)
-f.Position = UDim2.new(0.5, -350, 0.5, -375)
+f.Size = UDim2.new(0, 550, 0, 650)
+f.Position = UDim2.new(0.5, -275, 0.5, -325)
 f.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
 f.BackgroundTransparency = 0.6
 f.BorderSizePixel = 0
@@ -26,7 +26,7 @@ pd.PaddingTop = UDim.new(0, 10)
 pd.PaddingBottom = UDim.new(0, 10)
 pd.Parent = f
 local tb = Instance.new("Frame")
-tb.Size = UDim2.new(1, 0, 0, 40)
+tb.Size = UDim2.new(1, 0, 0, 35)
 tb.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
 tb.BackgroundTransparency = 0.4
 tb.BorderSizePixel = 0
@@ -35,18 +35,18 @@ local tc = Instance.new("UICorner")
 tc.CornerRadius = UDim.new(0, 12)
 tc.Parent = tb
 local tl = Instance.new("TextLabel")
-tl.Size = UDim2.new(1, -80, 1, 0)
+tl.Size = UDim2.new(1, -40, 1, 0)
 tl.Position = UDim2.new(0, 5, 0, 0)
 tl.BackgroundTransparency = 1
 tl.Text = "axomenvlogger"
 tl.TextColor3 = Color3.fromRGB(255, 255, 255)
-tl.TextSize = 18
+tl.TextSize = 16
 tl.TextXAlignment = Enum.TextXAlignment.Left
 tl.Font = Enum.Font.GothamBold
 tl.Parent = tb
 local close = Instance.new("TextButton")
-close.Size = UDim2.new(0, 35, 0, 35)
-close.Position = UDim2.new(1, -40, 0, 2.5)
+close.Size = UDim2.new(0, 30, 0, 30)
+close.Position = UDim2.new(1, -35, 0, 2.5)
 close.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 close.BackgroundTransparency = 0.3
 close.Text = "X"
@@ -60,8 +60,8 @@ local cc = Instance.new("UICorner")
 cc.CornerRadius = UDim.new(0, 8)
 cc.Parent = close
 local inf = Instance.new("Frame")
-inf.Size = UDim2.new(1, 0, 0, 100)
-inf.Position = UDim2.new(0, 0, 0, 50)
+inf.Size = UDim2.new(1, 0, 0, 120)
+inf.Position = UDim2.new(0, 0, 0, 45)
 inf.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
 inf.BackgroundTransparency = 0.5
 inf.BorderSizePixel = 0
@@ -80,7 +80,7 @@ box.Size = UDim2.new(1, 0, 1, 0)
 box.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 box.BackgroundTransparency = 0.2
 box.Text = ""
-box.PlaceholderText = "paste url or code here"
+box.PlaceholderText = "paste obfuscated lua code here"
 box.TextColor3 = Color3.fromRGB(255, 255, 255)
 box.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
 box.TextSize = 13
@@ -95,7 +95,7 @@ bc.CornerRadius = UDim.new(0, 8)
 bc.Parent = box
 local bf = Instance.new("Frame")
 bf.Size = UDim2.new(1, 0, 0, 45)
-bf.Position = UDim2.new(0, 0, 0, 160)
+bf.Position = UDim2.new(0, 0, 0, 175)
 bf.BackgroundTransparency = 1
 bf.Parent = f
 local run = Instance.new("TextButton")
@@ -103,7 +103,7 @@ run.Size = UDim2.new(0.48, 0, 1, -5)
 run.Position = UDim2.new(0, 0, 0, 2.5)
 run.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
 run.BackgroundTransparency = 0.3
-run.Text = "run & log"
+run.Text = "deobfuscate & reconstruct"
 run.TextColor3 = Color3.fromRGB(255, 255, 255)
 run.TextSize = 14
 run.Font = Enum.Font.GothamBold
@@ -126,40 +126,9 @@ clr.Parent = bf
 local clc = Instance.new("UICorner")
 clc.CornerRadius = UDim.new(0, 8)
 clc.Parent = clr
-local outputheader = Instance.new("Frame")
-outputheader.Size = UDim2.new(1, 0, 0, 30)
-outputheader.Position = UDim2.new(0, 0, 0, 215)
-outputheader.BackgroundColor3 = Color3.fromRGB(0, 60, 150)
-outputheader.BackgroundTransparency = 0.5
-outputheader.BorderSizePixel = 0
-outputheader.Parent = f
-local headerlabel = Instance.new("TextLabel")
-headerlabel.Size = UDim2.new(1, -40, 1, 0)
-headerlabel.Position = UDim2.new(0, 5, 0, 0)
-headerlabel.BackgroundTransparency = 1
-headerlabel.Text = "output"
-headerlabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-headerlabel.TextSize = 12
-headerlabel.TextXAlignment = Enum.TextXAlignment.Left
-headerlabel.Font = Enum.Font.GothamBold
-headerlabel.Parent = outputheader
-local copyall = Instance.new("TextButton")
-copyall.Size = UDim2.new(0, 60, 1, -4)
-copyall.Position = UDim2.new(1, -65, 0, 2)
-copyall.BackgroundColor3 = Color3.fromRGB(100, 100, 200)
-copyall.BackgroundTransparency = 0.3
-copyall.Text = "copy all"
-copyall.TextColor3 = Color3.fromRGB(255, 255, 255)
-copyall.TextSize = 10
-copyall.Font = Enum.Font.GothamBold
-copyall.BorderSizePixel = 0
-copyall.Parent = outputheader
-local copyallcorner = Instance.new("UICorner")
-copyallcorner.CornerRadius = UDim.new(0, 4)
-copyallcorner.Parent = copyall
 local of = Instance.new("Frame")
-of.Size = UDim2.new(1, 0, 1, -260)
-of.Position = UDim2.new(0, 0, 0, 245)
+of.Size = UDim2.new(1, 0, 1, -235)
+of.Position = UDim2.new(0, 0, 0, 230)
 of.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
 of.BackgroundTransparency = 0.5
 of.BorderSizePixel = 0
@@ -185,24 +154,14 @@ lst.Padding = UDim.new(0, 4)
 lst.SortOrder = Enum.SortOrder.LayoutOrder
 lst.Parent = sc
 local sb = Instance.new("Frame")
-sb.Size = UDim2.new(1, 0, 0, 55)
-sb.Position = UDim2.new(0, 0, 1, -55)
+sb.Size = UDim2.new(1, 0, 0, 25)
+sb.Position = UDim2.new(0, 0, 1, -25)
 sb.BackgroundColor3 = Color3.fromRGB(0, 60, 150)
 sb.BackgroundTransparency = 0.5
 sb.BorderSizePixel = 0
 sb.Parent = f
-local statusframe = Instance.new("Frame")
-statusframe.Size = UDim2.new(0.88, 0, 1, -8)
-statusframe.Position = UDim2.new(0, 4, 0, 4)
-statusframe.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-statusframe.BackgroundTransparency = 0.3
-statusframe.BorderSizePixel = 0
-statusframe.Parent = sb
-local statuscorner = Instance.new("UICorner")
-statuscorner.CornerRadius = UDim.new(0, 6)
-statuscorner.Parent = statusframe
 local sl = Instance.new("TextLabel")
-sl.Size = UDim2.new(1, -35, 1, 0)
+sl.Size = UDim2.new(1, -10, 1, 0)
 sl.Position = UDim2.new(0, 5, 0, 0)
 sl.BackgroundTransparency = 1
 sl.Text = "ready"
@@ -210,10 +169,10 @@ sl.TextColor3 = Color3.fromRGB(200, 200, 200)
 sl.TextSize = 11
 sl.TextXAlignment = Enum.TextXAlignment.Left
 sl.Font = Enum.Font.SourceSans
-sl.Parent = statusframe
+sl.Parent = sb
 local copybtn = Instance.new("TextButton")
-copybtn.Size = UDim2.new(0, 30, 0, 30)
-copybtn.Position = UDim2.new(1, -35, 0, 2)
+copybtn.Size = UDim2.new(0, 25, 0, 25)
+copybtn.Position = UDim2.new(1, -30, 0, 0)
 copybtn.BackgroundColor3 = Color3.fromRGB(100, 100, 200)
 copybtn.BackgroundTransparency = 0.3
 copybtn.Text = "C"
@@ -221,7 +180,7 @@ copybtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 copybtn.TextSize = 12
 copybtn.Font = Enum.Font.GothamBold
 copybtn.BorderSizePixel = 0
-copybtn.Parent = statusframe
+copybtn.Parent = sb
 local copycorner = Instance.new("UICorner")
 copycorner.CornerRadius = UDim.new(0, 4)
 copycorner.Parent = copybtn
@@ -262,6 +221,13 @@ end)
 close.MouseButton1Click:Connect(function()
     g:Destroy()
 end)
+copybtn.MouseButton1Click:Connect(function()
+    setclipboard(sl.Text)
+    local old = copybtn.Text
+    copybtn.Text = "✓"
+    task.wait(1)
+    copybtn.Text = old
+end)
 local outputtexts = {}
 function add(t, col)
     local l = Instance.new("TextLabel")
@@ -285,352 +251,316 @@ function clear()
     end
     outputtexts = {}
 end
-copyall.MouseButton1Click:Connect(function()
-    local full = table.concat(outputtexts, "\n")
-    setclipboard(full)
-    local old = copyall.Text
-    copyall.Text = "copied"
-    task.wait(1)
-    copyall.Text = old
-end)
-copybtn.MouseButton1Click:Connect(function()
-    setclipboard(sl.Text)
-    local old = copybtn.Text
-    copybtn.Text = "✓"
-    task.wait(1)
-    copybtn.Text = old
-end)
-local envlog = {}
-function capture(category, value)
-    table.insert(envlog, {cat = category, val = value, time = os.time()})
+local loglines = {}
+function log(msg)
+    table.insert(loglines, msg)
+    add(msg, Color3.fromRGB(150, 150, 150))
 end
-function esc(s)
-    if type(s) ~= "string" then
-        return tostring(s)
+local function buildscript()
+    local out = {}
+    for i, line in ipairs(loglines) do
+        table.insert(out, line)
     end
-    s = s:gsub("\\", "\\\\")
-    s = s:gsub('"', '\\"')
-    s = s:gsub("\n", "\\n")
-    s = s:gsub("\r", "\\r")
-    s = s:gsub("\t", "\\t")
-    return s
+    return table.concat(out, "\n")
 end
-function ser(v, d)
-    d = d or 0
-    if d > 5 then
-        return "..."
-    end
-    local t = typeof(v)
-    if t == "string" then
-        return '"' .. esc(v) .. '"'
-    elseif t == "number" or t == "boolean" then
-        return tostring(v)
-    elseif t == "nil" then
-        return "nil"
-    elseif t == "Instance" then
-        return 'game:GetService("' .. v.ClassName .. '")'
-    elseif t == "CFrame" then
-        local x, y, z = v:GetComponents()
-        return string.format("CFrame.new(%f, %f, %f)", x, y, z)
-    elseif t == "Vector3" then
-        return string.format("Vector3.new(%f, %f, %f)", v.X, v.Y, v.Z)
-    elseif t == "Vector2" then
-        return string.format("Vector2.new(%f, %f)", v.X, v.Y)
-    elseif t == "Color3" then
-        return string.format("Color3.new(%f, %f, %f)", v.R, v.G, v.B)
-    elseif t == "UDim2" then
-        return string.format("UDim2.new(%f, %d, %f, %d)", v.X.Scale, v.X.Offset, v.Y.Scale, v.Y.Offset)
-    elseif t == "EnumItem" then
-        return tostring(v)
-    elseif t == "RBXScriptSignal" then
-        return "signal"
-    elseif t == "RBXScriptConnection" then
-        return "connection"
-    elseif t == "function" then
-        return "function() end"
-    elseif t == "table" then
-        local items = {}
-        for k, val in pairs(v) do
-            table.insert(items, "[" .. ser(k, d + 1) .. "] = " .. ser(val, d + 1))
-            if #items >= 10 then
-                table.insert(items, "...")
-                break
-            end
-        end
-        return "{" .. table.concat(items, ", ") .. "}"
-    else
-        return tostring(v)
-    end
-end
-function saveenvlog()
-    local ok, err = pcall(function()
-        local data = "-- axomenvlogger output\n-- " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n\nreturn {\n"
-        for i, e in ipairs(envlog) do
-            local safeval = ser(e.val)
-            data = data .. '  ["' .. e.cat .. '"] = ' .. safeval .. ',\n'
-        end
-        data = data .. "}"
-        writefile("envloggedscript.txt", data)
-        add("saved to envloggedscript.txt", Color3.fromRGB(100, 255, 100))
-        sl.Text = "saved to envloggedscript.txt"
-    end)
-    if not ok then
-        add("save failed: " .. tostring(err), Color3.fromRGB(255, 100, 100))
-        sl.Text = "save failed"
-    end
-end
-function captureglobals()
-    local list = {"game", "workspace", "script", "shared", "Enum", "debug", "task", "coroutine", "table", "string", "math", "os", "Vector3", "Vector2", "CFrame", "Color3", "UDim2", "BrickColor", "TweenInfo", "Ray", "Rect", "Region3", "Instance", "Random", "ColorSequence", "NumberSequence", "NumberRange", "PhysicalProperties", "RaycastParams", "OverlapParams", "PathWaypoint", "Axes", "Faces"}
-    for _, n in ipairs(list) do
-        local ok, v = pcall(function()
-            return _G[n]
-        end)
-        if ok and v ~= nil then
-            capture("global_" .. n, v)
+local sandbox = {}
+local capturedcalls = {}
+local function recordcall(funcname, ...)
+    local args = {...}
+    local argstr = {}
+    for i, v in ipairs(args) do
+        if type(v) == "string" then
+            table.insert(argstr, '"' .. v .. '"')
+        else
+            table.insert(argstr, tostring(v))
         end
     end
+    table.insert(capturedcalls, funcname .. "(" .. table.concat(argstr, ", ") .. ")")
 end
-function captureservices()
-    local svcs = {"Players", "RunService", "ReplicatedStorage", "Workspace", "Lighting", "ServerStorage", "ServerScriptService", "StarterGui", "StarterPack", "StarterPlayer", "SoundService", "Chat", "UserInputService", "TweenService", "HttpService", "MarketplaceService", "TeleportService", "PathfindingService", "CollectionService", "PhysicsService", "ProximityPromptService", "ContextActionService", "GuiService", "Teams", "InsertService", "DataStoreService", "MessagingService", "TextService", "TextChatService", "ContentProvider", "Debris", "Selection", "SelectionService", "MaterialService", "Terrain", "NetworkClient", "NetworkServer", "ReplicatedFirst", "CoreGui", "StarterPlayerScripts", "StarterCharacterScripts", "StarterGuiScripts", "VoiceChatService", "FriendService", "GroupService", "BadgeService", "PointsService", "SocialService", "CreatorTagService"}
-    for _, n in ipairs(svcs) do
-        local ok, sv = pcall(function()
-            return game:GetService(n)
-        end)
-        if ok and sv then
-            capture("service_" .. n, sv)
-        end
-    end
-end
-function captureallremotes()
-    local function scanremotes(folder, path)
-        for _, c in pairs(folder:GetChildren()) do
-            if c:IsA("RemoteEvent") or c:IsA("RemoteFunction") then
-                capture("remote_" .. path .. "_" .. c.Name, c)
-            elseif c:IsA("Folder") or c:IsA("Model") or c:IsA("Tool") or c:IsA("Part") then
-                scanremotes(c, path .. "_" .. c.Name)
-            end
-        end
-    end
-    local ok, rs = pcall(function() return game:GetService("ReplicatedStorage") end)
-    if ok and rs then scanremotes(rs, "ReplicatedStorage") end
-    local ok2, ls = pcall(function() return game:GetService("Lighting") end)
-    if ok2 and ls then scanremotes(ls, "Lighting") end
-    local ok3, ws = pcall(function() return game:GetService("Workspace") end)
-    if ok3 and ws then scanremotes(ws, "Workspace") end
-end
-function capturebytecode(func)
-    if type(func) ~= "function" then
-        return "not a function"
-    end
-    local ok, bytecode = pcall(function()
-        return string.dump(func)
-    end)
-    if ok and bytecode then
-        return bytecode
-    end
-    return "cannot dump"
-end
-function captureallproperties(inst, path, depth)
-    depth = depth or 0
-    if depth > 8 then return end
-    path = path or inst.ClassName
-    local ok, props = pcall(function() return inst:GetProperties() end)
-    if ok and props then
-        for _, prop in ipairs(props) do
-            local ok2, val = pcall(function() return inst[prop] end)
-            if ok2 then
-                if typeof(val) == "function" then
-                    local bc = capturebytecode(val)
-                    capture("bytecode_" .. path .. "_" .. prop, bc)
+local function createsandbox()
+    local env = {}
+    local mt = {}
+    mt.__index = function(t, k)
+        if k == "game" then
+            recordcall("game", k)
+            local gameproxy = {}
+            local gamemt = {}
+            gamemt.__index = function(gt, gk)
+                if gk == "GetService" then
+                    return function(self, servicename)
+                        recordcall("game:GetService", servicename)
+                        local serviceproxy = {}
+                        local servicemt = {}
+                        servicemt.__index = function(st, sk)
+                            if sk == "WaitForChild" then
+                                return function(self, childname)
+                                    recordcall(servicename .. ":WaitForChild", childname)
+                                    return createsandbox()
+                                end
+                            elseif sk == "FindFirstChild" then
+                                return function(self, childname)
+                                    recordcall(servicename .. ":FindFirstChild", childname)
+                                    return createsandbox()
+                                end
+                            elseif sk == "GetChildren" then
+                                return function(self)
+                                    recordcall(servicename .. ":GetChildren")
+                                    return {}
+                                end
+                            elseif sk == "Connect" then
+                                return function(self, callback)
+                                    recordcall(servicename .. ":Connect")
+                                    local conn = {}
+                                    conn.Disconnect = function()
+                                        recordcall(servicename .. "_connection:Disconnect")
+                                    end
+                                    return conn
+                                end
+                            elseif sk == "FireServer" then
+                                return function(self, ...)
+                                    recordcall(servicename .. ":FireServer", ...)
+                                end
+                            elseif sk == "InvokeServer" then
+                                return function(self, ...)
+                                    recordcall(servicename .. ":InvokeServer", ...)
+                                    return {}
+                                end
+                            else
+                                recordcall(servicename .. "." .. tostring(sk))
+                                return createsandbox()
+                            end
+                        end
+                        servicemt.__newindex = function(st, sk, sv)
+                            recordcall(servicename .. "." .. tostring(sk) .. " = " .. tostring(sv))
+                        end
+                        setmetatable(serviceproxy, servicemt)
+                        return serviceproxy
+                    end
+                elseif gk == "GetPropertyChangedSignal" then
+                    return function(self, prop)
+                        recordcall("game:GetPropertyChangedSignal", prop)
+                        return createsandbox()
+                    end
+                elseif gk == "HttpGet" then
+                    return function(self, url)
+                        recordcall("game:HttpGet", url)
+                        return ""
+                    end
+                elseif gk == "HttpPost" then
+                    return function(self, url, data)
+                        recordcall("game:HttpPost", url, data)
+                        return ""
+                    end
+                else
+                    recordcall("game." .. tostring(gk))
+                    return createsandbox()
                 end
-                capture("property_" .. path .. "_" .. prop, val)
             end
-        end
-    end
-    local ok2, children = pcall(function() return inst:GetChildren() end)
-    if ok2 then
-        for _, child in ipairs(children) do
-            captureallproperties(child, path .. "_" .. child.Name, depth + 1)
-        end
-    end
-end
-function captureallinstances()
-    local total = 0
-    local function scanall(parent, path, depth)
-        if depth > 6 then return end
-        for _, c in pairs(parent:GetChildren()) do
-            if total < 500 then
-                total = total + 1
-                capture("instance_" .. path .. "_" .. c.Name, c)
-                capture("class_" .. c.Name, c.ClassName)
-                captureallproperties(c, c.ClassName .. "_" .. c.Name, depth + 1)
-                if c:IsA("BasePart") then
-                    capture("part_position_" .. c.Name, c.Position)
-                    capture("part_size_" .. c.Name, c.Size)
-                    capture("part_material_" .. c.Name, c.Material)
-                    capture("part_color_" .. c.Name, c.Color)
-                    if c:IsA("WedgePart") or c:IsA("CornerWedgePart") then
-                        capture("wedge_" .. c.Name, true)
+            gamemt.__newindex = function(gt, gk, gv)
+                recordcall("game." .. tostring(gk) .. " = " .. tostring(gv))
+            end
+            setmetatable(gameproxy, gamemt)
+            return gameproxy
+        elseif k == "Instance" then
+            local instanceproxy = {}
+            local instancemt = {}
+            instancemt.__index = function(it, ik)
+                if ik == "new" then
+                    return function(self, classname, parent)
+                        recordcall("Instance.new", classname, parent)
+                        local newproxy = {}
+                        local newmt = {}
+                        newmt.__index = function(nt, nk)
+                            if nk == "Parent" then
+                                recordcall(classname .. ".Parent")
+                                return createsandbox()
+                            elseif nk == "Name" then
+                                recordcall(classname .. ".Name")
+                                return ""
+                            elseif nk == "ClassName" then
+                                recordcall(classname .. ".ClassName")
+                                return classname
+                            else
+                                recordcall(classname .. "." .. tostring(nk))
+                                return createsandbox()
+                            end
+                        end
+                        newmt.__newindex = function(nt, nk, nv)
+                            recordcall(classname .. "." .. tostring(nk) .. " = " .. tostring(nv))
+                        end
+                        setmetatable(newproxy, newmt)
+                        return newproxy
                     end
                 end
-                if c:IsA("Weld") or c:IsA("WeldConstraint") then
-                    capture("weld_" .. c.Name, {Part0 = c.Part0, Part1 = c.Part1})
-                end
-                if c:IsA("Motor6D") then
-                    capture("motor_" .. c.Name, {Part0 = c.Part0, Part1 = c.Part1, C0 = c.C0, C1 = c.C1})
-                end
-                if c:IsA("Script") or c:IsA("LocalScript") or c:IsA("ModuleScript") then
-                    capture("script_source_" .. c.Name, c.Source)
-                    local bc = capturebytecode(loadstring(c.Source))
-                    capture("script_bytecode_" .. c.Name, bc)
-                end
-                if c:IsA("Tool") then
-                    capture("tool_grip_" .. c.Name, {Grip = c.Grip, GripForward = c.GripForward, GripPos = c.GripPos, GripRight = c.GripRight, GripUp = c.GripUp})
-                end
-                if c:IsA("Humanoid") then
-                    capture("humanoid_stats_" .. c.Name, {Health = c.Health, MaxHealth = c.MaxHealth, WalkSpeed = c.WalkSpeed, JumpPower = c.JumpPower})
-                end
-                if c:IsA("AnimationTrack") then
-                    capture("animation_" .. c.Name, {Animation = c.Animation, Length = c.Length, Speed = c.Speed})
-                end
-                scanall(c, path .. "_" .. c.Name, depth + 1)
+                return createsandbox()
             end
+            setmetatable(instanceproxy, instancemt)
+            return instanceproxy
+        elseif k == "workspace" or k == "Workspace" then
+            recordcall("workspace")
+            return createsandbox()
+        elseif k == "script" then
+            recordcall("script")
+            local scriptproxy = {}
+            scriptproxy.Name = "DumpedScript"
+            scriptproxy.ClassName = "LocalScript"
+            scriptproxy.Parent = sandbox.game
+            return scriptproxy
+        elseif k == "print" then
+            return function(...)
+                local args = {...}
+                local out = {}
+                for i, v in ipairs(args) do
+                    table.insert(out, tostring(v))
+                end
+                recordcall("print", table.concat(out, ", "))
+            end
+        elseif k == "warn" then
+            return function(...)
+                local args = {...}
+                local out = {}
+                for i, v in ipairs(args) do
+                    table.insert(out, tostring(v))
+                end
+                recordcall("warn", table.concat(out, ", "))
+            end
+        elseif k == "task" then
+            local taskproxy = {}
+            taskproxy.wait = function(t)
+                recordcall("task.wait", t)
+                return t or 0.03
+            end
+            taskproxy.spawn = function(f)
+                recordcall("task.spawn")
+            end
+            taskproxy.delay = function(t, f)
+                recordcall("task.delay", t)
+            end
+            return taskproxy
+        elseif k == "wait" then
+            return function(t)
+                recordcall("wait", t)
+                return t or 0.03
+            end
+        elseif k == "spawn" then
+            return function(f)
+                recordcall("spawn")
+            end
+        elseif k == "delay" then
+            return function(t, f)
+                recordcall("delay", t)
+            end
+        elseif k == "tick" then
+            recordcall("tick")
+            return os.clock()
+        elseif k == "time" then
+            recordcall("time")
+            return os.time()
+        elseif k == "typeof" then
+            return function(v)
+                recordcall("typeof", v)
+                return "Instance"
+            end
+        elseif k == "getfenv" then
+            return function()
+                recordcall("getfenv")
+                return env
+            end
+        elseif k == "setfenv" then
+            return function(f, newenv)
+                recordcall("setfenv")
+            end
+        elseif k == "loadstring" or k == "load" then
+            return function(str, name)
+                recordcall("loadstring", str)
+                return function()
+                    recordcall("loadstring_result")
+                    return nil
+                end
+            end
+        else
+            recordcall("_G." .. tostring(k))
+            return env[k]
         end
     end
-    local ok, ws = pcall(function() return game:GetService("Workspace") end)
-    if ok then scanall(ws, "Workspace", 0) end
-    local ok2, pl = pcall(function() return game:GetService("Players") end)
-    if ok2 then scanall(pl, "Players", 0) end
-    local ok3, rs = pcall(function() return game:GetService("ReplicatedStorage") end)
-    if ok3 then scanall(rs, "ReplicatedStorage", 0) end
-    local ok4, ss = pcall(function() return game:GetService("ServerStorage") end)
-    if ok4 then scanall(ss, "ServerStorage", 0) end
-    local ok5, sg = pcall(function() return game:GetService("StarterGui") end)
-    if ok5 then scanall(sg, "StarterGui", 0) end
-    local ok6, sp = pcall(function() return game:GetService("StarterPack") end)
-    if ok6 then scanall(sp, "StarterPack", 0) end
-    capture("total_instances_captured", total)
+    mt.__newindex = function(t, k, v)
+        recordcall("_G." .. tostring(k) .. " = " .. tostring(v))
+        rawset(t, k, v)
+    end
+    setmetatable(env, mt)
+    env._G = env
+    env.game = nil
+    env.Instance = nil
+    env.workspace = nil
+    env.script = nil
+    env.print = nil
+    env.warn = nil
+    env.task = nil
+    env.wait = nil
+    env.spawn = nil
+    env.delay = nil
+    env.tick = nil
+    env.time = nil
+    env.typeof = nil
+    env.getfenv = nil
+    env.setfenv = nil
+    env.loadstring = nil
+    env.load = nil
+    sandbox = env
+    return env
 end
-function captureallfunctions()
-    local gc = getgc()
-    local count = 0
-    for _, obj in ipairs(gc) do
-        if type(obj) == "function" and count < 200 then
-            local info = debug.getinfo(obj)
-            if info and info.source and not string.match(info.source or "", "axomenvlogger") then
-                count = count + 1
-                local name = info and info.name or "anonymous_" .. count
-                local bc = capturebytecode(obj)
-                capture("function_bytecode_" .. name, bc)
-                capture("function_source_" .. name, info and info.source or "unknown")
-            end
-        end
+function reconstructsource()
+    local out = {}
+    for _, call in ipairs(capturedcalls) do
+        table.insert(out, call)
     end
-    capture("total_functions_captured", count)
-end
-function captureallglobals()
-    for k, v in pairs(_G) do
-        if type(k) == "string" and k ~= "" and not string.match(k, "axomenvlogger") then
-            capture("globalvalue_" .. k, v)
-            if type(v) == "function" then
-                local bc = capturebytecode(v)
-                capture("globalbytecode_" .. k, bc)
-            end
-        end
+    if #out == 0 then
+        table.insert(out, "-- no api calls captured")
     end
-end
-function captureallsignals()
-    local services = {"RunService", "Players", "Workspace", "ReplicatedStorage"}
-    for _, srvname in ipairs(services) do
-        local ok, srv = pcall(function() return game:GetService(srvname) end)
-        if ok and srv then
-            local ok2, events = pcall(function() return srv:GetEvents() end)
-            if ok2 and events then
-                for _, ev in ipairs(events) do
-                    capture("signal_" .. srvname .. "_" .. ev, ev)
-                end
-            end
-        end
-    end
-end
-function captureallterrain()
-    local ok, terrain = pcall(function() return game:GetService("Terrain") end)
-    if ok and terrain then
-        capture("terrain_watercolor", terrain.WaterColor)
-        capture("terrain_decoration", terrain.Decoration)
-        local ok2, size = pcall(function() return terrain.Size end)
-        if ok2 then capture("terrain_size", size) end
-    end
-end
-function captureallmaterials()
-    local materials = {"Plastic", "Metal", "Wood", "Glass", "Concrete", "CorrodedMetal", "DiamondPlate", "Ice", "Grass", "Sand", "Brick", "Granite", "Marble", "Slate", "Basalt", "CrackedLava", "Neon", "Foil", "ForceField", "Glow", "SmoothPlastic", "Fabric", "Cardboard", "Plaster"}
-    for _, mat in ipairs(materials) do
-        capture("material_" .. mat, mat)
-    end
-end
-function runscript(code)
-    envlog = {}
-    capture("execution_start", os.date("%Y-%m-%d %H:%M:%S"))
-    capture("script_length", #code)
-    add("capturing environment...", Color3.fromRGB(100, 200, 255))
-    sl.Text = "capturing environment..."
-    pcall(function() captureglobals() end)
-    pcall(function() captureallglobals() end)
-    pcall(function() captureservices() end)
-    pcall(function() captureallremotes() end)
-    pcall(function() captureallinstances() end)
-    pcall(function() captureallfunctions() end)
-    pcall(function() captureallsignals() end)
-    pcall(function() captureallterrain() end)
-    pcall(function() captureallmaterials() end)
-    add("captured " .. #envlog .. " items", Color3.fromRGB(100, 255, 100))
-    add("executing script...", Color3.fromRGB(255, 200, 100))
-    sl.Text = "executing script..."
-    local fn, err = loadstring(code)
-    if not fn then
-        add("load error: " .. tostring(err), Color3.fromRGB(255, 100, 100))
-        sl.Text = "load error"
-        saveenvlog()
-        return false
-    end
-    local bc = capturebytecode(fn)
-    capture("script_bytecode", bc)
-    local ok, res = pcall(fn)
-    if not ok then
-        add("execution error: " .. tostring(res), Color3.fromRGB(255, 100, 100))
-        sl.Text = "execution error"
-        saveenvlog()
-        return false
-    end
-    capture("execution_end", os.date("%Y-%m-%d %H:%M:%S"))
-    add("execution complete", Color3.fromRGB(100, 255, 100))
-    sl.Text = "execution complete"
-    saveenvlog()
-    return true
+    return table.concat(out, "\n")
 end
 function processinput()
     local inp = box.Text
     if inp == nil or inp == "" then
-        add("paste script or url first", Color3.fromRGB(255, 200, 100))
+        add("paste code first", Color3.fromRGB(255, 200, 100))
         return
     end
-    add("processing...", Color3.fromRGB(100, 200, 255))
-    sl.Text = "processing..."
-    if string.match(inp, "^https?://") then
-        add("fetching " .. inp, Color3.fromRGB(200, 200, 100))
-        sl.Text = "fetching..."
-        local ok, res = pcall(function()
-            return game:GetService("HttpService"):GetAsync(inp)
-        end)
-        if ok and res then
-            add("fetched " .. #res .. " bytes", Color3.fromRGB(100, 255, 100))
-            runscript(res)
-        else
-            add("fetch failed: " .. tostring(res), Color3.fromRGB(255, 100, 100))
-            sl.Text = "fetch failed"
-        end
+    loglines = {}
+    capturedcalls = {}
+    add("creating sandbox environment...", Color3.fromRGB(100, 200, 255))
+    sl.Text = "creating sandbox..."
+    local sandboxenv = createsandbox()
+    add("loading script...", Color3.fromRGB(255, 200, 100))
+    sl.Text = "loading..."
+    local fn, err = loadstring(inp)
+    if not fn then
+        add("load error: " .. tostring(err), Color3.fromRGB(255, 100, 100))
+        sl.Text = "load error"
+        return
+    end
+    add("executing in sandbox...", Color3.fromRGB(255, 200, 100))
+    sl.Text = "executing..."
+    setfenv(fn, sandboxenv)
+    local ok, res = pcall(fn)
+    if not ok then
+        add("execution error: " .. tostring(res), Color3.fromRGB(255, 100, 100))
+        sl.Text = "execution error"
     else
-        runscript(inp)
+        add("execution complete", Color3.fromRGB(100, 255, 100))
+        sl.Text = "complete"
+    end
+    local reconstructed = reconstructsource()
+    local output = "-- envlogged by axom env logger | https://discord.gg/FgR3MXqZy9\n" .. reconstructed
+    local saveok, saveerr = pcall(function()
+        writefile("envloggedscript.txt", output)
+        add("saved to envloggedscript.txt", Color3.fromRGB(100, 255, 100))
+    end)
+    if not saveok then
+        add("save failed: " .. tostring(saveerr), Color3.fromRGB(255, 100, 100))
+    end
+    add("--- reconstructed script ---", Color3.fromRGB(200, 200, 255))
+    for _, line in ipairs(capturedcalls) do
+        add(line, Color3.fromRGB(180, 180, 180))
     end
 end
 run.MouseButton1Click:Connect(function()
@@ -638,8 +568,9 @@ run.MouseButton1Click:Connect(function()
 end)
 clr.MouseButton1Click:Connect(function()
     clear()
-    add("output cleared", Color3.fromRGB(200, 200, 200))
+    loglines = {}
+    capturedcalls = {}
+    add("cleared", Color3.fromRGB(200, 200, 200))
 end)
-add("axomenvlogger ready", Color3.fromRGB(100, 255, 255))
-add("captures: services, remotes, instances, parts, welds, motors, scripts, functions, signals, terrain, materials", Color3.fromRGB(200, 200, 200))
-add("paste script url or code above", Color3.fromRGB(200, 200, 200))
+add("axomenvlogger ready - sandbox environment logger", Color3.fromRGB(100, 255, 255))
+add("paste obfuscated lua code above", Color3.fromRGB(200, 200, 200))
