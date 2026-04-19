@@ -1,0 +1,546 @@
+local Fluent = loadstring(game:HttpGet('https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua'))()
+local SaveManager = loadstring(game:HttpGet('https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua'))()
+local InterfaceManager = loadstring(game:HttpGet('https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua'))()
+
+local Window = Fluent:CreateWindow({
+    SubTitle = 'World War 3',
+    Title = 'Axomic',
+    MinimizeKey = Enum.KeyCode.LeftControl,
+    Theme = 'Amethyst',
+    Acrylic = false,
+    TabWidth = 150,
+    Size = UDim2.fromOffset(445, 345),
+})
+
+local Tabs = {
+    Auto = Window:AddTab({ Title = 'Auto', Icon = 'play' }),
+    Misc = Window:AddTab({ Title = 'Misc', Icon = 'delete' }),
+    Credits = Window:AddTab({ Title = 'Credits', Icon = 'heart' }),
+}
+
+Tabs.Credits:AddParagraph({
+    Title = 'Axomic',
+    Content = 'Creator: Axom\nDiscord: https://discord.gg/FgR3MXqZy9',
+})
+
+local Options = Fluent.Options
+
+local autoupgrading = false
+local autoupgradeconnection = nil
+
+local function upgradealllands()
+    local upgraderemote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('UpgradeService'):WaitForChild('RE'):WaitForChild('Upgrade')
+    local landscontainer = workspace:WaitForChild('Map'):WaitForChild('Lands')
+    
+    local landsizes = { 'Large', 'Medium', 'XL', 'Small' }
+    
+    for _, size in ipairs(landsizes) do
+        local sizefolder = landscontainer:FindFirstChild(size)
+        if sizefolder then
+            for _, land in ipairs(sizefolder:GetChildren()) do
+                upgraderemote:FireServer(land.Name)
+                task.wait(0.05)
+            end
+        end
+    end
+end
+
+local autoupgradetoggle = Tabs.Auto:AddToggle('autoupgradetoggle', {
+    Title = 'Auto Upgrade Lands',
+    Default = false,
+})
+
+autoupgradetoggle:OnChanged(function()
+    if Options.autoupgradetoggle.Value then
+        autoupgrading = true
+        autoupgradeconnection = game:GetService('RunService').Stepped:Connect(function()
+            if autoupgrading and Options.autoupgradetoggle.Value then
+                upgradealllands()
+                task.wait(20)
+            end
+        end)
+    else
+        autoupgrading = false
+        if autoupgradeconnection then
+            autoupgradeconnection:Disconnect()
+            autoupgradeconnection = nil
+        end
+    end
+end)
+
+local autoclaimrunning = false
+local autoclaimconnection = nil
+
+local function claimalllands()
+    local claimremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('LandService'):WaitForChild('RE'):WaitForChild('Claim')
+    local landscontainer = workspace:WaitForChild('Map'):WaitForChild('Lands')
+    
+    local landsizes = { 'Large', 'Medium', 'XL', 'Small' }
+    
+    for _, size in ipairs(landsizes) do
+        local sizefolder = landscontainer:FindFirstChild(size)
+        if sizefolder then
+            for _, land in ipairs(sizefolder:GetChildren()) do
+                claimremote:FireServer(land.Name)
+                task.wait(0.05)
+            end
+        end
+    end
+end
+
+local autoclaimtoggle = Tabs.Auto:AddToggle('autoclaimtoggle', {
+    Title = 'Auto Claim Money',
+    Default = false,
+})
+
+autoclaimtoggle:OnChanged(function()
+    if Options.autoclaimtoggle.Value then
+        autoclaimrunning = true
+        autoclaimconnection = game:GetService('RunService').Stepped:Connect(function()
+            if autoclaimrunning and Options.autoclaimtoggle.Value then
+                claimalllands()
+                task.wait(30)
+            end
+        end)
+    else
+        autoclaimrunning = false
+        if autoclaimconnection then
+            autoclaimconnection:Disconnect()
+            autoclaimconnection = nil
+        end
+    end
+end)
+
+local autobuysoldierrunning = false
+local autobuysoldierconnection = nil
+
+local function buysoldier()
+    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('ArmyService'):WaitForChild('RE'):WaitForChild('Buy')
+    buyremote:FireServer("Soldier")
+end
+
+local autosoldiertoggle = Tabs.Auto:AddToggle('autosoldiertoggle', {
+    Title = 'Auto Buy Soldier',
+    Default = false,
+})
+
+autosoldiertoggle:OnChanged(function()
+    if Options.autosoldiertoggle.Value then
+        autobuysoldierrunning = true
+        autobuysoldierconnection = game:GetService('RunService').Stepped:Connect(function()
+            if autobuysoldierrunning and Options.autosoldiertoggle.Value then
+                buysoldier()
+                task.wait(1)
+            end
+        end)
+    else
+        autobuysoldierrunning = false
+        if autobuysoldierconnection then
+            autobuysoldierconnection:Disconnect()
+            autobuysoldierconnection = nil
+        end
+    end
+end)
+
+local autobuytankrunning = false
+local autobuytankconnection = nil
+
+local function buytank()
+    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('ArmyService'):WaitForChild('RE'):WaitForChild('Buy')
+    buyremote:FireServer("Tank")
+end
+
+local autotanktoggle = Tabs.Auto:AddToggle('autotanktoggle', {
+    Title = 'Auto Buy Tank',
+    Default = false,
+})
+
+autotanktoggle:OnChanged(function()
+    if Options.autotanktoggle.Value then
+        autobuytankrunning = true
+        autobuytankconnection = game:GetService('RunService').Stepped:Connect(function()
+            if autobuytankrunning and Options.autotanktoggle.Value then
+                buytank()
+                task.wait(1.5)
+            end
+        end)
+    else
+        autobuytankrunning = false
+        if autobuytankconnection then
+            autobuytankconnection:Disconnect()
+            autobuytankconnection = nil
+        end
+    end
+end)
+
+local autobuymissilerunning = false
+local autobuymissileconnection = nil
+
+local function buymissiletruck()
+    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('ArmyService'):WaitForChild('RE'):WaitForChild('Buy')
+    buyremote:FireServer("MissileTruck")
+end
+
+local automissiletoggle = Tabs.Auto:AddToggle('automissiletoggle', {
+    Title = 'Auto Buy MissileTruck',
+    Default = false,
+})
+
+automissiletoggle:OnChanged(function()
+    if Options.automissiletoggle.Value then
+        autobuymissilerunning = true
+        autobuymissileconnection = game:GetService('RunService').Stepped:Connect(function()
+            if autobuymissilerunning and Options.automissiletoggle.Value then
+                buymissiletruck()
+                task.wait(2)
+            end
+        end)
+    else
+        autobuymissilerunning = false
+        if autobuymissileconnection then
+            autobuymissileconnection:Disconnect()
+            autobuymissileconnection = nil
+        end
+    end
+end)
+
+local autobuyjetrunning = false
+local autobuyjetconnection = nil
+
+local function buyfighterjet()
+    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('ArmyService'):WaitForChild('RE'):WaitForChild('Buy')
+    buyremote:FireServer("FighterJet")
+end
+
+local autojettoggle = Tabs.Auto:AddToggle('autojettoggle', {
+    Title = 'Auto Buy Fighter Jet',
+    Default = false,
+})
+
+autojettoggle:OnChanged(function()
+    if Options.autojettoggle.Value then
+        autobuyjetrunning = true
+        autobuyjetconnection = game:GetService('RunService').Stepped:Connect(function()
+            if autobuyjetrunning and Options.autojettoggle.Value then
+                buyfighterjet()
+                task.wait(2.5)
+            end
+        end)
+    else
+        autobuyjetrunning = false
+        if autobuyjetconnection then
+            autobuyjetconnection:Disconnect()
+            autobuyjetconnection = nil
+        end
+    end
+end)
+
+local autobuyhelirunning = false
+local autobuyheliconnection = nil
+
+local function buyattackhelicopter()
+    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('ArmyService'):WaitForChild('RE'):WaitForChild('Buy')
+    buyremote:FireServer("AttackHelicopter")
+end
+
+local autohelitoggle = Tabs.Auto:AddToggle('autohelitoggle', {
+    Title = 'Auto Buy Attack Helicopter',
+    Default = false,
+})
+
+autohelitoggle:OnChanged(function()
+    if Options.autohelitoggle.Value then
+        autobuyhelirunning = true
+        autobuyheliconnection = game:GetService('RunService').Stepped:Connect(function()
+            if autobuyhelirunning and Options.autohelitoggle.Value then
+                buyattackhelicopter()
+                task.wait(2)
+            end
+        end)
+    else
+        autobuyhelirunning = false
+        if autobuyheliconnection then
+            autobuyheliconnection:Disconnect()
+            autobuyheliconnection = nil
+        end
+    end
+end)
+
+local smallesprunning = false
+local smallespconnection = nil
+local smallesphighlights = {}
+
+local function updatesmallesp()
+    local landscontainer = workspace:WaitForChild('Map'):WaitForChild('Lands')
+    local smallfolder = landscontainer:FindFirstChild('Small')
+    
+    if smallfolder then
+        for _, land in ipairs(smallfolder:GetChildren()) do
+            if not smallesphighlights[land] then
+                local highlight = Instance.new('Highlight')
+                highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                highlight.FillTransparency = 0.5
+                highlight.Adornee = land
+                highlight.Parent = land
+                smallesphighlights[land] = highlight
+            end
+        end
+    end
+end
+
+local function clearsmallesp()
+    for land, highlight in pairs(smallesphighlights) do
+        highlight:Destroy()
+    end
+    smallesphighlights = {}
+end
+
+local smallesptoggle = Tabs.Misc:AddToggle('smallesptoggle', {
+    Title = 'Small Lands ESP',
+    Default = false,
+})
+
+smallesptoggle:OnChanged(function()
+    if Options.smallesptoggle.Value then
+        smallesprunning = true
+        updatesmallesp()
+        smallespconnection = game:GetService('RunService').Stepped:Connect(function()
+            if smallesprunning and Options.smallesptoggle.Value then
+                updatesmallesp()
+            end
+        end)
+    else
+        smallesprunning = false
+        if smallespconnection then
+            smallespconnection:Disconnect()
+            smallespconnection = nil
+        end
+        clearsmallesp()
+    end
+end)
+
+local mediumesprunning = false
+local mediumespconnection = nil
+local mediumesphighlights = {}
+
+local function updatemediumesp()
+    local landscontainer = workspace:WaitForChild('Map'):WaitForChild('Lands')
+    local mediumfolder = landscontainer:FindFirstChild('Medium')
+    
+    if mediumfolder then
+        for _, land in ipairs(mediumfolder:GetChildren()) do
+            if not mediumesphighlights[land] then
+                local highlight = Instance.new('Highlight')
+                highlight.FillColor = Color3.fromRGB(0, 255, 0)
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                highlight.FillTransparency = 0.5
+                highlight.Adornee = land
+                highlight.Parent = land
+                mediumesphighlights[land] = highlight
+            end
+        end
+    end
+end
+
+local function clearmediumesp()
+    for land, highlight in pairs(mediumesphighlights) do
+        highlight:Destroy()
+    end
+    mediumesphighlights = {}
+end
+
+local mediumesptoggle = Tabs.Misc:AddToggle('mediumesptoggle', {
+    Title = 'Medium Lands ESP',
+    Default = false,
+})
+
+mediumesptoggle:OnChanged(function()
+    if Options.mediumesptoggle.Value then
+        mediumesprunning = true
+        updatemediumesp()
+        mediumespconnection = game:GetService('RunService').Stepped:Connect(function()
+            if mediumesprunning and Options.mediumesptoggle.Value then
+                updatemediumesp()
+            end
+        end)
+    else
+        mediumesprunning = false
+        if mediumespconnection then
+            mediumespconnection:Disconnect()
+            mediumespconnection = nil
+        end
+        clearmediumesp()
+    end
+end)
+
+local largeesprunning = false
+local largeespconnection = nil
+local largeesphighlights = {}
+
+local function updatelargeesp()
+    local landscontainer = workspace:WaitForChild('Map'):WaitForChild('Lands')
+    local largefolder = landscontainer:FindFirstChild('Large')
+    
+    if largefolder then
+        for _, land in ipairs(largefolder:GetChildren()) do
+            if not largeesphighlights[land] then
+                local highlight = Instance.new('Highlight')
+                highlight.FillColor = Color3.fromRGB(0, 0, 255)
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                highlight.FillTransparency = 0.5
+                highlight.Adornee = land
+                highlight.Parent = land
+                largeesphighlights[land] = highlight
+            end
+        end
+    end
+end
+
+local function clearlargeesp()
+    for land, highlight in pairs(largeesphighlights) do
+        highlight:Destroy()
+    end
+    largeesphighlights = {}
+end
+
+local largeesptoggle = Tabs.Misc:AddToggle('largeesptoggle', {
+    Title = 'Large Lands ESP',
+    Default = false,
+})
+
+largeesptoggle:OnChanged(function()
+    if Options.largeesptoggle.Value then
+        largeesprunning = true
+        updatelargeesp()
+        largeespconnection = game:GetService('RunService').Stepped:Connect(function()
+            if largeesprunning and Options.largeesptoggle.Value then
+                updatelargeesp()
+            end
+        end)
+    else
+        largeesprunning = false
+        if largeespconnection then
+            largeespconnection:Disconnect()
+            largeespconnection = nil
+        end
+        clearlargeesp()
+    end
+end)
+
+local xlesprunning = false
+local xlespconnection = nil
+local xlesphighlights = {}
+
+local function updatexlesp()
+    local landscontainer = workspace:WaitForChild('Map'):WaitForChild('Lands')
+    local xlfolder = landscontainer:FindFirstChild('XL')
+    
+    if xlfolder then
+        for _, land in ipairs(xlfolder:GetChildren()) do
+            if not xlesphighlights[land] then
+                local highlight = Instance.new('Highlight')
+                highlight.FillColor = Color3.fromRGB(255, 255, 0)
+                highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+                highlight.FillTransparency = 0.5
+                highlight.Adornee = land
+                highlight.Parent = land
+                xlesphighlights[land] = highlight
+            end
+        end
+    end
+end
+
+local function clearxlesp()
+    for land, highlight in pairs(xlesphighlights) do
+        highlight:Destroy()
+    end
+    xlesphighlights = {}
+end
+
+local xlesptoggle = Tabs.Misc:AddToggle('xlesptoggle', {
+    Title = 'XL Lands ESP',
+    Default = false,
+})
+
+xlesptoggle:OnChanged(function()
+    if Options.xlesptoggle.Value then
+        xlesprunning = true
+        updatexlesp()
+        xlespconnection = game:GetService('RunService').Stepped:Connect(function()
+            if xlesprunning and Options.xlesptoggle.Value then
+                updatexlesp()
+            end
+        end)
+    else
+        xlesprunning = false
+        if xlespconnection then
+            xlespconnection:Disconnect()
+            xlespconnection = nil
+        end
+        clearxlesp()
+    end
+end)
+
+local flingrunning = false
+local flingconnection = nil
+
+local function flingall()
+    local players = game:GetService('Players')
+    local localplayer = players.LocalPlayer
+    local character = localplayer.Character
+    local humanoidrootpart = character and character:FindFirstChild('HumanoidRootPart')
+    
+    if not humanoidrootpart then return end
+    
+    for _, player in ipairs(players:GetPlayers()) do
+        if player ~= localplayer then
+            local targetchar = player.Character
+            if targetchar and targetchar:FindFirstChild('HumanoidRootPart') then
+                local targetroot = targetchar.HumanoidRootPart
+                local velocity = (targetroot.Position - humanoidrootpart.Position).Unit * 500
+                targetroot.Velocity = Vector3.new(velocity.X, 100, velocity.Z)
+            end
+        end
+    end
+end
+
+local flingtoggle = Tabs.Misc:AddToggle('flingtoggle', {
+    Title = 'Fling All',
+    Default = false,
+})
+
+flingtoggle:OnChanged(function()
+    if Options.flingtoggle.Value then
+        flingrunning = true
+        flingconnection = game:GetService('RunService').Stepped:Connect(function()
+            if flingrunning and Options.flingtoggle.Value then
+                flingall()
+                task.wait(0.5)
+            end
+        end)
+    else
+        flingrunning = false
+        if flingconnection then
+            flingconnection:Disconnect()
+            flingconnection = nil
+        end
+    end
+end)
+
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+InterfaceManager:SetFolder('axomicww3')
+SaveManager:SetFolder('axomicww3/ww3config')
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+Window:SelectTab(1)
+Fluent:Notify({
+    Duration = 10,
+    Title = 'Axomic',
+    Content = 'The script has been Successfully Loaded.',
+})
+SaveManager:LoadAutoloadConfig()
