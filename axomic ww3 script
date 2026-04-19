@@ -20,8 +20,37 @@ local Tabs = {
 
 Tabs.Credits:AddParagraph({
     Title = 'Axomic',
-    Content = 'Creator: Axom\nDiscord: https://discord.gg/FgR3MXqZy9',
+    Content = 'Creator: Axom',
 })
+
+Tabs.Credits:AddButton({
+    Title = 'Discord',
+    Callback = function()
+        setclipboard('https://discord.gg/FgR3MXqZy9')
+        Fluent:Notify({
+            Title = 'Axomic',
+            Content = 'Discord link copied to clipboard!',
+            Duration = 3,
+        })
+    end,
+})
+
+local screenbutton = Instance.new('TextButton')
+screenbutton.Size = UDim2.new(0, 100, 0, 50)
+screenbutton.Position = UDim2.new(0, 10, 0, 100)
+screenbutton.Text = 'ui toggle'
+screenbutton.TextColor3 = Color3.fromRGB(255, 255, 255)
+screenbutton.TextScaled = true
+screenbutton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+screenbutton.BackgroundTransparency = 0.6
+screenbutton.BorderSizePixel = 0
+screenbutton.Parent = game.CoreGui
+
+screenbutton.MouseButton1Click:Connect(function()
+    game:GetService('VirtualInputManager'):SendKeyEvent(true, Enum.KeyCode.LeftControl, false, game)
+    task.wait(0.05)
+    game:GetService('VirtualInputManager'):SendKeyEvent(false, Enum.KeyCode.LeftControl, false, game)
+end)
 
 local Options = Fluent.Options
 
@@ -83,9 +112,12 @@ local function claimalllands()
             for _, ownerland in ipairs(sizefolder:GetChildren()) do
                 local cash = ownerland:FindFirstChild('Hitbox') and ownerland.Hitbox:FindFirstChild('Cash')
                 if cash and cash:FindFirstChild('TouchInterest') then
-                    firetouchinterest(cash, game.Players.LocalPlayer.Character.HumanoidRootPart, 0)
-                    firetouchinterest(cash, game.Players.LocalPlayer.Character.HumanoidRootPart, 1)
-                    task.wait(0.05)
+                    local character = game.Players.LocalPlayer.Character
+                    if character and character:FindFirstChild('HumanoidRootPart') then
+                        firetouchinterest(cash, character.HumanoidRootPart, 0)
+                        firetouchinterest(cash, character.HumanoidRootPart, 1)
+                        task.wait(0.05)
+                    end
                 end
             end
         end
@@ -119,7 +151,7 @@ local autobuysoldierrunning = false
 local autobuysoldierconnection = nil
 
 local function buysoldier()
-    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('ArmyService'):WaitForChild('RE'):WaitForChild('Buy')
+    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
     buyremote:FireServer("Soldier")
 end
 
@@ -150,7 +182,7 @@ local autobuytankrunning = false
 local autobuytankconnection = nil
 
 local function buytank()
-    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('ArmyService'):WaitForChild('RE'):WaitForChild('Buy')
+    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
     buyremote:FireServer("Tank")
 end
 
@@ -181,8 +213,8 @@ local autobuymissilerunning = false
 local autobuymissileconnection = nil
 
 local function buymissiletruck()
-    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('ArmyService'):WaitForChild('RE'):WaitForChild('Buy')
-    buyremote:FireServer("MissileTruck")
+    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
+    buyremote:FireServer("MissleTruck")
 end
 
 local automissiletoggle = Tabs.Auto:AddToggle('automissiletoggle', {
@@ -212,7 +244,7 @@ local autobuyjetrunning = false
 local autobuyjetconnection = nil
 
 local function buyfighterjet()
-    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('ArmyService'):WaitForChild('RE'):WaitForChild('Buy')
+    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
     buyremote:FireServer("FighterJet")
 end
 
@@ -243,7 +275,7 @@ local autobuyhelirunning = false
 local autobuyheliconnection = nil
 
 local function buyattackhelicopter()
-    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('ArmyService'):WaitForChild('RE'):WaitForChild('Buy')
+    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
     buyremote:FireServer("AttackHelicopter")
 end
 
@@ -486,27 +518,46 @@ xlesptoggle:OnChanged(function()
     end
 end)
 
+local infiniteyieldloaded = false
 local flingrunning = false
 local flingconnection = nil
+local currenttarget = nil
 
-local function flingall()
+local function loadinfiniteyield()
+    if not infiniteyieldloaded then
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
+        infiniteyieldloaded = true
+        task.wait(1)
+    end
+end
+
+local function startfling()
     local players = game:GetService('Players')
     local localplayer = players.LocalPlayer
-    local character = localplayer.Character
-    local humanoidrootpart = character and character:FindFirstChild('HumanoidRootPart')
-    
-    if not humanoidrootpart then return end
+    local playerslist = {}
     
     for _, player in ipairs(players:GetPlayers()) do
         if player ~= localplayer then
-            local targetchar = player.Character
-            if targetchar and targetchar:FindFirstChild('HumanoidRootPart') then
-                local targetroot = targetchar.HumanoidRootPart
-                local velocity = (targetroot.Position - humanoidrootpart.Position).Unit * 500
-                targetroot.Velocity = Vector3.new(velocity.X, 100, velocity.Z)
-            end
+            table.insert(playerslist, player)
         end
     end
+    
+    if #playerslist == 0 then return end
+    
+    for _, targetplayer in ipairs(playerslist) do
+        if not flingrunning then break end
+        currenttarget = targetplayer
+        local character = localplayer.Character
+        local targetchar = targetplayer.Character
+        if character and targetchar and targetchar:FindFirstChild('HumanoidRootPart') then
+            local targetpos = targetchar.HumanoidRootPart.Position
+            character:SetPrimaryPartCFrame(CFrame.new(targetpos))
+            task.wait(0.5)
+            game:GetService('ReplicatedStorage').DefaultChatSystemChatEvents.SayMessageRequest:FireServer(';walkfling', 'All')
+            task.wait(3)
+        end
+    end
+    currenttarget = nil
 end
 
 local flingtoggle = Tabs.Misc:AddToggle('flingtoggle', {
@@ -517,14 +568,16 @@ local flingtoggle = Tabs.Misc:AddToggle('flingtoggle', {
 flingtoggle:OnChanged(function()
     if Options.flingtoggle.Value then
         flingrunning = true
+        loadinfiniteyield()
         flingconnection = game:GetService('RunService').Stepped:Connect(function()
             if flingrunning and Options.flingtoggle.Value then
-                flingall()
+                startfling()
                 task.wait(0.5)
             end
         end)
     else
         flingrunning = false
+        currenttarget = nil
         if flingconnection then
             flingconnection:Disconnect()
             flingconnection = nil
