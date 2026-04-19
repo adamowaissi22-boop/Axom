@@ -35,6 +35,27 @@ Tabs.Credits:AddButton({
     end,
 })
 
+local screengui = Instance.new('ScreenGui')
+screengui.Name = 'ScreenGui'
+screengui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screengui.ResetOnSpawn = false
+
+local success = false
+local containers = { game.CoreGui, game.Players.LocalPlayer.PlayerGui }
+
+for _, container in ipairs(containers) do
+    if container and not success then
+        pcall(function()
+            screengui.Parent = container
+            success = true
+        end)
+    end
+end
+
+if not success then
+    screengui.Parent = game:GetService('CoreGui')
+end
+
 local screenbutton = Instance.new('TextButton')
 screenbutton.Size = UDim2.new(0, 100, 0, 50)
 screenbutton.Position = UDim2.new(0, 10, 0, 100)
@@ -44,7 +65,8 @@ screenbutton.TextScaled = true
 screenbutton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 screenbutton.BackgroundTransparency = 0.6
 screenbutton.BorderSizePixel = 0
-screenbutton.Parent = game.CoreGui
+screenbutton.ZIndex = 10
+screenbutton.Parent = screengui
 
 screenbutton.MouseButton1Click:Connect(function()
     game:GetService('VirtualInputManager'):SendKeyEvent(true, Enum.KeyCode.LeftControl, false, game)
