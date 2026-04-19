@@ -1,95 +1,45 @@
-local Fluent = loadstring(game:HttpGet('https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua'))()
-local SaveManager = loadstring(game:HttpGet('https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua'))()
-local InterfaceManager = loadstring(game:HttpGet('https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua'))()
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/footageus/WindUI/main/source.lua"))()
 
-local Window = Fluent:CreateWindow({
-    SubTitle = 'World War 3',
-    Title = 'Axomic',
+local Window = WindUI:CreateWindow({
+    Title = "Axomic",
+    SubTitle = "World War 3",
     MinimizeKey = Enum.KeyCode.LeftControl,
-    Theme = 'Amethyst',
-    Acrylic = false,
-    TabWidth = 150,
     Size = UDim2.fromOffset(445, 345),
 })
 
 local Tabs = {
-    Auto = Window:AddTab({ Title = 'Auto', Icon = 'play' }),
-    Misc = Window:AddTab({ Title = 'Misc', Icon = 'delete' }),
-    Credits = Window:AddTab({ Title = 'Credits', Icon = 'heart' }),
+    Auto = Window:AddTab({ Title = "Auto", Icon = "play" }),
+    Misc = Window:AddTab({ Title = "Misc", Icon = "delete" }),
+    Credits = Window:AddTab({ Title = "Credits", Icon = "heart" }),
 }
 
 Tabs.Credits:AddParagraph({
-    Title = 'Axomic',
-    Content = 'Creator: Axom',
+    Title = "Axomic",
+    Content = "Creator: Axom",
 })
 
 Tabs.Credits:AddButton({
-    Title = 'Discord',
+    Title = "Discord",
     Callback = function()
-        setclipboard('https://discord.gg/FgR3MXqZy9')
-        Fluent:Notify({
-            Title = 'Axomic',
-            Content = 'Discord link copied to clipboard!',
+        setclipboard("https://discord.gg/FgR3MXqZy9")
+        WindUI:Notify({
+            Title = "Axomic",
+            Content = "Discord link copied to clipboard!",
             Duration = 3,
         })
     end,
 })
 
-local screengui = Instance.new('ScreenGui')
-screengui.Name = 'ScreenGui'
-screengui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screengui.ResetOnSpawn = false
-
-local success = false
-local containers = { game.CoreGui, game.Players.LocalPlayer.PlayerGui }
-
-for _, container in ipairs(containers) do
-    if container and not success then
-        pcall(function()
-            screengui.Parent = container
-            success = true
-        end)
-    end
-end
-
-if not success then
-    screengui.Parent = game:GetService('CoreGui')
-end
-
-local screenbutton = Instance.new('TextButton')
-screenbutton.Size = UDim2.new(0, 100, 0, 50)
-screenbutton.Position = UDim2.new(0, 10, 0, 100)
-screenbutton.Text = 'ui toggle'
-screenbutton.TextColor3 = Color3.fromRGB(255, 255, 255)
-screenbutton.TextScaled = true
-screenbutton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-screenbutton.BackgroundTransparency = 0.6
-screenbutton.BorderSizePixel = 0
-screenbutton.ZIndex = 10
-screenbutton.Parent = screengui
-
-local vim = game:GetService('VirtualInputManager')
-local uis = game:GetService('UserInputService')
-
-screenbutton.MouseButton1Click:Connect(function()
-    local oldmovement = uis.MouseBehavior
-    uis.MouseBehavior = Enum.MouseBehavior.Default
-    vim:SendKeyEvent(true, Enum.KeyCode.LeftAlt, false, game)
-    task.wait(0.05)
-    vim:SendKeyEvent(false, Enum.KeyCode.LeftAlt, false, game)
-    uis.MouseBehavior = oldmovement
-end)
-
-local Options = Fluent.Options
+local Options = {}
 
 local autoupgrading = false
 local autoupgradeconnection = nil
 
 local function upgradealllands()
-    local upgraderemote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('UpgradeService'):WaitForChild('RE'):WaitForChild('Upgrade')
-    local ownerlands = workspace:WaitForChild('Map'):WaitForChild('OwnerLands')
+    local upgraderemote = game:GetService("ReplicatedStorage"):WaitForChild("src"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("UpgradeService"):WaitForChild("RE"):WaitForChild("Upgrade")
+    local ownerlands = workspace:WaitForChild("Map"):WaitForChild("OwnerLands")
     
-    local ownersizes = { 'Small', 'Medium', 'Large', 'XL' }
+    local ownersizes = { "Small", "Medium", "Large", "XL" }
     
     for _, size in ipairs(ownersizes) do
         local sizefolder = ownerlands:FindFirstChild(size)
@@ -102,45 +52,45 @@ local function upgradealllands()
     end
 end
 
-local autoupgradetoggle = Tabs.Auto:AddToggle('autoupgradetoggle', {
-    Title = 'Auto Upgrade Lands',
+Tabs.Auto:AddToggle("autoupgradetoggle", {
+    Title = "Auto Upgrade Lands",
     Default = false,
-})
-
-autoupgradetoggle:OnChanged(function()
-    if Options.autoupgradetoggle.Value then
-        autoupgrading = true
-        autoupgradeconnection = game:GetService('RunService').Stepped:Connect(function()
-            if autoupgrading and Options.autoupgradetoggle.Value then
-                upgradealllands()
-                task.wait(20)
+    Callback = function(value)
+        Options.autoupgradetoggle = value
+        if value then
+            autoupgrading = true
+            autoupgradeconnection = game:GetService("RunService").Stepped:Connect(function()
+                if autoupgrading and Options.autoupgradetoggle then
+                    upgradealllands()
+                    task.wait(20)
+                end
+            end)
+        else
+            autoupgrading = false
+            if autoupgradeconnection then
+                autoupgradeconnection:Disconnect()
+                autoupgradeconnection = nil
             end
-        end)
-    else
-        autoupgrading = false
-        if autoupgradeconnection then
-            autoupgradeconnection:Disconnect()
-            autoupgradeconnection = nil
         end
-    end
-end)
+    end,
+})
 
 local autoclaimrunning = false
 local autoclaimconnection = nil
 
 local function claimalllands()
-    local ownerlands = workspace:WaitForChild('Map'):WaitForChild('OwnerLands')
+    local ownerlands = workspace:WaitForChild("Map"):WaitForChild("OwnerLands")
     
-    local ownersizes = { 'Small', 'Medium', 'Large', 'XL' }
+    local ownersizes = { "Small", "Medium", "Large", "XL" }
     
     for _, size in ipairs(ownersizes) do
         local sizefolder = ownerlands:FindFirstChild(size)
         if sizefolder then
             for _, ownerland in ipairs(sizefolder:GetChildren()) do
-                local cash = ownerland:FindFirstChild('Hitbox') and ownerland.Hitbox:FindFirstChild('Cash')
-                if cash and cash:FindFirstChild('TouchInterest') then
+                local cash = ownerland:FindFirstChild("Hitbox") and ownerland.Hitbox:FindFirstChild("Cash")
+                if cash and cash:FindFirstChild("TouchInterest") then
                     local character = game.Players.LocalPlayer.Character
-                    if character and character:FindFirstChild('HumanoidRootPart') then
+                    if character and character:FindFirstChild("HumanoidRootPart") then
                         firetouchinterest(cash, character.HumanoidRootPart, 0)
                         firetouchinterest(cash, character.HumanoidRootPart, 1)
                         task.wait(0.05)
@@ -151,193 +101,193 @@ local function claimalllands()
     end
 end
 
-local autoclaimtoggle = Tabs.Auto:AddToggle('autoclaimtoggle', {
-    Title = 'Auto Claim Money',
+Tabs.Auto:AddToggle("autoclaimtoggle", {
+    Title = "Auto Claim Money",
     Default = false,
-})
-
-autoclaimtoggle:OnChanged(function()
-    if Options.autoclaimtoggle.Value then
-        autoclaimrunning = true
-        autoclaimconnection = game:GetService('RunService').Stepped:Connect(function()
-            if autoclaimrunning and Options.autoclaimtoggle.Value then
-                claimalllands()
-                task.wait(30)
+    Callback = function(value)
+        Options.autoclaimtoggle = value
+        if value then
+            autoclaimrunning = true
+            autoclaimconnection = game:GetService("RunService").Stepped:Connect(function()
+                if autoclaimrunning and Options.autoclaimtoggle then
+                    claimalllands()
+                    task.wait(30)
+                end
+            end)
+        else
+            autoclaimrunning = false
+            if autoclaimconnection then
+                autoclaimconnection:Disconnect()
+                autoclaimconnection = nil
             end
-        end)
-    else
-        autoclaimrunning = false
-        if autoclaimconnection then
-            autoclaimconnection:Disconnect()
-            autoclaimconnection = nil
         end
-    end
-end)
+    end,
+})
 
 local autobuysoldierrunning = false
 local autobuysoldierconnection = nil
 
 local function buysoldier()
-    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
-    buyremote:FireServer('Soldier')
+    local buyremote = game:GetService("ReplicatedStorage"):WaitForChild("src"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("GameService"):WaitForChild("RE"):WaitForChild("BuyTroops")
+    buyremote:FireServer("Soldier")
 end
 
-local autosoldiertoggle = Tabs.Auto:AddToggle('autosoldiertoggle', {
-    Title = 'Auto Buy Soldier',
+Tabs.Auto:AddToggle("autosoldiertoggle", {
+    Title = "Auto Buy Soldier",
     Default = false,
-})
-
-autosoldiertoggle:OnChanged(function()
-    if Options.autosoldiertoggle.Value then
-        autobuysoldierrunning = true
-        autobuysoldierconnection = game:GetService('RunService').Stepped:Connect(function()
-            if autobuysoldierrunning and Options.autosoldiertoggle.Value then
-                buysoldier()
-                task.wait(1)
+    Callback = function(value)
+        Options.autosoldiertoggle = value
+        if value then
+            autobuysoldierrunning = true
+            autobuysoldierconnection = game:GetService("RunService").Stepped:Connect(function()
+                if autobuysoldierrunning and Options.autosoldiertoggle then
+                    buysoldier()
+                    task.wait(1)
+                end
+            end)
+        else
+            autobuysoldierrunning = false
+            if autobuysoldierconnection then
+                autobuysoldierconnection:Disconnect()
+                autobuysoldierconnection = nil
             end
-        end)
-    else
-        autobuysoldierrunning = false
-        if autobuysoldierconnection then
-            autobuysoldierconnection:Disconnect()
-            autobuysoldierconnection = nil
         end
-    end
-end)
+    end,
+})
 
 local autobuytankrunning = false
 local autobuytankconnection = nil
 
 local function buytank()
-    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
-    buyremote:FireServer('Tank')
+    local buyremote = game:GetService("ReplicatedStorage"):WaitForChild("src"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("GameService"):WaitForChild("RE"):WaitForChild("BuyTroops")
+    buyremote:FireServer("Tank")
 end
 
-local autotanktoggle = Tabs.Auto:AddToggle('autotanktoggle', {
-    Title = 'Auto Buy Tank',
+Tabs.Auto:AddToggle("autotanktoggle", {
+    Title = "Auto Buy Tank",
     Default = false,
-})
-
-autotanktoggle:OnChanged(function()
-    if Options.autotanktoggle.Value then
-        autobuytankrunning = true
-        autobuytankconnection = game:GetService('RunService').Stepped:Connect(function()
-            if autobuytankrunning and Options.autotanktoggle.Value then
-                buytank()
-                task.wait(1.5)
+    Callback = function(value)
+        Options.autotanktoggle = value
+        if value then
+            autobuytankrunning = true
+            autobuytankconnection = game:GetService("RunService").Stepped:Connect(function()
+                if autobuytankrunning and Options.autotanktoggle then
+                    buytank()
+                    task.wait(1.5)
+                end
+            end)
+        else
+            autobuytankrunning = false
+            if autobuytankconnection then
+                autobuytankconnection:Disconnect()
+                autobuytankconnection = nil
             end
-        end)
-    else
-        autobuytankrunning = false
-        if autobuytankconnection then
-            autobuytankconnection:Disconnect()
-            autobuytankconnection = nil
         end
-    end
-end)
+    end,
+})
 
 local autobuymissilerunning = false
 local autobuymissileconnection = nil
 
 local function buymissiletruck()
-    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
-    buyremote:FireServer('MissleTruck')
+    local buyremote = game:GetService("ReplicatedStorage"):WaitForChild("src"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("GameService"):WaitForChild("RE"):WaitForChild("BuyTroops")
+    buyremote:FireServer("MissleTruck")
 end
 
-local automissiletoggle = Tabs.Auto:AddToggle('automissiletoggle', {
-    Title = 'Auto Buy MissileTruck',
+Tabs.Auto:AddToggle("automissiletoggle", {
+    Title = "Auto Buy MissileTruck",
     Default = false,
-})
-
-automissiletoggle:OnChanged(function()
-    if Options.automissiletoggle.Value then
-        autobuymissilerunning = true
-        autobuymissileconnection = game:GetService('RunService').Stepped:Connect(function()
-            if autobuymissilerunning and Options.automissiletoggle.Value then
-                buymissiletruck()
-                task.wait(2)
+    Callback = function(value)
+        Options.automissiletoggle = value
+        if value then
+            autobuymissilerunning = true
+            autobuymissileconnection = game:GetService("RunService").Stepped:Connect(function()
+                if autobuymissilerunning and Options.automissiletoggle then
+                    buymissiletruck()
+                    task.wait(2)
+                end
+            end)
+        else
+            autobuymissilerunning = false
+            if autobuymissileconnection then
+                autobuymissileconnection:Disconnect()
+                autobuymissileconnection = nil
             end
-        end)
-    else
-        autobuymissilerunning = false
-        if autobuymissileconnection then
-            autobuymissileconnection:Disconnect()
-            autobuymissileconnection = nil
         end
-    end
-end)
+    end,
+})
 
 local autobuyjetrunning = false
 local autobuyjetconnection = nil
 
 local function buyfighterjet()
-    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
-    buyremote:FireServer('FighterJet')
+    local buyremote = game:GetService("ReplicatedStorage"):WaitForChild("src"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("GameService"):WaitForChild("RE"):WaitForChild("BuyTroops")
+    buyremote:FireServer("FighterJet")
 end
 
-local autojettoggle = Tabs.Auto:AddToggle('autojettoggle', {
-    Title = 'Auto Buy Fighter Jet',
+Tabs.Auto:AddToggle("autojettoggle", {
+    Title = "Auto Buy Fighter Jet",
     Default = false,
-})
-
-autojettoggle:OnChanged(function()
-    if Options.autojettoggle.Value then
-        autobuyjetrunning = true
-        autobuyjetconnection = game:GetService('RunService').Stepped:Connect(function()
-            if autobuyjetrunning and Options.autojettoggle.Value then
-                buyfighterjet()
-                task.wait(2.5)
+    Callback = function(value)
+        Options.autojettoggle = value
+        if value then
+            autobuyjetrunning = true
+            autobuyjetconnection = game:GetService("RunService").Stepped:Connect(function()
+                if autobuyjetrunning and Options.autojettoggle then
+                    buyfighterjet()
+                    task.wait(2.5)
+                end
+            end)
+        else
+            autobuyjetrunning = false
+            if autobuyjetconnection then
+                autobuyjetconnection:Disconnect()
+                autobuyjetconnection = nil
             end
-        end)
-    else
-        autobuyjetrunning = false
-        if autobuyjetconnection then
-            autobuyjetconnection:Disconnect()
-            autobuyjetconnection = nil
         end
-    end
-end)
+    end,
+})
 
 local autobuyhelirunning = false
 local autobuyheliconnection = nil
 
 local function buyattackhelicopter()
-    local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
-    buyremote:FireServer('AttackHelicopter')
+    local buyremote = game:GetService("ReplicatedStorage"):WaitForChild("src"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("GameService"):WaitForChild("RE"):WaitForChild("BuyTroops")
+    buyremote:FireServer("AttackHelicopter")
 end
 
-local autohelitoggle = Tabs.Auto:AddToggle('autohelitoggle', {
-    Title = 'Auto Buy Attack Helicopter',
+Tabs.Auto:AddToggle("autohelitoggle", {
+    Title = "Auto Buy Attack Helicopter",
     Default = false,
-})
-
-autohelitoggle:OnChanged(function()
-    if Options.autohelitoggle.Value then
-        autobuyhelirunning = true
-        autobuyheliconnection = game:GetService('RunService').Stepped:Connect(function()
-            if autobuyhelirunning and Options.autohelitoggle.Value then
-                buyattackhelicopter()
-                task.wait(2)
+    Callback = function(value)
+        Options.autohelitoggle = value
+        if value then
+            autobuyhelirunning = true
+            autobuyheliconnection = game:GetService("RunService").Stepped:Connect(function()
+                if autobuyhelirunning and Options.autohelitoggle then
+                    buyattackhelicopter()
+                    task.wait(2)
+                end
+            end)
+        else
+            autobuyhelirunning = false
+            if autobuyheliconnection then
+                autobuyheliconnection:Disconnect()
+                autobuyheliconnection = nil
             end
-        end)
-    else
-        autobuyhelirunning = false
-        if autobuyheliconnection then
-            autobuyheliconnection:Disconnect()
-            autobuyheliconnection = nil
         end
-    end
-end)
+    end,
+})
 
 local function getalllandmodels()
     local alllands = {}
-    local map = workspace:WaitForChild('Map')
+    local map = workspace:WaitForChild("Map")
     
-    local lands = map:FindFirstChild('Lands')
-    local ownerlands = map:FindFirstChild('OwnerLands')
+    local lands = map:FindFirstChild("Lands")
+    local ownerlands = map:FindFirstChild("OwnerLands")
     
     if lands then
-        local sizes = { 'XL', 'Large', 'Medium', 'Small' }
+        local sizes = { "XL", "Large", "Medium", "Small" }
         for _, size in ipairs(sizes) do
             local sizefolder = lands:FindFirstChild(size)
             if sizefolder then
@@ -349,7 +299,7 @@ local function getalllandmodels()
     end
     
     if ownerlands then
-        local sizes = { 'XL', 'Large', 'Medium', 'Small' }
+        local sizes = { "XL", "Large", "Medium", "Small" }
         for _, size in ipairs(sizes) do
             local sizefolder = ownerlands:FindFirstChild(size)
             if sizefolder then
@@ -370,9 +320,9 @@ local smallesphighlights = {}
 local function updatesmallesp()
     local alllands = getalllandmodels()
     for _, land in ipairs(alllands) do
-        if land.Name:find('Small') or (land.Parent and land.Parent.Name == 'Small') then
+        if land.Name:find("Small") or (land.Parent and land.Parent.Name == "Small") then
             if not smallesphighlights[land] then
-                local highlight = Instance.new('Highlight')
+                local highlight = Instance.new("Highlight")
                 highlight.FillColor = Color3.fromRGB(255, 0, 0)
                 highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                 highlight.FillTransparency = 0.5
@@ -391,29 +341,29 @@ local function clearsmallesp()
     smallesphighlights = {}
 end
 
-local smallesptoggle = Tabs.Misc:AddToggle('smallesptoggle', {
-    Title = 'Small Lands ESP',
+Tabs.Misc:AddToggle("smallesptoggle", {
+    Title = "Small Lands ESP",
     Default = false,
-})
-
-smallesptoggle:OnChanged(function()
-    if Options.smallesptoggle.Value then
-        smallesprunning = true
-        updatesmallesp()
-        smallespconnection = game:GetService('RunService').Stepped:Connect(function()
-            if smallesprunning and Options.smallesptoggle.Value then
-                updatesmallesp()
+    Callback = function(value)
+        Options.smallesptoggle = value
+        if value then
+            smallesprunning = true
+            updatesmallesp()
+            smallespconnection = game:GetService("RunService").Stepped:Connect(function()
+                if smallesprunning and Options.smallesptoggle then
+                    updatesmallesp()
+                end
+            end)
+        else
+            smallesprunning = false
+            if smallespconnection then
+                smallespconnection:Disconnect()
+                smallespconnection = nil
             end
-        end)
-    else
-        smallesprunning = false
-        if smallespconnection then
-            smallespconnection:Disconnect()
-            smallespconnection = nil
+            clearsmallesp()
         end
-        clearsmallesp()
-    end
-end)
+    end,
+})
 
 local mediumesprunning = false
 local mediumespconnection = nil
@@ -422,9 +372,9 @@ local mediumesphighlights = {}
 local function updatemediumesp()
     local alllands = getalllandmodels()
     for _, land in ipairs(alllands) do
-        if land.Name:find('Medium') or (land.Parent and land.Parent.Name == 'Medium') then
+        if land.Name:find("Medium") or (land.Parent and land.Parent.Name == "Medium") then
             if not mediumesphighlights[land] then
-                local highlight = Instance.new('Highlight')
+                local highlight = Instance.new("Highlight")
                 highlight.FillColor = Color3.fromRGB(0, 255, 0)
                 highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                 highlight.FillTransparency = 0.5
@@ -443,29 +393,29 @@ local function clearmediumesp()
     mediumesphighlights = {}
 end
 
-local mediumesptoggle = Tabs.Misc:AddToggle('mediumesptoggle', {
-    Title = 'Medium Lands ESP',
+Tabs.Misc:AddToggle("mediumesptoggle", {
+    Title = "Medium Lands ESP",
     Default = false,
-})
-
-mediumesptoggle:OnChanged(function()
-    if Options.mediumesptoggle.Value then
-        mediumesprunning = true
-        updatemediumesp()
-        mediumespconnection = game:GetService('RunService').Stepped:Connect(function()
-            if mediumesprunning and Options.mediumesptoggle.Value then
-                updatemediumesp()
+    Callback = function(value)
+        Options.mediumesptoggle = value
+        if value then
+            mediumesprunning = true
+            updatemediumesp()
+            mediumespconnection = game:GetService("RunService").Stepped:Connect(function()
+                if mediumesprunning and Options.mediumesptoggle then
+                    updatemediumesp()
+                end
+            end)
+        else
+            mediumesprunning = false
+            if mediumespconnection then
+                mediumespconnection:Disconnect()
+                mediumespconnection = nil
             end
-        end)
-    else
-        mediumesprunning = false
-        if mediumespconnection then
-            mediumespconnection:Disconnect()
-            mediumespconnection = nil
+            clearmediumesp()
         end
-        clearmediumesp()
-    end
-end)
+    end,
+})
 
 local largeesprunning = false
 local largeespconnection = nil
@@ -474,9 +424,9 @@ local largeesphighlights = {}
 local function updatelargeesp()
     local alllands = getalllandmodels()
     for _, land in ipairs(alllands) do
-        if land.Name:find('Large') or (land.Parent and land.Parent.Name == 'Large') then
+        if land.Name:find("Large") or (land.Parent and land.Parent.Name == "Large") then
             if not largeesphighlights[land] then
-                local highlight = Instance.new('Highlight')
+                local highlight = Instance.new("Highlight")
                 highlight.FillColor = Color3.fromRGB(0, 0, 255)
                 highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                 highlight.FillTransparency = 0.5
@@ -495,29 +445,29 @@ local function clearlargeesp()
     largeesphighlights = {}
 end
 
-local largeesptoggle = Tabs.Misc:AddToggle('largeesptoggle', {
-    Title = 'Large Lands ESP',
+Tabs.Misc:AddToggle("largeesptoggle", {
+    Title = "Large Lands ESP",
     Default = false,
-})
-
-largeesptoggle:OnChanged(function()
-    if Options.largeesptoggle.Value then
-        largeesprunning = true
-        updatelargeesp()
-        largeespconnection = game:GetService('RunService').Stepped:Connect(function()
-            if largeesprunning and Options.largeesptoggle.Value then
-                updatelargeesp()
+    Callback = function(value)
+        Options.largeesptoggle = value
+        if value then
+            largeesprunning = true
+            updatelargeesp()
+            largeespconnection = game:GetService("RunService").Stepped:Connect(function()
+                if largeesprunning and Options.largeesptoggle then
+                    updatelargeesp()
+                end
+            end)
+        else
+            largeesprunning = false
+            if largeespconnection then
+                largeespconnection:Disconnect()
+                largeespconnection = nil
             end
-        end)
-    else
-        largeesprunning = false
-        if largeespconnection then
-            largeespconnection:Disconnect()
-            largeespconnection = nil
+            clearlargeesp()
         end
-        clearlargeesp()
-    end
-end)
+    end,
+})
 
 local xlesprunning = false
 local xlespconnection = nil
@@ -526,9 +476,9 @@ local xlesphighlights = {}
 local function updatexlesp()
     local alllands = getalllandmodels()
     for _, land in ipairs(alllands) do
-        if land.Name:find('XL') or (land.Parent and land.Parent.Name == 'XL') then
+        if land.Name:find("XL") or (land.Parent and land.Parent.Name == "XL") then
             if not xlesphighlights[land] then
-                local highlight = Instance.new('Highlight')
+                local highlight = Instance.new("Highlight")
                 highlight.FillColor = Color3.fromRGB(255, 255, 0)
                 highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
                 highlight.FillTransparency = 0.5
@@ -547,29 +497,29 @@ local function clearxlesp()
     xlesphighlights = {}
 end
 
-local xlesptoggle = Tabs.Misc:AddToggle('xlesptoggle', {
-    Title = 'XL Lands ESP',
+Tabs.Misc:AddToggle("xlesptoggle", {
+    Title = "XL Lands ESP",
     Default = false,
-})
-
-xlesptoggle:OnChanged(function()
-    if Options.xlesptoggle.Value then
-        xlesprunning = true
-        updatexlesp()
-        xlespconnection = game:GetService('RunService').Stepped:Connect(function()
-            if xlesprunning and Options.xlesptoggle.Value then
-                updatexlesp()
+    Callback = function(value)
+        Options.xlesptoggle = value
+        if value then
+            xlesprunning = true
+            updatexlesp()
+            xlespconnection = game:GetService("RunService").Stepped:Connect(function()
+                if xlesprunning and Options.xlesptoggle then
+                    updatexlesp()
+                end
+            end)
+        else
+            xlesprunning = false
+            if xlespconnection then
+                xlespconnection:Disconnect()
+                xlespconnection = nil
             end
-        end)
-    else
-        xlesprunning = false
-        if xlespconnection then
-            xlespconnection:Disconnect()
-            xlespconnection = nil
+            clearxlesp()
         end
-        clearxlesp()
-    end
-end)
+    end,
+})
 
 local hiddenfling = false
 local flingthread = nil
@@ -579,51 +529,40 @@ local function fling()
     local c, hrp, vel, movel = nil, nil, nil, 0.1
 
     while hiddenfling do
-        game:GetService('RunService').Heartbeat:Wait()
+        game:GetService("RunService").Heartbeat:Wait()
         c = lp.Character
-        hrp = c and c:FindFirstChild('HumanoidRootPart')
+        hrp = c and c:FindFirstChild("HumanoidRootPart")
 
         if hrp then
             vel = hrp.Velocity
             hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
-            game:GetService('RunService').RenderStepped:Wait()
+            game:GetService("RunService").RenderStepped:Wait()
             hrp.Velocity = vel
-            game:GetService('RunService').Stepped:Wait()
+            game:GetService("RunService").Stepped:Wait()
             hrp.Velocity = vel + Vector3.new(0, movel, 0)
             movel = -movel
         end
     end
 end
 
-local flingtoggle = Tabs.Misc:AddToggle('flingtoggle', {
-    Title = 'Fling All',
+Tabs.Misc:AddToggle("flingtoggle", {
+    Title = "Fling All",
     Default = false,
+    Callback = function(value)
+        Options.flingtoggle = value
+        if value then
+            hiddenfling = true
+            flingthread = coroutine.create(fling)
+            coroutine.resume(flingthread)
+        else
+            hiddenfling = false
+            flingthread = nil
+        end
+    end,
 })
 
-flingtoggle:OnChanged(function()
-    if Options.flingtoggle.Value then
-        hiddenfling = true
-        flingthread = coroutine.create(fling)
-        coroutine.resume(flingthread)
-    else
-        hiddenfling = false
-        flingthread = nil
-    end
-end)
-
-SaveManager:SetLibrary(Fluent)
-InterfaceManager:SetLibrary(Fluent)
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({})
-InterfaceManager:SetFolder('axomicww3')
-SaveManager:SetFolder('axomicww3/ww3config')
-InterfaceManager:BuildInterfaceSection(Tabs.Settings)
-SaveManager:BuildConfigSection(Tabs.Settings)
-
-Window:SelectTab(1)
-Fluent:Notify({
-    Duration = 10,
-    Title = 'Axomic',
-    Content = 'The script has been Successfully Loaded.',
+WindUI:Notify({
+    Title = "Axomic",
+    Content = "The script has been Successfully Loaded.",
+    Duration = 5,
 })
-SaveManager:LoadAutoloadConfig()
