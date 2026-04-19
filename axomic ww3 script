@@ -540,46 +540,38 @@ xlesptoggle:OnChanged(function()
     end
 end)
 
-local infiniteyieldloaded = false
 local flingrunning = false
-local flingconnection = nil
-local currenttarget = nil
-
-local function loadinfiniteyield()
-    if not infiniteyieldloaded then
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
-        infiniteyieldloaded = true
-        task.wait(1)
-    end
-end
+local flingthread = nil
+local flingtogglebutton = nil
 
 local function startfling()
+    local replicatedstorage = game:GetService('ReplicatedStorage')
+    local runservice = game:GetService('RunService')
     local players = game:GetService('Players')
-    local localplayer = players.LocalPlayer
-    local playerslist = {}
-    
-    for _, player in ipairs(players:GetPlayers()) do
-        if player ~= localplayer then
-            table.insert(playerslist, player)
+    local lp = players.LocalPlayer
+    local c, hrp, vel, movel = nil, nil, nil, 0.1
+
+    if not replicatedstorage:FindFirstChild('axomic_touch_fling_detection') then
+        local detection = Instance.new('Decal')
+        detection.Name = 'axomic_touch_fling_detection'
+        detection.Parent = replicatedstorage
+    end
+
+    while flingrunning do
+        runservice.Heartbeat:Wait()
+        c = lp.Character
+        hrp = c and c:FindFirstChild('HumanoidRootPart')
+        
+        if hrp then
+            vel = hrp.Velocity
+            hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+            runservice.RenderStepped:Wait()
+            hrp.Velocity = vel
+            runservice.Stepped:Wait()
+            hrp.Velocity = vel + Vector3.new(0, movel, 0)
+            movel = -movel
         end
     end
-    
-    if #playerslist == 0 then return end
-    
-    for _, targetplayer in ipairs(playerslist) do
-        if not flingrunning then break end
-        currenttarget = targetplayer
-        local character = localplayer.Character
-        local targetchar = targetplayer.Character
-        if character and targetchar and targetchar:FindFirstChild('HumanoidRootPart') then
-            local targetpos = targetchar.HumanoidRootPart.Position
-            character:SetPrimaryPartCFrame(CFrame.new(targetpos))
-            task.wait(0.5)
-            game:GetService('ReplicatedStorage').DefaultChatSystemChatEvents.SayMessageRequest:FireServer(';walkfling', 'All')
-            task.wait(3)
-        end
-    end
-    currenttarget = nil
 end
 
 local flingtoggle = Tabs.Misc:AddToggle('flingtoggle', {
@@ -590,20 +582,11 @@ local flingtoggle = Tabs.Misc:AddToggle('flingtoggle', {
 flingtoggle:OnChanged(function()
     if Options.flingtoggle.Value then
         flingrunning = true
-        loadinfiniteyield()
-        flingconnection = game:GetService('RunService').Stepped:Connect(function()
-            if flingrunning and Options.flingtoggle.Value then
-                startfling()
-                task.wait(0.5)
-            end
-        end)
+        flingthread = coroutine.create(startfling)
+        coroutine.resume(flingthread)
     else
         flingrunning = false
-        currenttarget = nil
-        if flingconnection then
-            flingconnection:Disconnect()
-            flingconnection = nil
-        end
+        flingthread = nil
     end
 end)
 
