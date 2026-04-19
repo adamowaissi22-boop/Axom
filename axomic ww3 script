@@ -323,24 +323,56 @@ autohelitoggle:OnChanged(function()
     end
 end)
 
+local function getalllandmodels()
+    local alllands = {}
+    local map = workspace:WaitForChild('Map')
+    
+    local lands = map:FindFirstChild('Lands')
+    local ownerlands = map:FindFirstChild('OwnerLands')
+    
+    if lands then
+        local sizes = { 'XL', 'Large', 'Medium', 'Small' }
+        for _, size in ipairs(sizes) do
+            local sizefolder = lands:FindFirstChild(size)
+            if sizefolder then
+                for _, land in ipairs(sizefolder:GetChildren()) do
+                    table.insert(alllands, land)
+                end
+            end
+        end
+    end
+    
+    if ownerlands then
+        local sizes = { 'XL', 'Large', 'Medium', 'Small' }
+        for _, size in ipairs(sizes) do
+            local sizefolder = ownerlands:FindFirstChild(size)
+            if sizefolder then
+                for _, land in ipairs(sizefolder:GetChildren()) do
+                    table.insert(alllands, land)
+                end
+            end
+        end
+    end
+    
+    return alllands
+end
+
 local smallesprunning = false
 local smallespconnection = nil
 local smallesphighlights = {}
 
 local function updatesmallesp()
-    local ownerlands = workspace:WaitForChild('Map'):WaitForChild('OwnerLands')
-    local smallfolder = ownerlands:FindFirstChild('Small')
-    
-    if smallfolder then
-        for _, ownerland in ipairs(smallfolder:GetChildren()) do
-            if not smallesphighlights[ownerland] then
+    local alllands = getalllandmodels()
+    for _, land in ipairs(alllands) do
+        if land.Name:find('Small') or (land.Parent and land.Parent.Name == 'Small') then
+            if not smallesphighlights[land] then
                 local highlight = Instance.new('Highlight')
                 highlight.FillColor = Color3.fromRGB(255, 0, 0)
                 highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                 highlight.FillTransparency = 0.5
-                highlight.Adornee = ownerland
-                highlight.Parent = ownerland
-                smallesphighlights[ownerland] = highlight
+                highlight.Adornee = land
+                highlight.Parent = land
+                smallesphighlights[land] = highlight
             end
         end
     end
@@ -382,19 +414,17 @@ local mediumespconnection = nil
 local mediumesphighlights = {}
 
 local function updatemediumesp()
-    local ownerlands = workspace:WaitForChild('Map'):WaitForChild('OwnerLands')
-    local mediumfolder = ownerlands:FindFirstChild('Medium')
-    
-    if mediumfolder then
-        for _, ownerland in ipairs(mediumfolder:GetChildren()) do
-            if not mediumesphighlights[ownerland] then
+    local alllands = getalllandmodels()
+    for _, land in ipairs(alllands) do
+        if land.Name:find('Medium') or (land.Parent and land.Parent.Name == 'Medium') then
+            if not mediumesphighlights[land] then
                 local highlight = Instance.new('Highlight')
                 highlight.FillColor = Color3.fromRGB(0, 255, 0)
                 highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                 highlight.FillTransparency = 0.5
-                highlight.Adornee = ownerland
-                highlight.Parent = ownerland
-                mediumesphighlights[ownerland] = highlight
+                highlight.Adornee = land
+                highlight.Parent = land
+                mediumesphighlights[land] = highlight
             end
         end
     end
@@ -436,19 +466,17 @@ local largeespconnection = nil
 local largeesphighlights = {}
 
 local function updatelargeesp()
-    local ownerlands = workspace:WaitForChild('Map'):WaitForChild('OwnerLands')
-    local largefolder = ownerlands:FindFirstChild('Large')
-    
-    if largefolder then
-        for _, ownerland in ipairs(largefolder:GetChildren()) do
-            if not largeesphighlights[ownerland] then
+    local alllands = getalllandmodels()
+    for _, land in ipairs(alllands) do
+        if land.Name:find('Large') or (land.Parent and land.Parent.Name == 'Large') then
+            if not largeesphighlights[land] then
                 local highlight = Instance.new('Highlight')
                 highlight.FillColor = Color3.fromRGB(0, 0, 255)
                 highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                 highlight.FillTransparency = 0.5
-                highlight.Adornee = ownerland
-                highlight.Parent = ownerland
-                largeesphighlights[ownerland] = highlight
+                highlight.Adornee = land
+                highlight.Parent = land
+                largeesphighlights[land] = highlight
             end
         end
     end
@@ -490,19 +518,17 @@ local xlespconnection = nil
 local xlesphighlights = {}
 
 local function updatexlesp()
-    local ownerlands = workspace:WaitForChild('Map'):WaitForChild('OwnerLands')
-    local xlfolder = ownerlands:FindFirstChild('XL')
-    
-    if xlfolder then
-        for _, ownerland in ipairs(xlfolder:GetChildren()) do
-            if not xlesphighlights[ownerland] then
+    local alllands = getalllandmodels()
+    for _, land in ipairs(alllands) do
+        if land.Name:find('XL') or (land.Parent and land.Parent.Name == 'XL') then
+            if not xlesphighlights[land] then
                 local highlight = Instance.new('Highlight')
                 highlight.FillColor = Color3.fromRGB(255, 255, 0)
                 highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
                 highlight.FillTransparency = 0.5
-                highlight.Adornee = ownerland
-                highlight.Parent = ownerland
-                xlesphighlights[ownerland] = highlight
+                highlight.Adornee = land
+                highlight.Parent = land
+                xlesphighlights[land] = highlight
             end
         end
     end
