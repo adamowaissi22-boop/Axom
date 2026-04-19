@@ -30,15 +30,16 @@ local autoupgradeconnection = nil
 
 local function upgradealllands()
     local upgraderemote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('UpgradeService'):WaitForChild('RE'):WaitForChild('Upgrade')
-    local landscontainer = workspace:WaitForChild('Map'):WaitForChild('Lands')
+    local ownerlands = workspace:WaitForChild('Map'):WaitForChild('OwnerLands')
     
-    local landsizes = { 'Large', 'Medium', 'XL', 'Small' }
+    local ownersizes = { 'Small', 'Medium', 'Large', 'XL' }
     
-    for _, size in ipairs(landsizes) do
-        local sizefolder = landscontainer:FindFirstChild(size)
+    for _, size in ipairs(ownersizes) do
+        local sizefolder = ownerlands:FindFirstChild(size)
         if sizefolder then
-            for _, land in ipairs(sizefolder:GetChildren()) do
-                upgraderemote:FireServer(land.Name)
+            for _, ownerland in ipairs(sizefolder:GetChildren()) do
+                local ownername = ownerland.Name
+                upgraderemote:FireServer(ownername)
                 task.wait(0.05)
             end
         end
@@ -72,17 +73,20 @@ local autoclaimrunning = false
 local autoclaimconnection = nil
 
 local function claimalllands()
-    local claimremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('LandService'):WaitForChild('RE'):WaitForChild('Claim')
-    local landscontainer = workspace:WaitForChild('Map'):WaitForChild('Lands')
+    local ownerlands = workspace:WaitForChild('Map'):WaitForChild('OwnerLands')
     
-    local landsizes = { 'Large', 'Medium', 'XL', 'Small' }
+    local ownersizes = { 'Small', 'Medium', 'Large', 'XL' }
     
-    for _, size in ipairs(landsizes) do
-        local sizefolder = landscontainer:FindFirstChild(size)
+    for _, size in ipairs(ownersizes) do
+        local sizefolder = ownerlands:FindFirstChild(size)
         if sizefolder then
-            for _, land in ipairs(sizefolder:GetChildren()) do
-                claimremote:FireServer(land.Name)
-                task.wait(0.05)
+            for _, ownerland in ipairs(sizefolder:GetChildren()) do
+                local cash = ownerland:FindFirstChild('Hitbox') and ownerland.Hitbox:FindFirstChild('Cash')
+                if cash and cash:FindFirstChild('TouchInterest') then
+                    firetouchinterest(cash, game.Players.LocalPlayer.Character.HumanoidRootPart, 0)
+                    firetouchinterest(cash, game.Players.LocalPlayer.Character.HumanoidRootPart, 1)
+                    task.wait(0.05)
+                end
             end
         end
     end
@@ -271,19 +275,19 @@ local smallespconnection = nil
 local smallesphighlights = {}
 
 local function updatesmallesp()
-    local landscontainer = workspace:WaitForChild('Map'):WaitForChild('Lands')
-    local smallfolder = landscontainer:FindFirstChild('Small')
+    local ownerlands = workspace:WaitForChild('Map'):WaitForChild('OwnerLands')
+    local smallfolder = ownerlands:FindFirstChild('Small')
     
     if smallfolder then
-        for _, land in ipairs(smallfolder:GetChildren()) do
-            if not smallesphighlights[land] then
+        for _, ownerland in ipairs(smallfolder:GetChildren()) do
+            if not smallesphighlights[ownerland] then
                 local highlight = Instance.new('Highlight')
                 highlight.FillColor = Color3.fromRGB(255, 0, 0)
                 highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                 highlight.FillTransparency = 0.5
-                highlight.Adornee = land
-                highlight.Parent = land
-                smallesphighlights[land] = highlight
+                highlight.Adornee = ownerland
+                highlight.Parent = ownerland
+                smallesphighlights[ownerland] = highlight
             end
         end
     end
@@ -325,19 +329,19 @@ local mediumespconnection = nil
 local mediumesphighlights = {}
 
 local function updatemediumesp()
-    local landscontainer = workspace:WaitForChild('Map'):WaitForChild('Lands')
-    local mediumfolder = landscontainer:FindFirstChild('Medium')
+    local ownerlands = workspace:WaitForChild('Map'):WaitForChild('OwnerLands')
+    local mediumfolder = ownerlands:FindFirstChild('Medium')
     
     if mediumfolder then
-        for _, land in ipairs(mediumfolder:GetChildren()) do
-            if not mediumesphighlights[land] then
+        for _, ownerland in ipairs(mediumfolder:GetChildren()) do
+            if not mediumesphighlights[ownerland] then
                 local highlight = Instance.new('Highlight')
                 highlight.FillColor = Color3.fromRGB(0, 255, 0)
                 highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                 highlight.FillTransparency = 0.5
-                highlight.Adornee = land
-                highlight.Parent = land
-                mediumesphighlights[land] = highlight
+                highlight.Adornee = ownerland
+                highlight.Parent = ownerland
+                mediumesphighlights[ownerland] = highlight
             end
         end
     end
@@ -379,19 +383,19 @@ local largeespconnection = nil
 local largeesphighlights = {}
 
 local function updatelargeesp()
-    local landscontainer = workspace:WaitForChild('Map'):WaitForChild('Lands')
-    local largefolder = landscontainer:FindFirstChild('Large')
+    local ownerlands = workspace:WaitForChild('Map'):WaitForChild('OwnerLands')
+    local largefolder = ownerlands:FindFirstChild('Large')
     
     if largefolder then
-        for _, land in ipairs(largefolder:GetChildren()) do
-            if not largeesphighlights[land] then
+        for _, ownerland in ipairs(largefolder:GetChildren()) do
+            if not largeesphighlights[ownerland] then
                 local highlight = Instance.new('Highlight')
                 highlight.FillColor = Color3.fromRGB(0, 0, 255)
                 highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                 highlight.FillTransparency = 0.5
-                highlight.Adornee = land
-                highlight.Parent = land
-                largeesphighlights[land] = highlight
+                highlight.Adornee = ownerland
+                highlight.Parent = ownerland
+                largeesphighlights[ownerland] = highlight
             end
         end
     end
@@ -433,19 +437,19 @@ local xlespconnection = nil
 local xlesphighlights = {}
 
 local function updatexlesp()
-    local landscontainer = workspace:WaitForChild('Map'):WaitForChild('Lands')
-    local xlfolder = landscontainer:FindFirstChild('XL')
+    local ownerlands = workspace:WaitForChild('Map'):WaitForChild('OwnerLands')
+    local xlfolder = ownerlands:FindFirstChild('XL')
     
     if xlfolder then
-        for _, land in ipairs(xlfolder:GetChildren()) do
-            if not xlesphighlights[land] then
+        for _, ownerland in ipairs(xlfolder:GetChildren()) do
+            if not xlesphighlights[ownerland] then
                 local highlight = Instance.new('Highlight')
                 highlight.FillColor = Color3.fromRGB(255, 255, 0)
                 highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
                 highlight.FillTransparency = 0.5
-                highlight.Adornee = land
-                highlight.Parent = land
-                xlesphighlights[land] = highlight
+                highlight.Adornee = ownerland
+                highlight.Parent = ownerland
+                xlesphighlights[ownerland] = highlight
             end
         end
     end
