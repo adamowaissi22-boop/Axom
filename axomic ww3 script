@@ -89,8 +89,7 @@ local function upgradealllands()
         local sizefolder = ownerlands:FindFirstChild(size)
         if sizefolder then
             for _, ownerland in ipairs(sizefolder:GetChildren()) do
-                local ownername = ownerland.Name
-                upgraderemote:FireServer(ownername)
+                upgraderemote:FireServer(ownerland.Name)
                 task.wait(0.05)
             end
         end
@@ -174,7 +173,7 @@ local autobuysoldierconnection = nil
 
 local function buysoldier()
     local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
-    buyremote:FireServer("Soldier")
+    buyremote:FireServer('Soldier')
 end
 
 local autosoldiertoggle = Tabs.Auto:AddToggle('autosoldiertoggle', {
@@ -205,7 +204,7 @@ local autobuytankconnection = nil
 
 local function buytank()
     local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
-    buyremote:FireServer("Tank")
+    buyremote:FireServer('Tank')
 end
 
 local autotanktoggle = Tabs.Auto:AddToggle('autotanktoggle', {
@@ -236,7 +235,7 @@ local autobuymissileconnection = nil
 
 local function buymissiletruck()
     local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
-    buyremote:FireServer("MissleTruck")
+    buyremote:FireServer('MissleTruck')
 end
 
 local automissiletoggle = Tabs.Auto:AddToggle('automissiletoggle', {
@@ -267,7 +266,7 @@ local autobuyjetconnection = nil
 
 local function buyfighterjet()
     local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
-    buyremote:FireServer("FighterJet")
+    buyremote:FireServer('FighterJet')
 end
 
 local autojettoggle = Tabs.Auto:AddToggle('autojettoggle', {
@@ -298,7 +297,7 @@ local autobuyheliconnection = nil
 
 local function buyattackhelicopter()
     local buyremote = game:GetService('ReplicatedStorage'):WaitForChild('src'):WaitForChild('Packages'):WaitForChild('Knit'):WaitForChild('Services'):WaitForChild('GameService'):WaitForChild('RE'):WaitForChild('BuyTroops')
-    buyremote:FireServer("AttackHelicopter")
+    buyremote:FireServer('AttackHelicopter')
 end
 
 local autohelitoggle = Tabs.Auto:AddToggle('autohelitoggle', {
@@ -540,34 +539,24 @@ xlesptoggle:OnChanged(function()
     end
 end)
 
-local flingrunning = false
+local hiddenfling = false
 local flingthread = nil
-local flingtogglebutton = nil
 
-local function startfling()
-    local replicatedstorage = game:GetService('ReplicatedStorage')
-    local runservice = game:GetService('RunService')
-    local players = game:GetService('Players')
-    local lp = players.LocalPlayer
+local function fling()
+    local lp = game.Players.LocalPlayer
     local c, hrp, vel, movel = nil, nil, nil, 0.1
 
-    if not replicatedstorage:FindFirstChild('axomic_touch_fling_detection') then
-        local detection = Instance.new('Decal')
-        detection.Name = 'axomic_touch_fling_detection'
-        detection.Parent = replicatedstorage
-    end
-
-    while flingrunning do
-        runservice.Heartbeat:Wait()
+    while hiddenfling do
+        game:GetService('RunService').Heartbeat:Wait()
         c = lp.Character
         hrp = c and c:FindFirstChild('HumanoidRootPart')
-        
+
         if hrp then
             vel = hrp.Velocity
             hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
-            runservice.RenderStepped:Wait()
+            game:GetService('RunService').RenderStepped:Wait()
             hrp.Velocity = vel
-            runservice.Stepped:Wait()
+            game:GetService('RunService').Stepped:Wait()
             hrp.Velocity = vel + Vector3.new(0, movel, 0)
             movel = -movel
         end
@@ -581,11 +570,11 @@ local flingtoggle = Tabs.Misc:AddToggle('flingtoggle', {
 
 flingtoggle:OnChanged(function()
     if Options.flingtoggle.Value then
-        flingrunning = true
-        flingthread = coroutine.create(startfling)
+        hiddenfling = true
+        flingthread = coroutine.create(fling)
         coroutine.resume(flingthread)
     else
-        flingrunning = false
+        hiddenfling = false
         flingthread = nil
     end
 end)
