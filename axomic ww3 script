@@ -68,10 +68,17 @@ screenbutton.BorderSizePixel = 0
 screenbutton.ZIndex = 10
 screenbutton.Parent = screengui
 
+local uis = game:GetService('UserInputService')
+local isopen = false
+
 screenbutton.MouseButton1Click:Connect(function()
-    game:GetService('VirtualInputManager'):SendKeyEvent(true, Enum.KeyCode.LeftControl, false, game)
-    task.wait(0.05)
-    game:GetService('VirtualInputManager'):SendKeyEvent(false, Enum.KeyCode.LeftControl, false, game)
+    if isopen then
+        Window:Close()
+        isopen = false
+    else
+        Window:Open()
+        isopen = true
+    end
 end)
 
 local Options = Fluent.Options
