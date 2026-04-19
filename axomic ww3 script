@@ -68,17 +68,16 @@ screenbutton.BorderSizePixel = 0
 screenbutton.ZIndex = 10
 screenbutton.Parent = screengui
 
+local vim = game:GetService('VirtualInputManager')
 local uis = game:GetService('UserInputService')
-local isopen = false
 
 screenbutton.MouseButton1Click:Connect(function()
-    if isopen then
-        Window:Close()
-        isopen = false
-    else
-        Window:Open()
-        isopen = true
-    end
+    local oldmovement = uis.MouseBehavior
+    uis.MouseBehavior = Enum.MouseBehavior.Default
+    vim:SendKeyEvent(true, Enum.KeyCode.LeftAlt, false, game)
+    task.wait(0.05)
+    vim:SendKeyEvent(false, Enum.KeyCode.LeftAlt, false, game)
+    uis.MouseBehavior = oldmovement
 end)
 
 local Options = Fluent.Options
